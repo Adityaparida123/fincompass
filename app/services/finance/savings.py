@@ -1,0 +1,26 @@
+"""Savings goal helpers."""
+
+from decimal import Decimal
+
+from app.db.models.savings import SavingsGoal
+
+RECOMMENDED_MONTHS = 6
+
+
+def progress_percent(goal: SavingsGoal) -> Decimal:
+    if goal.target_amount <= 0:
+        return Decimal("0")
+    value = (goal.current_amount / goal.target_amount) * Decimal("100")
+    return value.quantize(Decimal("0.01"))
+
+
+def goal_to_read(goal: SavingsGoal) -> dict:
+    return {
+        "id": goal.id,
+        "name": goal.name,
+        "target_amount": goal.target_amount,
+        "current_amount": goal.current_amount,
+        "target_date": goal.target_date,
+        "status": goal.status,
+        "progress_percent": progress_percent(goal),
+    }

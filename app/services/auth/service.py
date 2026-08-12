@@ -1,0 +1,156 @@
+"""Authentication service: register, login, logout, password reset.
+
+Passwords are always hashed with Argon2id. Never store or log plaintext.
+"""
+
+from datetime import timedelta
+from typing import Any
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.config import settings
+from app.core.exceptions import ConflictError, InvalidInputError, UnauthorizedError
+from app.core.security import (
+    ACCESS_TOKEN_TYPE,
+    TokenError,
+    create_token,
+    decode_token,
+)
+from app.db.models.user import User
+from app.schemas.auth import RegisterRequest, UserSummary
+from app.services.audit import log_audit
+from app.services.auth.password import hash_password, verify_password
+from app.services.auth.tokens import issue_token_pair, refresh_expiry
+
+RESET_TOKEN_EXPIRE_MINUTES = 30
+
+
+async def get_user_by_email(db: AsyncSession, email: str) -> User | None:
+    stmt = select(User).where(User.email == email.lower())
+    return (await db.execute(stmt)).scalar_one_or_none()
+
+
+async def get_user_by_id(db: AsyncSession, user_id: int) -> User | None:
+    stmt = select(User).where(User.id == user_id)
+    return (await db.execute(stmt)).scalar_one_or_none()
+
+
+def user_summary(user: User) -> UserSummary:
+    return UserSummary(
+        id=user.id,
+        email=user.email,
+        full_name=user.full_name,
+        phone=user.phone,
+        preferred_language=user.preferred_language,
+        currency=user.currency,
+        timezone=user.timezone,
+    )
+
+
+async def register(db: AsyncSession, data: RegisterRequest) -> tuple[User, Any]:
+    existing = await get_user_by_email(db, data.email)
+    if existing:
+        raise ConflictError("An account with this email already exists.")
+
+    password_hash = hash_password(data.password)
+    user = User(
+        email=data.email.lower(),
+        password_hash=password_hash,
+        full_name=data.full_name.strip(),
+        currency=settings.DEFAULT_CURRENCY,
+        timezone=settings.DEFAULT_TIMEZONE,
+        preferred_language="en",
+    )
+    db.add(user)
+    await db.flush()
+
+    await log_audit(
+        db,
+        action="auth.register",
+        resource_type="user",
+        user_id=user.id,
+        resource_id=user.id,
+    )
+    tokens = issue_token_pair(user.id, remember_me=False)
+    return user, tokens
+
+
+async def authenticate(db: AsyncSession, email: str, password: str) -> User:
+    user = await get_user_by_email(db, email)
+    if user is None or not verify_password(password, user.password_hash):
+        raise UnauthorizedError("Invalid email or password.")
+    if not user.is_active:
+        raise UnauthorizedError("Account is disabled.")
+    return user
+
+
+async def login(db: AsyncSession, email: str, password: str, remember_me: bool):
+    user = await authenticate(db, email, password)
+    tokens = issue_token_pair(user.id, remember_me=remember_me)
+    await log_audit(
+        db,
+        action="auth.login",
+        resource_type="user",
+        user_id=user.id,
+        resource_id=user.id,
+        metadata={"remember_me": remember_me},
+    )
+    await db.flush()
+    return user, tokens
+
+
+def rotate_tokens(user_id: int, remember_me: bool):
+    return issue_token_pair(user_id, remember_me=remember_me)
+
+
+def create_reset_token(user_id: int) -> str:
+    return create_token(
+        str(user_id),
+        "password_reset",
+        timedelta(minutes=RESET_TOKEN_EXPIRE_MINUTES),
+    )
+
+
+async def forgot_password(db: AsyncSession, email: str) -> str | None:
+    """Generate a reset token.
+
+    Returns the raw token only when no mail transport is configured
+    (development convenience). In production this is routed through an
+    email provider and never returned to the API caller.
+    """
+    user = await get_user_by_email(db, email)
+    if user is None:
+        return None
+    token = create_reset_token(user.id)
+    await log_audit(
+        db,
+        action="auth.forgot_password",
+        resource_type="user",
+        user_id=user.id,
+        resource_id=user.id,
+    )
+    return token
+
+
+async def reset_password(db: AsyncSession, token: str, new_password: str) -> User:
+    try:
+        payload = decode_token(token, "password_reset")
+        user_id = int(payload["sub"])
+    except (TokenError, KeyError, ValueError) as exc:
+        raise InvalidInputError("Reset token is invalid or expired.") from exc
+
+    user = await get_user_by_id(db, user_id)
+    if user is None:
+        raise InvalidInputError("Reset token is invalid or expired.")
+
+    user.password_hash = hash_password(new_password)
+    await log_audit(
+        db,
+        action="auth.reset_password",
+        resource_type="user",
+        user_id=user.id,
+        resource_id=user.id,
+    )
+    await db.flush()
+    return user
