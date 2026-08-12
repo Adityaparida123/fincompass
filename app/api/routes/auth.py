@@ -1,12 +1,12 @@
 """Authentication routes."""
 
-from fastapi import APIRouter, Cookie, Depends, Request, Response
+from fastapi import APIRouter, Cookie, Depends, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_current_user, rate_limit_auth
-from app.core.exceptions import InvalidInputError, UnauthorizedError
+from app.core.exceptions import UnauthorizedError
 from app.core.logging import get_logger
-from app.core.security import TokenError
+from app.core.security import TokenError, refresh_token_metadata
 from app.db.models.user import User
 from app.db.session import get_session
 from app.schemas.auth import (
@@ -21,10 +21,14 @@ from app.schemas.auth import (
     TokenPair,
 )
 from app.services.auth import service as auth_service
+from app.services.auth.refresh_sessions import (
+    revoke_all_for_user,
+    revoke_jti,
+    validate_and_rotate,
+)
 from app.services.auth.tokens import (
     REFRESH_COOKIE_NAME,
     clear_refresh_cookie,
-    decode_refresh_token,
     set_refresh_cookie,
 )
 
@@ -43,6 +47,7 @@ async def register(
     data: RegisterRequest,
     response: Response,
     db: AsyncSession = Depends(get_session),
+    _: None = Depends(rate_limit_auth),
 ) -> AuthResponse:
     user, tokens = await auth_service.register(db, data)
     await db.commit()
@@ -54,6 +59,7 @@ async def login(
     data: LoginRequest,
     response: Response,
     db: AsyncSession = Depends(get_session),
+    _: None = Depends(rate_limit_auth),
 ) -> AuthResponse:
     user, tokens = await auth_service.login(db, data.email, data.password, data.remember_me)
     await db.commit()
@@ -64,38 +70,46 @@ async def login(
 async def refresh(
     data: RefreshRequest,
     response: Response,
+    db: AsyncSession = Depends(get_session),
     refresh_cookie: str | None = Cookie(default=None, alias=REFRESH_COOKIE_NAME),
+    _: None = Depends(rate_limit_auth),
 ) -> TokenPair:
     token = data.refresh_token or refresh_cookie
     if not token:
         raise UnauthorizedError("Refresh token missing.")
-    try:
-        user_id, remember_me = decode_refresh_token(token)
-    except TokenError as exc:
-        raise UnauthorizedError(str(exc)) from exc
-    tokens = auth_service.rotate_tokens(user_id, remember_me=remember_me)
+    user_id, remember_me, family_id, _expires = await validate_and_rotate(db, token)
+    tokens = await auth_service.rotate_tokens(db, user_id, remember_me, family_id)
+    await db.commit()
     set_refresh_cookie(response, tokens.refresh_token, remember_me=remember_me)
     return tokens
 
 
 @router.post("/logout", status_code=204)
 async def logout(
+    response: Response,
     data: LogoutRequest | None = None,
-    response: Response = None,
+    db: AsyncSession = Depends(get_session),
     refresh_cookie: str | None = Cookie(default=None, alias=REFRESH_COOKIE_NAME),
 ) -> None:
-    if response is not None:
-        clear_refresh_cookie(response)
+    token = (data.refresh_token if data else None) or refresh_cookie
+    if token:
+        try:
+            meta = refresh_token_metadata(token)
+            await revoke_jti(db, meta["jti"])
+            await db.commit()
+        except TokenError:
+            pass
+    clear_refresh_cookie(response)
 
 
 @router.post("/forgot-password", status_code=200)
 async def forgot_password(
     data: ForgotPasswordRequest,
     db: AsyncSession = Depends(get_session),
+    _: None = Depends(rate_limit_auth),
 ) -> dict:
     await auth_service.forgot_password(db, data.email)
     await db.commit()
-    # Same response whether or not the email exists (anti-enumeration).
     return {"message": "If that email exists, a reset link has been issued."}
 
 
@@ -103,8 +117,10 @@ async def forgot_password(
 async def reset_password(
     data: ResetPasswordRequest,
     db: AsyncSession = Depends(get_session),
+    _: None = Depends(rate_limit_auth),
 ) -> dict:
-    await auth_service.reset_password(db, data.token, data.new_password)
+    user = await auth_service.reset_password(db, data.token, data.new_password)
+    await revoke_all_for_user(db, user.id)
     await db.commit()
     return {"message": "Password updated successfully."}
 

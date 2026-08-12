@@ -22,11 +22,11 @@ from app.schemas.budget import (
 )
 from app.services.consent.service import require_consent
 from app.services.finance.budget import (
-    average_monthly_spend,
     build_recommendations,
     category_spend,
     list_budgets,
 )
+from app.services.recycle_bin.service import move_to_recycle_bin
 from app.utils.dates import month_period_from_string
 
 router = APIRouter(prefix="/budget", tags=["budget"])
@@ -86,9 +86,9 @@ async def delete_budget(
     budget = (await db.execute(stmt)).scalar_one_or_none()
     if budget is None:
         raise NotFoundError("Budget not found.")
-    await db.delete(budget)
+    await move_to_recycle_bin(db, user.id, "budget", budget.id, budget)
     await db.commit()
-    return {"message": "Budget deleted."}
+    return {"message": "Budget moved to recycle bin."}
 
 
 @router.get("/status", response_model=list[BudgetStatus])

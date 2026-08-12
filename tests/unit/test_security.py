@@ -1,5 +1,7 @@
 """Unit tests for security primitives."""
 
+from datetime import UTC
+
 import pytest
 
 from app.core.security import (
@@ -55,8 +57,9 @@ def test_refresh_token_roundtrip():
 
 
 def test_expired_token_rejected():
+    from datetime import datetime, timedelta
+
     import jwt
-    from datetime import datetime, timedelta, timezone
 
     from app.core.config import settings
 
@@ -64,8 +67,8 @@ def test_expired_token_rejected():
         {
             "sub": "1",
             "type": "access",
-            "iat": datetime.now(timezone.utc) - timedelta(hours=2),
-            "exp": datetime.now(timezone.utc) - timedelta(hours=1),
+            "iat": datetime.now(UTC) - timedelta(hours=2),
+            "exp": datetime.now(UTC) - timedelta(hours=1),
         },
         settings.JWT_SECRET_KEY,
         algorithm=settings.JWT_ALGORITHM,

@@ -1,6 +1,6 @@
 """Consent service. Personalised features require matching granted consent."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -40,7 +40,7 @@ async def grant_consent(
     db: AsyncSession, user_id: int, consent_type: ConsentType, version: int = 1
 ) -> Consent:
     existing = await get_consent(db, user_id, consent_type)
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     if existing is None:
         consent = Consent(
             user_id=user_id,
@@ -76,7 +76,7 @@ async def revoke_consent(
     if consent is None:
         raise NotFoundError(f"Consent '{consent_type.value}' not found.")
     consent.status = ConsentStatus.revoked
-    consent.revoked_at = datetime.now(timezone.utc)
+    consent.revoked_at = datetime.now(UTC)
     await log_audit(
         db,
         action="consent.revoke",

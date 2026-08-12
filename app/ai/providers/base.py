@@ -5,7 +5,8 @@ configuration; never hardcode a specific vendor in business logic.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, AsyncIterator
+from collections.abc import AsyncIterator
+from typing import Any
 
 
 class LLMMessage:

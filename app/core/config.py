@@ -52,6 +52,12 @@ class Settings(BaseSettings):
     RATE_LIMIT_CHAT_LIMIT: int = 30
     RATE_LIMIT_CHAT_WINDOW: int = 60
 
+    EMAIL_PROVIDER: str = "console"
+    SMTP_HOST: str | None = None
+    SMTP_PORT: int = 587
+    SMTP_USERNAME: str | None = None
+    SMTP_PASSWORD: str | None = None
+
     KNOWLEDGE_BASE_DIR: str = "knowledge_base"
 
     @field_validator("CORS_ORIGINS")

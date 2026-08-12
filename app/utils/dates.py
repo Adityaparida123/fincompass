@@ -1,6 +1,6 @@
 """Date/time helpers. DB stores UTC; responses render in user timezone (default IST)."""
 
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta, timezone
 
 from app.core.config import settings
 
@@ -8,7 +8,7 @@ IST = timezone(timedelta(hours=5, minutes=30))
 
 
 def utc_now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def ist_now() -> datetime:

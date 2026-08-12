@@ -1,8 +1,10 @@
 """Expense analysis helpers (deterministic aggregation)."""
 
-from datetime import date
+from collections import defaultdict
+from datetime import date, timedelta
 from decimal import Decimal
 
+from pydantic import BaseModel
 from sqlalchemy import Select, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -95,4 +97,80 @@ async def expense_series(
         .order_by(Transaction.date)
     )
     rows = (await db.execute(stmt)).all()
-    return bucket_rows_by_period(rows, granularity)
+    return bucket_rows_by_period(list(rows), granularity)
+
+
+class RecurringPattern(BaseModel):
+    category: str
+    label: str
+    typical_amount: Decimal
+    occurrences: int
+    confidence: str
+    interval_days: int | None = None
+
+
+_RECURRING_HINTS: dict[str, list[str]] = {
+    "salary": ["salary", "payroll", "wage"],
+    "rent": ["rent", "housing", "lease"],
+    "emi": ["emi", "loan", "mortgage"],
+    "subscription": ["subscription", "netflix", "spotify", "prime"],
+    "utilities": ["electric", "water", "internet", "utility", "bill"],
+}
+
+
+async def detect_recurring_patterns(
+    db: AsyncSession,
+    user_id: int,
+    *,
+    lookback_days: int = 120,
+) -> list[RecurringPattern]:
+    """Detect likely recurring transactions with confidence labels."""
+    end = date.today()
+    start = end - timedelta(days=lookback_days)
+    stmt = (
+        select(Transaction.date, Transaction.category, Transaction.description, Transaction.amount)
+        .where(
+            Transaction.user_id == user_id,
+            Transaction.is_deleted.is_(False),
+            Transaction.date >= start,
+            Transaction.date <= end,
+        )
+        .order_by(Transaction.date)
+    )
+    rows = (await db.execute(stmt)).all()
+    by_key: dict[tuple[str, str], list[tuple[date, Decimal]]] = defaultdict(list)
+    for row in rows:
+        label = _classify_recurring(row.category, row.description)
+        if label:
+            by_key[(label, row.category)].append((row.date, Decimal(row.amount)))
+
+    patterns: list[RecurringPattern] = []
+    for (label, category), events in by_key.items():
+        if len(events) < 2:
+            continue
+        amounts = [a for _, a in events]
+        avg = sum(amounts, Decimal("0")) / Decimal(len(amounts))
+        gaps = [(events[i][0] - events[i - 1][0]).days for i in range(1, len(events))]
+        avg_gap = int(sum(gaps) / len(gaps)) if gaps else None
+        confidence = "high" if len(events) >= 3 else "medium"
+        patterns.append(
+            RecurringPattern(
+                category=category,
+                label=label,
+                typical_amount=avg.quantize(Decimal("0.01")),
+                occurrences=len(events),
+                confidence=confidence,
+                interval_days=avg_gap,
+            )
+        )
+    return sorted(patterns, key=lambda p: (-p.occurrences, p.label))
+
+
+def _classify_recurring(category: str, description: str) -> str | None:
+    text = f"{category} {description}".lower()
+    for label, keywords in _RECURRING_HINTS.items():
+        if any(k in text for k in keywords):
+            return label
+    if category.lower() in ("salary", "rent", "emi", "subscription", "utilities"):
+        return category.lower()
+    return None

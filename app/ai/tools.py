@@ -4,13 +4,13 @@ The LLM selects tools; the backend executes them using the financial engine.
 The LLM never performs the calculations itself.
 """
 
+from collections.abc import Callable, Coroutine
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import Any, Callable, Coroutine
+from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.models.transaction import Transaction, TransactionType
 from app.schemas.cashflow import CashFlowInput, SavingsCapacityInput
 from app.schemas.debt import DebtBurdenInput
 from app.schemas.loan import EMICalculateRequest, LoanSimulationRequest
@@ -22,7 +22,7 @@ from app.services.finance.emergency_fund import calculate_emergency_buffer
 from app.services.finance.expenses import category_totals, expense_series, income_totals
 from app.services.lending.emi import emi_result
 from app.services.lending.loan_simulator import simulate_loan
-from app.services.readiness.engine import ReadinessInput, compute_readiness
+from app.services.readiness.engine import compute_readiness
 from app.services.schemes.matcher import match_schemes
 
 
@@ -162,6 +162,22 @@ TOOL_SPECS: list[dict[str, Any]] = [
             "name": "get_user_goals",
             "description": "List the user's savings goals and their progress.",
             "parameters": {"type": "object", "properties": {}},
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "create_budget",
+            "description": "Create a monthly budget limit for a spending category using consented data.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "period": {"type": "string", "description": "First day of month YYYY-MM-DD."},
+                    "category": {"type": "string"},
+                    "limit_amount": {"type": "number"},
+                },
+                "required": ["period", "category", "limit_amount"],
+            },
         },
     },
     {
@@ -332,6 +348,32 @@ async def tool_get_user_goals(ctx: ToolContext, args: dict[str, Any]) -> dict[st
             }
             for g in goals
         ]
+    }
+
+
+@_register("create_budget")
+async def tool_create_budget(ctx: ToolContext, args: dict[str, Any]) -> dict[str, Any]:
+    from datetime import date
+
+    from app.db.models.budget import Budget
+    from app.db.models.consent import ConsentType
+    from app.services.consent.service import require_consent
+
+    await require_consent(ctx.db, ctx.user_id, ConsentType.financial_data_analysis)
+    period = date.fromisoformat(str(args["period"]))
+    budget = Budget(
+        user_id=ctx.user_id,
+        period=period,
+        category=str(args["category"]),
+        limit_amount=Decimal(str(args["limit_amount"])),
+    )
+    ctx.db.add(budget)
+    await ctx.db.flush()
+    return {
+        "id": budget.id,
+        "period": period.isoformat(),
+        "category": budget.category,
+        "limit_amount": str(budget.limit_amount),
     }
 
 

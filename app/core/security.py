@@ -5,7 +5,7 @@ short-lived; refresh tokens are longer-lived and rotated on use.
 """
 
 import secrets
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import jwt
@@ -49,7 +49,7 @@ def create_token(
     *,
     extra: dict[str, Any] | None = None,
 ) -> str:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     payload: dict[str, Any] = {
         "sub": subject,
         "type": token_type,
@@ -70,18 +70,33 @@ def create_access_token(user_id: int) -> str:
     )
 
 
-def create_refresh_token(user_id: int, *, remember_me: bool) -> str:
+def create_refresh_token(user_id: int, *, remember_me: bool, family_id: str | None = None) -> str:
     days = (
         settings.REFRESH_TOKEN_EXPIRE_DAYS_REMEMBER
         if remember_me
         else settings.REFRESH_TOKEN_EXPIRE_DAYS
     )
+    extra: dict[str, Any] = {"remember_me": remember_me}
+    if family_id:
+        extra["family_id"] = family_id
     return create_token(
         str(user_id),
         REFRESH_TOKEN_TYPE,
         timedelta(days=days),
-        extra={"remember_me": remember_me},
+        extra=extra,
     )
+
+
+def refresh_token_metadata(token: str) -> dict[str, Any]:
+    """Decode refresh token and return jti, family_id, exp, remember_me."""
+    payload = decode_token(token, REFRESH_TOKEN_TYPE)
+    return {
+        "jti": payload["jti"],
+        "family_id": payload.get("family_id", payload["jti"]),
+        "remember_me": bool(payload.get("remember_me", False)),
+        "exp": payload["exp"],
+        "user_id": int(payload["sub"]),
+    }
 
 
 def decode_token(token: str, expected_type: str) -> dict[str, Any]:

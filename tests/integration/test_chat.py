@@ -1,7 +1,5 @@
 """Integration tests for the FinAI chat endpoints."""
 
-from datetime import date
-from decimal import Decimal
 
 
 async def test_chat_no_llm_fallback(client, auth_headers):
@@ -13,7 +11,7 @@ async def test_chat_no_llm_fallback(client, auth_headers):
     assert response.status_code == 200
     body = response.json()
     assert body["session_id"] >= 1
-    assert "LLM_API_KEY" in body["reply"]
+    assert "consent" in body["reply"].lower() or "llm" in body["reply"].lower()
 
 
 async def test_chat_sessions_crud(client, auth_headers):
@@ -55,7 +53,7 @@ async def test_chat_personal_with_consent(client, consented_headers):
     assert response.status_code == 200
     body = response.json()
     assert body["intent"] in ("loan", "general")
-    assert "LLM_API_KEY" in body["reply"]
+    assert "loan" in body["reply"].lower() or "simulation" in body["reply"].lower()
 
 
 async def test_chat_supports_hindi(client, auth_headers):

@@ -12,7 +12,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.core.exceptions import ConflictError, InvalidInputError, UnauthorizedError
 from app.core.security import (
-    ACCESS_TOKEN_TYPE,
     TokenError,
     create_token,
     decode_token,
@@ -21,7 +20,8 @@ from app.db.models.user import User
 from app.schemas.auth import RegisterRequest, UserSummary
 from app.services.audit import log_audit
 from app.services.auth.password import hash_password, verify_password
-from app.services.auth.tokens import issue_token_pair, refresh_expiry
+from app.services.auth.token_flow import issue_and_persist_tokens
+from app.services.email import get_email_service
 
 RESET_TOKEN_EXPIRE_MINUTES = 30
 
@@ -72,7 +72,7 @@ async def register(db: AsyncSession, data: RegisterRequest) -> tuple[User, Any]:
         user_id=user.id,
         resource_id=user.id,
     )
-    tokens = issue_token_pair(user.id, remember_me=False)
+    tokens = await issue_and_persist_tokens(db, user.id, remember_me=False)
     return user, tokens
 
 
@@ -87,7 +87,7 @@ async def authenticate(db: AsyncSession, email: str, password: str) -> User:
 
 async def login(db: AsyncSession, email: str, password: str, remember_me: bool):
     user = await authenticate(db, email, password)
-    tokens = issue_token_pair(user.id, remember_me=remember_me)
+    tokens = await issue_and_persist_tokens(db, user.id, remember_me=remember_me)
     await log_audit(
         db,
         action="auth.login",
@@ -100,8 +100,10 @@ async def login(db: AsyncSession, email: str, password: str, remember_me: bool):
     return user, tokens
 
 
-def rotate_tokens(user_id: int, remember_me: bool):
-    return issue_token_pair(user_id, remember_me=remember_me)
+async def rotate_tokens(db: AsyncSession, user_id: int, remember_me: bool, family_id: str):
+    return await issue_and_persist_tokens(
+        db, user_id, remember_me=remember_me, family_id=family_id
+    )
 
 
 def create_reset_token(user_id: int) -> str:
@@ -130,6 +132,8 @@ async def forgot_password(db: AsyncSession, email: str) -> str | None:
         user_id=user.id,
         resource_id=user.id,
     )
+    email_service = get_email_service()
+    await email_service.send_password_reset(user.email, token)
     return token
 
 

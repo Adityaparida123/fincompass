@@ -1,10 +1,6 @@
-"""Token issuance and cookie helpers.
+"""Token issuance and cookie helpers."""
 
-Access and refresh tokens are JWTs. Refresh tokens are rotated: whenever a
-refresh token is used, a new pair is issued. "Remember me" extends the
-refresh token lifetime and stores it as a longer-lived HttpOnly cookie.
-"""
-
+import uuid
 from datetime import timedelta
 
 from fastapi import Response
@@ -22,9 +18,10 @@ from app.schemas.auth import TokenPair
 REFRESH_COOKIE_NAME = "finai_refresh"
 
 
-def issue_token_pair(user_id: int, *, remember_me: bool) -> TokenPair:
+def issue_token_pair(user_id: int, *, remember_me: bool, family_id: str | None = None) -> TokenPair:
+    fid = family_id or uuid.uuid4().hex
     access = create_access_token(user_id)
-    refresh = create_refresh_token(user_id, remember_me=remember_me)
+    refresh = create_refresh_token(user_id, remember_me=remember_me, family_id=fid)
     return TokenPair(
         access_token=access,
         refresh_token=refresh,

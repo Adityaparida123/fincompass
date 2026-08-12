@@ -19,6 +19,7 @@ from app.schemas.expense import (
 from app.services.consent.service import require_consent
 from app.services.finance.expenses import (
     category_totals,
+    detect_recurring_patterns,
     expense_series,
     expense_totals,
     income_totals,
@@ -38,6 +39,74 @@ def _share(total: Decimal, grand_total: Decimal) -> Decimal:
     if grand_total <= 0:
         return Decimal("0")
     return (total / grand_total * Decimal("100")).quantize(Decimal("0.01"))
+
+
+def _trend_direction(change: Decimal | None) -> str | None:
+    if change is None:
+        return None
+    if change > 0:
+        return "up"
+    if change < 0:
+        return "down"
+    return "flat"
+
+
+async def _enhanced_summary(
+    db: AsyncSession,
+    user_id: int,
+    start: date,
+    end: date,
+    *,
+    prev_start: date | None = None,
+    prev_end: date | None = None,
+    include_daily: bool = False,
+) -> dict:
+    data = await _summary(db, user_id, start, end)
+    prev_total = None
+    change_pct = None
+    if prev_start and prev_end:
+        prev_total, _ = await expense_totals(db, user_id, prev_start, prev_end)
+        if prev_total > 0:
+            change_pct = ((data["total_expenses"] - prev_total) / prev_total * Decimal("100")).quantize(
+                Decimal("0.01")
+            )
+    daily = None
+    if include_daily:
+        series = await expense_series(db, user_id, start, end, "day")
+        daily = series
+    recurring = await detect_recurring_patterns(db, user_id)
+    insights: list[str] = []
+    if change_pct is not None:
+        insights.append(f"Expenses changed {change_pct}% vs previous period.")
+    if recurring:
+        insights.append(f"Detected {len(recurring)} likely recurring payment pattern(s).")
+    return {
+        **data,
+        "previous_period_total": prev_total,
+        "change_percent": change_pct,
+        "trend_direction": _trend_direction(change_pct),
+        "daily_breakdown": daily,
+        "recurring_patterns": [p.model_dump(mode="json") for p in recurring],
+        "insights": insights or None,
+    }
+
+
+def _build_expense_summary(period: str, data: dict) -> ExpenseSummary:
+    cats = {cat: val for cat, val, _ in data["cats"]}
+    return ExpenseSummary(
+        period=period,
+        total_expenses=data["total_expenses"],
+        total_income=data["total_income"],
+        net_cash_flow=data["total_income"] - data["total_expenses"],
+        transaction_count=data["count"],
+        categories=cats,
+        previous_period_total=data.get("previous_period_total"),
+        change_percent=data.get("change_percent"),
+        trend_direction=data.get("trend_direction"),
+        daily_breakdown=data.get("daily_breakdown"),
+        recurring_patterns=data.get("recurring_patterns"),
+        insights=data.get("insights"),
+    )
 
 
 async def _summary(db: AsyncSession, user_id: int, start: date, end: date) -> dict:
@@ -63,16 +132,12 @@ async def weekly(
     iso = date.fromisocalendar(year, min(week, 52), 1)
     start = iso - timedelta(days=iso.weekday())
     end = start + timedelta(days=7)
-    data = await _summary(db, user.id, start, end)
-    cats = {cat: val for cat, val, _ in data["cats"]}
-    return ExpenseSummary(
-        period=f"{year}-W{week:02d}",
-        total_expenses=data["total_expenses"],
-        total_income=data["total_income"],
-        net_cash_flow=data["total_income"] - data["total_expenses"],
-        transaction_count=data["count"],
-        categories=cats,
+    prev_end = start
+    prev_start = prev_end - timedelta(days=7)
+    data = await _enhanced_summary(
+        db, user.id, start, end, prev_start=prev_start, prev_end=prev_end, include_daily=True
     )
+    return _build_expense_summary(f"{year}-W{week:02d}", data)
 
 
 @router.get("/monthly", response_model=ExpenseSummary)
@@ -84,16 +149,14 @@ async def monthly(
     await _ensure_consent(db, user.id)
     year, month = (int(p) for p in period.split("-"))
     start, end = month_bounds(year, month)
-    data = await _summary(db, user.id, start, end)
-    cats = {cat: val for cat, val, _ in data["cats"]}
-    return ExpenseSummary(
-        period=period,
-        total_expenses=data["total_expenses"],
-        total_income=data["total_income"],
-        net_cash_flow=data["total_income"] - data["total_expenses"],
-        transaction_count=data["count"],
-        categories=cats,
+    if month == 1:
+        prev_start, prev_end = month_bounds(year - 1, 12)
+    else:
+        prev_start, prev_end = month_bounds(year, month - 1)
+    data = await _enhanced_summary(
+        db, user.id, start, end, prev_start=prev_start, prev_end=prev_end, include_daily=True
     )
+    return _build_expense_summary(period, data)
 
 
 @router.get("/categories", response_model=list[CategoryBreakdown])

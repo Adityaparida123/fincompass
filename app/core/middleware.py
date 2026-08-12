@@ -5,6 +5,7 @@ response `X-Request-ID` header.
 """
 
 import contextvars
+import time
 import uuid
 
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -26,10 +27,22 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         request_id = request.headers.get("X-Request-ID") or uuid.uuid4().hex
         token = _request_id_var.set(request_id)
+        started = time.perf_counter()
         try:
             response = await call_next(request)
         finally:
             _request_id_var.reset(token)
+        elapsed_ms = (time.perf_counter() - started) * 1000
+        logger.info(
+            "request completed",
+            extra={
+                "request_id": request_id,
+                "method": request.method,
+                "path": request.url.path,
+                "status_code": response.status_code,
+                "latency_ms": round(elapsed_ms, 2),
+            },
+        )
         response.headers["X-Request-ID"] = request_id
         return response
 

@@ -8,11 +8,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_current_user
 from app.core.exceptions import NotFoundError
+from app.db.models.consent import ConsentType
 from app.db.models.transaction import Transaction, TransactionSource, TransactionType
 from app.db.models.user import User
 from app.db.session import get_session
 from app.schemas.common import Page
 from app.schemas.transaction import TransactionCreate, TransactionRead, TransactionUpdate
+from app.services.consent.service import require_consent
 from app.services.finance.transactions import (
     create_transaction,
     get_transaction,
@@ -24,12 +26,17 @@ from app.utils.pagination import paginate
 router = APIRouter(prefix="/transactions", tags=["transactions"])
 
 
+async def _require_financial_consent(db: AsyncSession, user_id: int) -> None:
+    await require_consent(db, user_id, ConsentType.financial_data_analysis)
+
+
 @router.post("", response_model=TransactionRead, status_code=201)
 async def create_tx(
     data: TransactionCreate,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ) -> Transaction:
+    await _require_financial_consent(db, user.id)
     tx = await create_transaction(db, user.id, data)
     await db.commit()
     return tx
@@ -47,6 +54,7 @@ async def list_txs(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
+    await _require_financial_consent(db, user.id)
     stmt = select(Transaction).where(Transaction.user_id == user.id, Transaction.is_deleted.is_(False))
     count_stmt = select(func.count()).select_from(Transaction).where(
         Transaction.user_id == user.id, Transaction.is_deleted.is_(False)
@@ -79,6 +87,7 @@ async def get_tx(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ) -> TransactionRead:
+    await _require_financial_consent(db, user.id)
     stmt = select(Transaction).where(
         Transaction.id == transaction_id,
         Transaction.user_id == user.id,
@@ -97,6 +106,7 @@ async def patch_tx(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ) -> TransactionRead:
+    await _require_financial_consent(db, user.id)
     tx = await update_transaction(db, user.id, transaction_id, data)
     await db.commit()
     return TransactionRead.model_validate(tx)
@@ -108,6 +118,7 @@ async def delete_tx(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ) -> dict:
+    await _require_financial_consent(db, user.id)
     tx = await get_transaction(db, user.id, transaction_id)
     snapshot = item_snapshot("transaction", tx)
     tx.is_deleted = True

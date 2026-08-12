@@ -4,7 +4,8 @@ from datetime import date
 from decimal import Decimal
 from enum import Enum
 
-from sqlalchemy import Date, Enum as SqlEnum, ForeignKey, Numeric, String
+from sqlalchemy import Date, ForeignKey, Numeric, String
+from sqlalchemy import Enum as SqlEnum
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, IdMixin, TimestampMixin

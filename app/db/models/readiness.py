@@ -1,8 +1,7 @@
 """Credit readiness score and its explainable factors."""
 
-from decimal import Decimal
 
-from sqlalchemy import ForeignKey, Integer, Numeric, String
+from sqlalchemy import ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, IdMixin, TimestampMixin

@@ -6,16 +6,29 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.dependencies import get_current_user
 from app.db.models.user import User
 from app.db.session import get_session
-from app.schemas.notification import NotificationList, NotificationRead
+from app.schemas.notification import NotificationCreate, NotificationList, NotificationRead
 from app.services.notifications.service import (
     delete_notification,
     list_notifications,
     mark_all_read,
     mark_read,
+    notify,
     unread_count,
 )
 
 router = APIRouter(prefix="/notifications", tags=["notifications"])
+
+
+@router.post("", response_model=NotificationRead, status_code=201)
+async def create_notification(
+    data: NotificationCreate,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_session),
+) -> NotificationRead:
+    """Create a notification for the current user (system/trigger use)."""
+    notification = await notify(db, user.id, data.title, data.message, data.type)
+    await db.commit()
+    return NotificationRead.model_validate(notification)
 
 
 @router.get("", response_model=NotificationList)

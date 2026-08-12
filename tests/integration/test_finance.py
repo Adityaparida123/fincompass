@@ -1,6 +1,5 @@
 """Integration tests for the financial API surface."""
 
-from datetime import date
 from decimal import Decimal
 
 

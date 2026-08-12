@@ -4,9 +4,9 @@ from fastapi import Depends, Header, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import RateLimitError, UnauthorizedError
+from app.core.security import require_valid_access_token
 from app.db.models.user import User
 from app.db.session import get_session
-from app.core.security import require_valid_access_token
 from app.services.auth.service import get_user_by_id
 
 

@@ -20,3 +20,9 @@ class NotificationList(BaseModel):
     items: list[NotificationRead]
     total: int
     unread: int
+
+
+class NotificationCreate(BaseModel):
+    title: str
+    message: str
+    type: str = "system"

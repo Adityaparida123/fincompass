@@ -3,7 +3,8 @@
 from datetime import datetime
 from enum import Enum
 
-from sqlalchemy import DateTime, Enum as SqlEnum, ForeignKey, Integer, String
+from sqlalchemy import DateTime, ForeignKey, Integer
+from sqlalchemy import Enum as SqlEnum
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, IdMixin, TimestampMixin

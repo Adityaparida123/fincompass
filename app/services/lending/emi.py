@@ -5,7 +5,7 @@ EMI formula (reducing balance):
 where r is the monthly interest rate. Zero-interest loans divide P by n.
 """
 
-from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
+from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 
 from app.core.exceptions import InvalidInputError
 from app.schemas.loan import EMIResult

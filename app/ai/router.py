@@ -4,7 +4,6 @@ Fast, deterministic intent classification from the user's message. Used to
 decide which tools to expose and whether financial context is required.
 """
 
-from app.ai.tools import TOOL_REGISTRY
 
 # (regex keyword, intent)
 _INTENT_RULES: list[tuple[list[str], str, list[str]]] = [

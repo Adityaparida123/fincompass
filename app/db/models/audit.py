@@ -1,6 +1,6 @@
 """Audit log model. Never store passwords, secrets, or tokens here."""
 
-from sqlalchemy import ForeignKey, Integer, JSON, String
+from sqlalchemy import JSON, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, IdMixin, TimestampMixin

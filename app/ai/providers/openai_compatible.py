@@ -4,7 +4,8 @@ Talks to any endpoint implementing the OpenAI chat completions API
 (base URL from `LLM_BASE_URL`, model from `LLM_MODEL`, key from `LLM_API_KEY`).
 """
 
-from typing import Any, AsyncIterator
+from collections.abc import AsyncIterator
+from typing import Any
 
 import httpx
 

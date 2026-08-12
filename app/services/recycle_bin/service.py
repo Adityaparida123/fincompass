@@ -1,5 +1,7 @@
 """Recycle bin service for soft-deleted records."""
 
+from typing import Any
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -68,9 +70,8 @@ async def remove_item(db: AsyncSession, user_id: int, item_id: int) -> RecycleBi
 
 def item_snapshot(resource_type: str, obj) -> dict:
     """Build a JSON-safe snapshot of a model for restore purposes."""
-    from enum import Enum
-
     from decimal import Decimal
+    from enum import Enum
 
     from sqlalchemy import inspect as sa_inspect
 
@@ -88,3 +89,21 @@ def item_snapshot(resource_type: str, obj) -> dict:
             value = str(value)
         data[key] = value
     return data
+
+
+async def move_to_recycle_bin(
+    db: AsyncSession,
+    user_id: int,
+    resource_type: str,
+    resource_id: int,
+    obj: Any,
+    *,
+    hard_delete: bool = True,
+) -> RecycleBinItem:
+    """Snapshot a resource, optionally hard-delete it, and store in recycle bin."""
+    snapshot = item_snapshot(resource_type, obj)
+    if hard_delete:
+        await db.delete(obj)
+        await db.flush()
+    item = await add_item(db, user_id, resource_type, resource_id, snapshot)
+    return item

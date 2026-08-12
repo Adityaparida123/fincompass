@@ -1,9 +1,8 @@
 """Savings goals and emergency fund endpoints."""
 
+from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-
-from fastapi import APIRouter, Depends
 
 from app.api.dependencies import get_current_user
 from app.core.exceptions import NotFoundError
@@ -21,6 +20,7 @@ from app.schemas.savings import (
 from app.services.consent.service import require_consent
 from app.services.finance.emergency_fund import calculate_emergency_buffer
 from app.services.finance.savings import goal_to_read
+from app.services.recycle_bin.service import move_to_recycle_bin
 
 router = APIRouter(prefix="/savings", tags=["savings"])
 
@@ -80,9 +80,9 @@ async def delete_goal(
     goal = (await db.execute(stmt)).scalar_one_or_none()
     if goal is None:
         raise NotFoundError("Savings goal not found.")
-    await db.delete(goal)
+    await move_to_recycle_bin(db, user.id, "savings_goal", goal.id, goal)
     await db.commit()
-    return {"message": "Savings goal deleted."}
+    return {"message": "Savings goal moved to recycle bin."}
 
 
 @router.post("/emergency-buffer", response_model=EmergencyBufferResult)

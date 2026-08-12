@@ -19,6 +19,7 @@ from app.schemas.debt import (
 )
 from app.services.consent.service import require_consent
 from app.services.finance.debt import calculate_debt_burden
+from app.services.recycle_bin.service import move_to_recycle_bin
 
 router = APIRouter(prefix="/debt", tags=["debt"])
 
@@ -82,9 +83,9 @@ async def delete_debt(
     obligation = (await db.execute(stmt)).scalar_one_or_none()
     if obligation is None:
         raise NotFoundError("Debt obligation not found.")
-    await db.delete(obligation)
+    await move_to_recycle_bin(db, user.id, "debt_obligation", obligation.id, obligation)
     await db.commit()
-    return {"message": "Debt obligation deleted."}
+    return {"message": "Debt obligation moved to recycle bin."}
 
 
 @router.post("/burden", response_model=DebtBurdenResult)

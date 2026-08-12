@@ -3,8 +3,6 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import NotFoundError
-from app.db.models.audit import AuditLog
 from app.db.models.readiness import ReadinessFactor, ReadinessScore
 from app.schemas.readiness import ReadinessFactorOut, ReadinessResult, ScoreCorrectionResult
 from app.services.audit import log_audit

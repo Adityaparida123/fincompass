@@ -19,6 +19,12 @@ class ExpenseSummary(BaseModel):
     net_cash_flow: Decimal
     transaction_count: int
     categories: dict[str, Decimal]
+    previous_period_total: Decimal | None = None
+    change_percent: Decimal | None = None
+    trend_direction: str | None = None
+    daily_breakdown: dict[str, Decimal] | None = None
+    recurring_patterns: list[dict] | None = None
+    insights: list[str] | None = None
 
 
 class ExpenseTrendPoint(BaseModel):

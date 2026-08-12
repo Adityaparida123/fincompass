@@ -16,9 +16,9 @@ from app.ai.memory import (
     list_sessions,
 )
 from app.ai.prompts import build_messages
+from app.api.dependencies import get_current_user, rate_limit_chat
 from app.db.models.consent import ConsentType
 from app.db.models.user import User
-from app.api.dependencies import get_current_user, rate_limit_chat
 from app.db.session import get_session as get_db
 from app.schemas.chat import (
     ChatMessageRead,
@@ -48,8 +48,8 @@ async def stream_chat(
     db: AsyncSession = Depends(get_db),
     _: None = Depends(rate_limit_chat),
 ) -> StreamingResponse:
-    from app.ai.router import route_intent
     from app.ai.memory import to_llm_history
+    from app.ai.router import route_intent
 
     routing = route_intent(data.message)
     needs_context = bool(routing["needs_context"])
