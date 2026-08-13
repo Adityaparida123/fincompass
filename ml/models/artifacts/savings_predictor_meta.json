@@ -1,0 +1,18 @@
+{
+  "model_name": "savings_predictor",
+  "model_version": "1.0.0",
+  "metrics": {
+    "mae": 3974.8931976889494,
+    "rmse": 5170.418364395805,
+    "r2": 0.9694561961969463,
+    "mape": 2.997116937232609
+  },
+  "feature_names": [
+    "avg_income",
+    "avg_expenses",
+    "discretionary_expenses",
+    "debt_obligations",
+    "expense_volatility",
+    "historical_net_savings"
+  ]
+}

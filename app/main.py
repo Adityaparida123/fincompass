@@ -16,6 +16,7 @@ from app.api.routes import (
     expenses,
     health,
     loans,
+    ml,
     notifications,
     recommendations,
     recycle_bin,
@@ -105,6 +106,7 @@ app.include_router(consent.router, prefix=API_PREFIX)
 app.include_router(chat.router, prefix=API_PREFIX)
 app.include_router(notifications.router, prefix=API_PREFIX)
 app.include_router(recycle_bin.router, prefix=API_PREFIX)
+app.include_router(ml.router, prefix=API_PREFIX)
 
 
 @app.get("/")

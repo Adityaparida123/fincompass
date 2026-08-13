@@ -1,0 +1,403 @@
+{
+  "classifier": {
+    "model_name": "transaction_classifier",
+    "model_version": "1.0.0",
+    "model_type": "logistic_regression",
+    "metrics": {
+      "accuracy": 1.0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "confusion_matrix": [
+        [
+          530,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          425,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          349,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          277,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          251,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          136,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          101,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          430,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          206,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          187,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          216,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          139,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          75,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          278
+        ]
+      ],
+      "report": {
+        "debt_payment": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 216.0
+        },
+        "education": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 101.0
+        },
+        "entertainment": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 206.0
+        },
+        "food": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 530.0
+        },
+        "groceries": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 425.0
+        },
+        "healthcare": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 136.0
+        },
+        "housing": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 277.0
+        },
+        "income": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 75.0
+        },
+        "other": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 278.0
+        },
+        "savings": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 139.0
+        },
+        "shopping": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 430.0
+        },
+        "subscriptions": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 187.0
+        },
+        "transport": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 349.0
+        },
+        "utilities": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 251.0
+        },
+        "accuracy": 1.0,
+        "macro avg": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 3600.0
+        },
+        "weighted avg": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 3600.0
+        }
+      }
+    },
+    "categories": [
+      "food",
+      "groceries",
+      "transport",
+      "housing",
+      "utilities",
+      "healthcare",
+      "education",
+      "shopping",
+      "entertainment",
+      "subscriptions",
+      "debt_payment",
+      "savings",
+      "income",
+      "other"
+    ]
+  },
+  "anomaly": {
+    "model_name": "anomaly_detector",
+    "model_version": "1.0.0",
+    "anomaly_rate": 0.05,
+    "feature_columns": [
+      "amount",
+      "rolling_mean",
+      "rolling_std",
+      "amount_deviation",
+      "day_of_week"
+    ]
+  },
+  "forecast": {
+    "model_name": "cashflow_forecaster",
+    "model_version": "1.0.0",
+    "best_model": "random_forest",
+    "metrics": {
+      "mae": 42891.795819295294,
+      "rmse": 53424.664496701414,
+      "r2": 0.20003954021239434,
+      "mape": 26.197235691620442
+    },
+    "feature_names": [
+      "mean_cashflow",
+      "std_cashflow",
+      "mean_income",
+      "mean_expenses",
+      "income_consistency",
+      "trend"
+    ]
+  },
+  "savings": {
+    "model_name": "savings_predictor",
+    "model_version": "1.0.0",
+    "metrics": {
+      "mae": 3974.8931976889494,
+      "rmse": 5170.418364395805,
+      "r2": 0.9694561961969463,
+      "mape": 2.997116937232609
+    },
+    "feature_names": [
+      "avg_income",
+      "avg_expenses",
+      "discretionary_expenses",
+      "debt_obligations",
+      "expense_volatility",
+      "historical_net_savings"
+    ]
+  }
+}

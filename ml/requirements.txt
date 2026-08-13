@@ -1,0 +1,6 @@
+# FinCompass ML Layer Dependencies
+scikit-learn==1.6.1
+joblib==1.4.2
+shap==0.46.0
+mlflow==2.19.0
+matplotlib==3.10.0
