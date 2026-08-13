@@ -1,0 +1,49 @@
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useLocale } from "next-intl";
+import { useAuthStore } from "@/stores/auth-store";
+import { Skeleton } from "@/components/ui/input";
+
+export function AuthGuard({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isHydrated } = useAuthStore();
+  const router = useRouter();
+  const locale = useLocale();
+
+  useEffect(() => {
+    if (isHydrated && !isAuthenticated) {
+      router.replace(`/${locale}/login`);
+    }
+  }, [isHydrated, isAuthenticated, router, locale]);
+
+  if (!isHydrated) {
+    return (
+      <div className="flex min-h-screen items-center justify-center p-8">
+        <div className="w-full max-w-md space-y-4">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-32 w-full" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) return null;
+  return <>{children}</>;
+}
+
+export function GuestGuard({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isHydrated } = useAuthStore();
+  const router = useRouter();
+  const locale = useLocale();
+
+  useEffect(() => {
+    if (isHydrated && isAuthenticated) {
+      router.replace(`/${locale}/dashboard`);
+    }
+  }, [isHydrated, isAuthenticated, router, locale]);
+
+  if (!isHydrated) return null;
+  if (isAuthenticated) return null;
+  return <>{children}</>;
+}

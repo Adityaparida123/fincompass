@@ -1,0 +1,232 @@
+{
+  "common": {
+    "appName": "FinCompass",
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "retry": "Try again",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "search": "Search",
+    "filter": "Filter",
+    "logout": "Logout",
+    "back": "Back",
+    "confirm": "Confirm",
+    "noData": "No data available yet",
+    "forecastDisclaimer": "Forecast — not guaranteed"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "expenses": "Expenses",
+    "cashflow": "Cash Flow",
+    "savings": "Savings",
+    "budget": "Budget",
+    "debt": "Debt",
+    "borrowing": "Borrowing",
+    "readiness": "Credit Readiness",
+    "recommendations": "Recommendations",
+    "schemes": "Public Schemes",
+    "finai": "FinAI",
+    "notifications": "Notifications",
+    "recycleBin": "Recycle Bin",
+    "consent": "Privacy & Consent",
+    "profile": "Profile"
+  },
+  "landing": {
+    "heroTitle": "Understand your money.\nMake better financial decisions.",
+    "heroSubtitle": "FinCompass helps you understand cash flow, savings, spending and responsible borrowing using only your consented financial data.",
+    "getStarted": "Get Started",
+    "login": "Login",
+    "howItWorks": "How FinCompass works",
+    "step1Title": "Give consent",
+    "step1Desc": "You control what data is used. Revoke anytime.",
+    "step2Title": "Understand your finances",
+    "step2Desc": "Track cash flow, expenses, savings, and debt clearly.",
+    "step3Title": "Get explainable insights",
+    "step3Desc": "Every score and prediction comes with clear explanations.",
+    "step4Title": "Make informed decisions",
+    "step4Desc": "Prioritize budgeting and savings before borrowing.",
+    "features": "Features",
+    "privacy": "Privacy & Trust",
+    "privacyDesc": "Only consented data is used. Readiness is explainable. Protected characteristics are never used. You can correct your financial information anytime.",
+    "cta": "Take control of your financial decisions."
+  },
+  "auth": {
+    "loginTitle": "Welcome back",
+    "registerTitle": "Create your account",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm password",
+    "fullName": "Full name",
+    "rememberMe": "Remember me",
+    "forgotPassword": "Forgot password?",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "termsAgree": "I agree to the terms of service",
+    "loginButton": "Sign in",
+    "registerButton": "Create account"
+  },
+  "dashboard": {
+    "greeting": "Good morning",
+    "cashFlow": "Cash Flow",
+    "savings": "Savings",
+    "expenses": "Expenses",
+    "readiness": "Readiness",
+    "incomeVsExpenses": "Income vs Expenses",
+    "weeklyExpenses": "Weekly Expenses",
+    "monthlyExpenses": "Monthly Expenses",
+    "savingsProgress": "Savings Progress",
+    "budgetStatus": "Budget Status",
+    "insights": "Financial Insights",
+    "recentNotifications": "Recent Notifications"
+  },
+  "readiness": {
+    "title": "Credit Readiness",
+    "score": "Credit Readiness Score",
+    "factors": "Score Factors",
+    "transparency": "Transparency",
+    "transparencyDesc": "This score uses only your consented financial data. Protected characteristics are excluded. You can correct inaccurate information below.",
+    "somethingWrong": "Something looks wrong?",
+    "correctData": "Correct financial data",
+    "previousScore": "Previous score",
+    "newScore": "New score",
+    "whatChanged": "What changed?"
+  },
+  "chat": {
+    "title": "FinAI",
+    "placeholder": "Ask FinAI...",
+    "disclaimer": "This information is based on your available data and is not a guarantee of future financial outcomes.",
+    "suggestions": {
+      "save": "How much can I save this month?",
+      "expenses": "Why did my expenses increase?",
+      "loan": "Can I afford this loan?",
+      "readiness": "How can I improve my readiness?",
+      "biggest": "What are my biggest expenses?",
+      "alternatives": "What alternatives do I have to borrowing?"
+    }
+  },
+  "consent": {
+    "title": "Privacy & Consent",
+    "financialAnalysis": "Financial analysis",
+    "recommendations": "Personalized recommendations",
+    "chatContext": "FinAI financial context",
+    "grant": "Grant",
+    "revoke": "Revoke",
+    "revokeWarning": "Revoking this consent will disable related features."
+  },
+  "expenses": {
+    "title": "Expenses",
+    "addTransaction": "Add transaction",
+    "weeklyChart": "Weekly breakdown",
+    "monthlyChart": "Monthly by category",
+    "allCategories": "All categories",
+    "income": "Income",
+    "expense": "Expense",
+    "description": "Description",
+    "amount": "Amount",
+    "category": "Category",
+    "date": "Date",
+    "type": "Type",
+    "noTransactions": "No transactions yet."
+  },
+  "cashflow": {
+    "title": "Cash Flow",
+    "income": "Income",
+    "expenses": "Expenses",
+    "net": "Net cash flow",
+    "trends": "Trends",
+    "forecast": "ML forecast"
+  },
+  "savings": {
+    "title": "Savings Goals",
+    "addGoal": "Add goal",
+    "goalName": "Goal name",
+    "targetAmount": "Target amount",
+    "currentAmount": "Current amount",
+    "targetDate": "Target date",
+    "mlCapacity": "Estimated savings capacity",
+    "noGoals": "No savings goals yet."
+  },
+  "budget": {
+    "title": "Budget",
+    "addBudget": "Add budget",
+    "category": "Category",
+    "limit": "Limit",
+    "overBudget": "Over budget",
+    "noBudgets": "No budgets for this period."
+  },
+  "debt": {
+    "title": "Debt",
+    "addDebt": "Add debt",
+    "name": "Name",
+    "principal": "Principal",
+    "monthlyPayment": "Monthly payment",
+    "interestRate": "Interest rate (%)",
+    "remainingBalance": "Remaining balance",
+    "dueDate": "Due date",
+    "totalObligations": "Total monthly obligations",
+    "noDebts": "No debt obligations yet."
+  },
+  "borrowing": {
+    "title": "Loan Simulator",
+    "subtitle": "Explore affordability — not a loan marketplace.",
+    "principal": "Loan amount",
+    "interestRate": "Annual interest rate (%)",
+    "tenure": "Tenure (months)",
+    "income": "Monthly income",
+    "expenses": "Monthly expenses",
+    "existingDebt": "Existing debt payment",
+    "calculate": "Calculate EMI",
+    "simulate": "Run simulation",
+    "emi": "Monthly EMI",
+    "alternatives": "Alternatives to borrowing",
+    "warnings": "Warnings",
+    "recommendation": "Recommendation"
+  },
+  "recommendations": {
+    "title": "Recommendations",
+    "subtitle": "Prioritized actions to improve your financial health.",
+    "noRecommendations": "No recommendations yet."
+  },
+  "schemes": {
+    "title": "Public Schemes",
+    "eligibilityDisclaimer": "Eligibility depends on your profile and scheme rules. Verify with official sources before applying.",
+    "benefits": "Benefits",
+    "eligibility": "Eligibility",
+    "learnMore": "Learn more",
+    "noSchemes": "No schemes available."
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markRead": "Mark read",
+    "unread": "Unread",
+    "noNotifications": "No notifications."
+  },
+  "recycleBin": {
+    "title": "Recycle Bin",
+    "restore": "Restore",
+    "confirmRestore": "Restore this item?",
+    "deletedAt": "Deleted",
+    "noItems": "Recycle bin is empty."
+  },
+  "profile": {
+    "title": "Profile",
+    "fullName": "Full name",
+    "email": "Email",
+    "phone": "Phone",
+    "language": "Language",
+    "currency": "Currency",
+    "timezone": "Timezone",
+    "saved": "Profile updated."
+  },
+  "errors": {
+    "unauthorized": "Please sign in to continue.",
+    "forbidden": "You don't have permission to access this.",
+    "consentDenied": "Consent required. Please grant the necessary permissions.",
+    "network": "Unable to connect. Please check your connection.",
+    "server": "Unable to load your financial data. Please try again.",
+    "notFound": "Page not found."
+  }
+}
