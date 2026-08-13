@@ -1,0 +1,232 @@
+{
+  "common": {
+    "appName": "FinCompass",
+    "loading": "लोड हो रहा है...",
+    "error": "कुछ गलत हो गया",
+    "retry": "पुनः प्रयास करें",
+    "save": "सहेजें",
+    "cancel": "रद्द करें",
+    "delete": "हटाएं",
+    "edit": "संपादित करें",
+    "add": "जोड़ें",
+    "search": "खोजें",
+    "filter": "फ़िल्टर",
+    "logout": "लॉग आउट",
+    "back": "वापस",
+    "confirm": "पुष्टि करें",
+    "noData": "अभी कोई डेटा उपलब्ध नहीं",
+    "forecastDisclaimer": "पूर्वानुमान — गारंटी नहीं"
+  },
+  "nav": {
+    "dashboard": "डैशबोर्ड",
+    "expenses": "खर्च",
+    "cashflow": "कैश फ्लो",
+    "savings": "बचत",
+    "budget": "बजट",
+    "debt": "ऋण",
+    "borrowing": "उधार",
+    "readiness": "क्रेडिट तैयारी",
+    "recommendations": "सुझाव",
+    "schemes": "सरकारी योजनाएं",
+    "finai": "FinAI",
+    "notifications": "सूचनाएं",
+    "recycleBin": "रीसायकल बिन",
+    "consent": "गोपनीयता और सहमति",
+    "profile": "प्रोफ़ाइल"
+  },
+  "landing": {
+    "heroTitle": "अपने पैसे को समझें।\nबेहतर वित्तीय निर्णय लें।",
+    "heroSubtitle": "FinCompass आपकी सहमति वाले वित्तीय डेटा से कैश फ्लो, बचत, खर्च और जिम्मेदार उधार को समझने में मदद करता है।",
+    "getStarted": "शुरू करें",
+    "login": "लॉग इन",
+    "howItWorks": "FinCompass कैसे काम करता है",
+    "step1Title": "सहमति दें",
+    "step1Desc": "आप नियंत्रित करते हैं कि कौन सा डेटा उपयोग हो।",
+    "step2Title": "अपने वित्त को समझें",
+    "step2Desc": "कैश फ्लो, खर्च, बचत और ऋण स्पष्ट रूप से ट्रैक करें।",
+    "step3Title": "स्पष्ट अंतर्दृष्टि पाएं",
+    "step3Desc": "हर स्कोर और पूर्वानुमान स्पष्ट व्याख्या के साथ।",
+    "step4Title": "सूचित निर्णय लें",
+    "step4Desc": "उधार से पहले बजट और बचत को प्राथमिकता दें।",
+    "features": "विशेषताएं",
+    "privacy": "गोपनीयता और विश्वास",
+    "privacyDesc": "केवल सहमति वाला डेटा उपयोग होता है। स्कोर स्पष्ट है। संरक्षित विशेषताएं कभी उपयोग नहीं होतीं।",
+    "cta": "अपने वित्तीय निर्णयों पर नियंत्रण रखें।"
+  },
+  "auth": {
+    "loginTitle": "वापस स्वागत है",
+    "registerTitle": "अपना खाता बनाएं",
+    "email": "ईमेल",
+    "password": "पासवर्ड",
+    "confirmPassword": "पासवर्ड की पुष्टि",
+    "fullName": "पूरा नाम",
+    "rememberMe": "मुझे याद रखें",
+    "forgotPassword": "पासवर्ड भूल गए?",
+    "noAccount": "खाता नहीं है?",
+    "hasAccount": "पहले से खाता है?",
+    "termsAgree": "मैं सेवा की शर्तों से सहमत हूं",
+    "loginButton": "साइन इन",
+    "registerButton": "खाता बनाएं"
+  },
+  "dashboard": {
+    "greeting": "सुप्रभात",
+    "cashFlow": "कैश फ्लो",
+    "savings": "बचत",
+    "expenses": "खर्च",
+    "readiness": "तैयारी",
+    "incomeVsExpenses": "आय बनाम खर्च",
+    "weeklyExpenses": "साप्ताहिक खर्च",
+    "monthlyExpenses": "मासिक खर्च",
+    "savingsProgress": "बचत प्रगति",
+    "budgetStatus": "बजट स्थिति",
+    "insights": "वित्तीय अंतर्दृष्टि",
+    "recentNotifications": "हाल की सूचनाएं"
+  },
+  "readiness": {
+    "title": "क्रेडिट तैयारी",
+    "score": "क्रेडिट तैयारी स्कोर",
+    "factors": "स्कोर कारक",
+    "transparency": "पारदर्शिता",
+    "transparencyDesc": "यह स्कोर केवल आपके सहमति वाले वित्तीय डेटा का उपयोग करता है।",
+    "somethingWrong": "कुछ गलत लग रहा है?",
+    "correctData": "वित्तीय डेटा सुधारें",
+    "previousScore": "पिछला स्कोर",
+    "newScore": "नया स्कोर",
+    "whatChanged": "क्या बदला?"
+  },
+  "chat": {
+    "title": "FinAI",
+    "placeholder": "FinAI से पूछें...",
+    "disclaimer": "यह जानकारी आपके उपलब्ध डेटा पर आधारित है और भविष्य के परिणाम की गारंटी नहीं है।",
+    "suggestions": {
+      "save": "इस महीने मैं कितना बचा सकता/सकती हूं?",
+      "expenses": "मेरे खर्च क्यों बढ़े?",
+      "loan": "क्या मैं यह लोन afford कर सकता/सकती हूं?",
+      "readiness": "मैं अपनी तैयारी कैसे सुधारूं?",
+      "biggest": "मेरे सबसे बड़े खर्च क्या हैं?",
+      "alternatives": "उधार के विकल्प क्या हैं?"
+    }
+  },
+  "consent": {
+    "title": "गोपनीयता और सहमति",
+    "financialAnalysis": "वित्तीय विश्लेषण",
+    "recommendations": "व्यक्तिगत सुझाव",
+    "chatContext": "FinAI वित्तीय संदर्भ",
+    "grant": "अनुमति दें",
+    "revoke": "रद्द करें",
+    "revokeWarning": "सहमति रद्द करने से संबंधित सुविधाएं बंद हो जाएंगी।"
+  },
+  "expenses": {
+    "title": "खर्च",
+    "addTransaction": "लेनदेन जोड़ें",
+    "weeklyChart": "साप्ताहिक विवरण",
+    "monthlyChart": "श्रेणी अनुसार मासिक",
+    "allCategories": "सभी श्रेणियां",
+    "income": "आय",
+    "expense": "खर्च",
+    "description": "विवरण",
+    "amount": "राशि",
+    "category": "श्रेणी",
+    "date": "तारीख",
+    "type": "प्रकार",
+    "noTransactions": "अभी कोई लेनदेन नहीं।"
+  },
+  "cashflow": {
+    "title": "कैश फ्लो",
+    "income": "आय",
+    "expenses": "खर्च",
+    "net": "शुद्ध कैश फ्लो",
+    "trends": "रुझान",
+    "forecast": "ML पूर्वानुमान"
+  },
+  "savings": {
+    "title": "बचत लक्ष्य",
+    "addGoal": "लक्ष्य जोड़ें",
+    "goalName": "लक्ष्य का नाम",
+    "targetAmount": "लक्ष्य राशि",
+    "currentAmount": "वर्तमान राशि",
+    "targetDate": "लक्ष्य तिथि",
+    "mlCapacity": "अनुमानित बचत क्षमता",
+    "noGoals": "अभी कोई बचत लक्ष्य नहीं।"
+  },
+  "budget": {
+    "title": "बजट",
+    "addBudget": "बजट जोड़ें",
+    "category": "श्रेणी",
+    "limit": "सीमा",
+    "overBudget": "बजट से अधिक",
+    "noBudgets": "इस अवधि के लिए कोई बजट नहीं।"
+  },
+  "debt": {
+    "title": "ऋण",
+    "addDebt": "ऋण जोड़ें",
+    "name": "नाम",
+    "principal": "मूल राशि",
+    "monthlyPayment": "मासिक भुगतान",
+    "interestRate": "ब्याज दर (%)",
+    "remainingBalance": "शेष राशि",
+    "dueDate": "नियत तिथि",
+    "totalObligations": "कुल मासिक दायित्व",
+    "noDebts": "अभी कोई ऋण दायित्व नहीं।"
+  },
+  "borrowing": {
+    "title": "लोन सिम्युलेटर",
+    "subtitle": "सामर्थ्य जांचें — यह लोन मार्केटप्लेस नहीं है।",
+    "principal": "लोन राशि",
+    "interestRate": "वार्षिक ब्याज दर (%)",
+    "tenure": "अवधि (महीने)",
+    "income": "मासिक आय",
+    "expenses": "मासिक खर्च",
+    "existingDebt": "मौजूदा ऋण भुगतान",
+    "calculate": "EMI गणना",
+    "simulate": "सिमुलेशन चलाएं",
+    "emi": "मासिक EMI",
+    "alternatives": "उधार के विकल्प",
+    "warnings": "चेतावनियां",
+    "recommendation": "सुझाव"
+  },
+  "recommendations": {
+    "title": "सुझाव",
+    "subtitle": "आपके वित्तीय स्वास्थ्य में सुधार के लिए प्राथमिकता वाले कदम।",
+    "noRecommendations": "अभी कोई सुझाव नहीं।"
+  },
+  "schemes": {
+    "title": "सरकारी योजनाएं",
+    "eligibilityDisclaimer": "पात्रता आपकी प्रोफ़ाइल और योजना नियमों पर निर्भर करती है। आवेदन से पहले आधिकारिक स्रोतों से सत्यापित करें।",
+    "benefits": "लाभ",
+    "eligibility": "पात्रता",
+    "learnMore": "और जानें",
+    "noSchemes": "कोई योजना उपलब्ध नहीं।"
+  },
+  "notifications": {
+    "title": "सूचनाएं",
+    "markRead": "पढ़ा चिह्नित करें",
+    "unread": "अपठित",
+    "noNotifications": "कोई सूचना नहीं।"
+  },
+  "recycleBin": {
+    "title": "रीसायकल बिन",
+    "restore": "पुनर्स्थापित करें",
+    "confirmRestore": "इस आइटम को पुनर्स्थापित करें?",
+    "deletedAt": "हटाया गया",
+    "noItems": "रीसायकल बिन खाली है।"
+  },
+  "profile": {
+    "title": "प्रोफ़ाइल",
+    "fullName": "पूरा नाम",
+    "email": "ईमेल",
+    "phone": "फ़ोन",
+    "language": "भाषा",
+    "currency": "मुद्रा",
+    "timezone": "समय क्षेत्र",
+    "saved": "प्रोफ़ाइल अपडेट हो गई।"
+  },
+  "errors": {
+    "unauthorized": "कृपया साइन इन करें।",
+    "forbidden": "आपको इस तक पहुंच की अनुमति नहीं है।",
+    "consentDenied": "सहमति आवश्यक है। कृपया आवश्यक अनुमतियां दें।",
+    "network": "कनेक्ट नहीं हो सका। कृपया अपना कनेक्शन जांचें।",
+    "server": "वित्तीय डेटा लोड नहीं हो सका। कृपया पुनः प्रयास करें।",
+    "notFound": "पृष्ठ नहीं मिला।"
+  }
+}

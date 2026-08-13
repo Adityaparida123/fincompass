@@ -25,6 +25,7 @@ async def register_refresh_session(
         family_id=family_id,
         remember_me=remember_me,
         expires_at=expires_at,
+        created_at=datetime.now(UTC),
     )
     db.add(session)
     await db.flush()

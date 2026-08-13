@@ -33,3 +33,9 @@ ml/models/artifacts/*.joblib
 ml/mlflow.db
 ml/mlruns/
 ml/data/synthetic/*.csv
+
+# Frontend
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+mlruns/
