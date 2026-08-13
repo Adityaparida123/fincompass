@@ -1,7 +1,7 @@
 [project]
-name = "finai-backend"
+name = "fincompass"
 version = "0.1.0"
-description = "FinAI - responsible personal-finance platform backend"
+description = "FinCompass — responsible personal-finance platform (backend, frontend, ML)"
 requires-python = ">=3.12"
 dependencies = []
 

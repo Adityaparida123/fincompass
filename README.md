@@ -1,65 +1,127 @@
-# FinAI Backend
+# FinCompass
 
-Responsible personal-finance platform and AI financial assistant — production-quality MVP backend built with FastAPI, PostgreSQL, and Redis.
+Unified monorepo for a responsible personal-finance platform — **backend API**, **Next.js frontend**, and **ML analytics layer**.
 
-FinAI helps users understand cash flow, track expenses, build budgets, simulate loans responsibly, and interact with an explainable FinAI assistant. **Financial calculations are deterministic backend functions**; the LLM explains results and handles conversation — it never invents figures.
+FinCompass helps users understand cash flow, track expenses, build budgets, simulate loans responsibly, and interact with an explainable FinAI assistant. **Financial calculations are deterministic backend functions**; ML provides probabilistic insights; the LLM explains results and handles conversation.
 
 ---
 
-## Project Overview
+## Monorepo Structure
 
-| Layer | Responsibility |
-|-------|----------------|
-| **FinAI (LLM)** | Natural language, tool selection, explanations, Hindi/English support |
-| **Financial Engine** | EMI, cash flow, savings, debt, readiness score, loan simulation |
-| **PostgreSQL** | Authoritative user and financial data |
-| **Redis** | Rate limiting and caching (optional for local dev) |
+```
+fincompass/
+├── app/                 # FastAPI backend (API, auth, financial engine, FinAI)
+├── frontend/            # Next.js 16 web app (i18n, dashboard, chat)
+├── ml/                  # Machine learning layer (classifier, anomaly, forecast)
+├── alembic/             # Database migrations
+├── knowledge_base/      # FinAI reference documents
+├── tests/               # Backend integration & unit tests
+├── docker-compose.yml   # Local Postgres + Redis + API
+├── Dockerfile           # Production API container (Render)
+└── render.yaml          # Render Blueprint (backend deploy)
+```
+
+| Component | Stack | Deploy target |
+|-----------|-------|---------------|
+| **Backend** (`app/`) | FastAPI, PostgreSQL, Redis, JWT | [Render](render.yaml) |
+| **Frontend** (`frontend/`) | Next.js 16, React 19, Tailwind | Vercel (root: `frontend/`) |
+| **ML** (`ml/`) | scikit-learn, SHAP, MLflow | Bundled with backend API |
+
+---
+
+## Architecture
+
+| Layer | Location | Responsibility |
+|-------|----------|----------------|
+| **Frontend** | `frontend/` | UI, auth flows, dashboards, FinAI chat |
+| **Financial Engine** | `app/services/finance/` | EMI, cash flow, savings, debt, loan simulation |
+| **ML Layer** | `ml/` | Transaction categorization, anomaly detection, forecasting |
+| **FinAI (LLM)** | `app/ai/` | Natural language, tool selection, Hindi/English |
+| **PostgreSQL** | managed | Authoritative user and financial data |
+| **Redis** | managed | Rate limiting |
 
 ---
 
 ## Tech Stack
 
-- **Python 3.12+**, FastAPI, Uvicorn, Pydantic v2
-- **PostgreSQL** + SQLAlchemy 2 async + Alembic + asyncpg
-- **Redis** (rate limiting)
-- **Argon2id** password hashing, JWT access/refresh tokens, HttpOnly cookies
-- **pytest**, httpx, Ruff, Black, MyPy
-- **Docker** + Docker Compose
+**Backend**
+- Python 3.12+, FastAPI, Uvicorn, Pydantic v2
+- PostgreSQL + SQLAlchemy 2 async + Alembic + asyncpg
+- Redis (rate limiting), Argon2id, JWT
+
+**Frontend**
+- Next.js 16, React 19, TypeScript, Tailwind CSS 4
+- next-intl (English/Hindi), TanStack Query, Zustand
+
+**ML**
+- scikit-learn, SHAP, MLflow, pandas, joblib
 
 ---
 
-## Folder Structure
+## Quick Start
+
+### Backend
+
+```bash
+cd fincompass
+python -m venv .venv
+.\.venv\Scripts\activate          # Windows
+pip install -r requirements.txt
+cp .env.example .env
+docker compose up -d postgres redis
+alembic upgrade head
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+API docs: http://localhost:8000/docs
+
+### Frontend
+
+```bash
+cd frontend
+npm install
+cp .env.example .env.local
+npm run dev
+```
+
+App: http://localhost:3000
+
+### ML
+
+```bash
+pip install -r ml/requirements.txt
+python -m ml.pipelines.training_pipeline
+python -m ml.demo.run_demo
+pytest ml/tests/ -v
+```
+
+See `ml/README.md` for full ML documentation.
+
+---
+
+## Folder Structure (Backend)
 
 ```
-finai-backend/
-├── app/
-│   ├── main.py              # FastAPI app entry
-│   ├── core/                # Config, security, logging, middleware, exceptions
-│   ├── api/routes/          # REST endpoints (/api/v1/...)
-│   ├── db/models/           # SQLAlchemy models
-│   ├── schemas/             # Pydantic request/response models
-│   ├── services/            # Business logic (auth, finance, lending, readiness, ...)
-│   ├── ai/                  # FinAI agent, tools, prompts, LLM providers
-│   ├── knowledge/           # Local knowledge base loader/retriever
-│   └── utils/               # Currency, dates, pagination, validation
-├── tests/unit/              # Deterministic calculation tests
-├── tests/integration/       # API integration tests
-├── alembic/                 # Database migrations
-├── knowledge_base/          # Markdown reference documents
-├── docker-compose.yml
-├── Dockerfile
-├── requirements.txt
-└── .env.example
+app/
+├── main.py              # FastAPI app entry
+├── core/                # Config, security, logging, middleware
+├── api/routes/          # REST endpoints (/api/v1/...)
+├── db/models/           # SQLAlchemy models
+├── schemas/             # Pydantic request/response models
+├── services/            # Business logic (auth, finance, ml, ...)
+├── ai/                  # FinAI agent, tools, prompts
+└── utils/               # Currency, dates, pagination
 ```
 
 ---
 
-## Environment Setup
+## Environment Setup (Backend)
 
 ### 1. Clone and enter the project
 
 ```bash
-cd finai-backend
+git clone https://github.com/Adityaparida123/fincompass.git
+cd fincompass
 ```
 
 ### 2. Create a virtual environment

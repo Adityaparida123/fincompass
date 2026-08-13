@@ -1,4 +1,4 @@
-# FinAI Backend — Render Blueprint
+# FinCompass — Render Blueprint (backend API)
 # Deploy: Render Dashboard → New → Blueprint → connect https://github.com/Adityaparida123/fincompass
 
 databases:
@@ -12,7 +12,7 @@ services:
     name: finai-api
     runtime: docker
     plan: free
-    branch: cursor/ml-layer-fincompass
+    branch: main
     healthCheckPath: /health
     preDeployCommand: alembic upgrade head
     envVars:
