@@ -60,6 +60,18 @@ class Settings(BaseSettings):
 
     KNOWLEDGE_BASE_DIR: str = "knowledge_base"
 
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def normalize_database_url(cls, v: str) -> str:
+        """Render Postgres URLs use postgresql://; SQLAlchemy async needs +asyncpg."""
+        if not isinstance(v, str):
+            return v
+        if v.startswith("postgres://"):
+            v = v.replace("postgres://", "postgresql://", 1)
+        if v.startswith("postgresql://") and "+asyncpg" not in v:
+            v = v.replace("postgresql://", "postgresql+asyncpg://", 1)
+        return v
+
     @field_validator("CORS_ORIGINS")
     @classmethod
     def parse_cors_origins(cls, v: str) -> list[str]:
