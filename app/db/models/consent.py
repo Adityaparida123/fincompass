@@ -14,6 +14,7 @@ class ConsentType(str, Enum):
     financial_data_analysis = "financial_data_analysis"
     personalized_recommendations = "personalized_recommendations"
     chat_financial_context = "chat_financial_context"
+    ml_analysis = "ml_analysis"
 
 
 class ConsentStatus(str, Enum):

@@ -6,8 +6,10 @@ from decimal import Decimal
 async def test_health(client):
     response = await client.get("/health")
     assert response.status_code == 200
-    assert response.json()["status"] == "ok"
-    assert response.json()["service"] == "finai-backend"
+    payload = response.json()
+    assert payload["status"] in {"healthy", "degraded", "ok"}
+    assert payload["service"] == "finai-backend"
+    assert "database" in payload
 
 
 async def test_emi_endpoint(client):

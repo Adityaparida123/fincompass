@@ -6,6 +6,7 @@ from decimal import Decimal
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.cache import invalidate_user_financial_cache
 from app.core.exceptions import NotFoundError
 from app.db.models.transaction import Transaction, TransactionSource, TransactionType
 from app.schemas.transaction import TransactionCreate, TransactionUpdate
@@ -27,6 +28,7 @@ async def create_transaction(
     )
     db.add(tx)
     await db.flush()
+    await invalidate_user_financial_cache(user_id)
     return tx
 
 
@@ -52,6 +54,7 @@ async def update_transaction(
     for field, value in updates.items():
         setattr(tx, field, value)
     await db.flush()
+    await invalidate_user_financial_cache(user_id)
     return tx
 
 
@@ -61,6 +64,7 @@ async def soft_delete_transaction(
     tx = await get_transaction(db, user_id, transaction_id)
     tx.is_deleted = True
     await db.flush()
+    await invalidate_user_financial_cache(user_id)
     return tx
 
 

@@ -1,17 +1,54 @@
-"""Health check endpoint."""
+"""Health check endpoint with optional database and Redis probes."""
 
 from fastapi import APIRouter
+from sqlalchemy import text
 
 from app import __version__
 from app.core.config import settings
+from app.db.session import engine
 
 router = APIRouter(tags=["health"])
 
 
+async def _check_database() -> str:
+    try:
+        async with engine.connect() as conn:
+            await conn.execute(text("SELECT 1"))
+        return "connected"
+    except Exception:
+        return "disconnected"
+
+
+async def _check_redis() -> str:
+    try:
+        from redis.asyncio import Redis
+
+        client = Redis.from_url(settings.REDIS_URL, socket_connect_timeout=0.5)
+        try:
+            pong = await client.ping()
+            return "connected" if pong else "disconnected"
+        finally:
+            await client.aclose()
+    except Exception:
+        return "disconnected"
+
+
 @router.get("/health")
 async def health() -> dict:
+    db_status = await _check_database()
+    redis_status = await _check_redis()
+    overall = "healthy" if db_status == "connected" else "degraded"
+
     return {
-        "status": "ok",
+        "status": overall,
         "service": "finai-backend",
         "version": settings.APP_VERSION or __version__,
+        "environment": settings.APP_ENV,
+        "database": {
+            "backend": settings.database_backend,
+            "status": db_status,
+        },
+        "redis": {
+            "status": redis_status,
+        },
     }

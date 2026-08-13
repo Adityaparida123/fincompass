@@ -3,6 +3,7 @@ from app.db.models.budget import Budget
 from app.db.models.chat import ChatMessage, ChatSession
 from app.db.models.consent import Consent, ConsentStatus, ConsentType
 from app.db.models.debt import DebtObligation
+from app.db.models.ml_prediction import MLPrediction
 from app.db.models.notification import Notification
 from app.db.models.readiness import ReadinessFactor, ReadinessScore
 from app.db.models.recycle_bin import RecycleBinItem
@@ -32,4 +33,5 @@ __all__ = [
     "AuditLog",
     "RecycleBinItem",
     "RefreshTokenSession",
+    "MLPrediction",
 ]

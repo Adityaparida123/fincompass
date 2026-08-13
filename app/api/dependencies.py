@@ -29,11 +29,25 @@ async def get_current_user(
 
 
 async def rate_limit_auth(request: Request) -> None:
-    await _rate_limit(request, "auth", limit=20, window=60)
+    from app.core.config import settings
+
+    await _rate_limit(
+        request,
+        "auth",
+        limit=settings.RATE_LIMIT_AUTH_LIMIT,
+        window=settings.RATE_LIMIT_AUTH_WINDOW,
+    )
 
 
 async def rate_limit_chat(request: Request) -> None:
-    await _rate_limit(request, "chat", limit=30, window=60)
+    from app.core.config import settings
+
+    await _rate_limit(
+        request,
+        "chat",
+        limit=settings.RATE_LIMIT_CHAT_LIMIT,
+        window=settings.RATE_LIMIT_CHAT_WINDOW,
+    )
 
 
 async def _rate_limit(request: Request, scope: str, limit: int, window: int) -> None:

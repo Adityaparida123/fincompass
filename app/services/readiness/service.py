@@ -1,5 +1,7 @@
 """Readiness service: compute, persist, and correct credit readiness scores."""
 
+from datetime import UTC, datetime
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -46,6 +48,9 @@ async def compute_and_store(
         user_id=user_id,
         score=result.score,
         version=VERSION,
+        model_version=VERSION,
+        feature_version=VERSION,
+        calculated_at=datetime.now(UTC),
         previous_score=previous_value,
     )
     db.add(score_row)
@@ -113,6 +118,9 @@ async def correct_score(
         user_id=user_id,
         score=result.score,
         version=VERSION,
+        model_version=VERSION,
+        feature_version=VERSION,
+        calculated_at=datetime.now(UTC),
         previous_score=previous_result.score,
         change_reason=reason,
     )

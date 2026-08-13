@@ -23,8 +23,12 @@ class Settings(BaseSettings):
     APP_ENV: str = "development"
     DEBUG: bool = True
 
-    DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/finai"
+    # Local development default — switch to PostgreSQL for Docker/production.
+    DATABASE_URL: str = "sqlite+aiosqlite:///./finai_dev.sqlite"
     REDIS_URL: str = "redis://localhost:6379/0"
+
+    DB_POOL_SIZE: int = 5
+    DB_MAX_OVERFLOW: int = 10
 
     JWT_SECRET_KEY: str = "change-me"
     JWT_ALGORITHM: str = "HS256"
@@ -52,6 +56,9 @@ class Settings(BaseSettings):
     RATE_LIMIT_CHAT_LIMIT: int = 30
     RATE_LIMIT_CHAT_WINDOW: int = 60
 
+    CACHE_ENABLED: bool = True
+    CACHE_TTL_SECONDS: int = 300
+
     EMAIL_PROVIDER: str = "console"
     SMTP_HOST: str | None = None
     SMTP_PORT: int = 587
@@ -63,7 +70,7 @@ class Settings(BaseSettings):
     @field_validator("DATABASE_URL", mode="before")
     @classmethod
     def normalize_database_url(cls, v: str) -> str:
-        """Render Postgres URLs use postgresql://; SQLAlchemy async needs +asyncpg."""
+        """Normalize Render/Heroku-style URLs to SQLAlchemy async drivers."""
         if not isinstance(v, str):
             return v
         if v.startswith("postgres://"):
@@ -82,8 +89,23 @@ class Settings(BaseSettings):
         return self.APP_ENV == "production"
 
     @property
+    def is_sqlite(self) -> bool:
+        return self.DATABASE_URL.startswith("sqlite")
+
+    @property
+    def is_postgresql(self) -> bool:
+        return "postgresql" in self.DATABASE_URL
+
+    @property
+    def database_backend(self) -> str:
+        if self.is_sqlite:
+            return "sqlite"
+        if self.is_postgresql:
+            return "postgresql"
+        return "unknown"
+
+    @property
     def cookie_secure(self) -> bool:
-        # Always secure cookies in production unless explicitly configured otherwise.
         return self.COOKIE_SECURE or self.is_production
 
     @property
