@@ -27,3 +27,9 @@ Thumbs.db
 *.log
 *.sqlite
 finai_dev.sqlite
+
+# ML artifacts and experiment tracking
+ml/models/artifacts/*.joblib
+ml/mlflow.db
+ml/mlruns/
+ml/data/synthetic/*.csv

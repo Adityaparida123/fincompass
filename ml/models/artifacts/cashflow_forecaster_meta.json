@@ -1,0 +1,19 @@
+{
+  "model_name": "cashflow_forecaster",
+  "model_version": "1.0.0",
+  "best_model": "random_forest",
+  "metrics": {
+    "mae": 42891.795819295294,
+    "rmse": 53424.664496701414,
+    "r2": 0.20003954021239434,
+    "mape": 26.197235691620442
+  },
+  "feature_names": [
+    "mean_cashflow",
+    "std_cashflow",
+    "mean_income",
+    "mean_expenses",
+    "income_consistency",
+    "trend"
+  ]
+}

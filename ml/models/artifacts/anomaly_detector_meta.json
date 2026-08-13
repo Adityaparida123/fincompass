@@ -1,0 +1,12 @@
+{
+  "model_name": "anomaly_detector",
+  "model_version": "1.0.0",
+  "anomaly_rate": 0.05,
+  "feature_columns": [
+    "amount",
+    "rolling_mean",
+    "rolling_std",
+    "amount_deviation",
+    "day_of_week"
+  ]
+}

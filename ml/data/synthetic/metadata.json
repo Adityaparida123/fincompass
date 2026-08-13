@@ -1,0 +1,22 @@
+{
+  "num_users": 50,
+  "num_transactions": 18000,
+  "categories": [
+    "food",
+    "groceries",
+    "transport",
+    "housing",
+    "utilities",
+    "healthcare",
+    "education",
+    "shopping",
+    "entertainment",
+    "subscriptions",
+    "debt_payment",
+    "savings",
+    "income",
+    "other"
+  ],
+  "generated_at": "2026-08-13",
+  "demo_user": "synthetic_001"
+}
