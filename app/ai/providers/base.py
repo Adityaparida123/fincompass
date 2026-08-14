@@ -32,7 +32,7 @@ class LLMProvider(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def generate_stream(
+    def generate_stream(
         self,
         messages: list[dict[str, str]],
         *,

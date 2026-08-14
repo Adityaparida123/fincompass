@@ -155,7 +155,7 @@ Edit `.env` with your values. **Never commit `.env`.**
 | `DATABASE_URL` | PostgreSQL async URL |
 | `REDIS_URL` | Redis URL for rate limiting |
 | `JWT_SECRET_KEY` | Strong random secret (change in production) |
-| `LLM_API_KEY`, `LLM_MODEL`, `LLM_BASE_URL` | OpenAI-compatible LLM (optional; chat works in fallback mode without) |
+| `LLM_API_KEY`, `LLM_MODEL`, `LLM_BASE_URL` | LLM provider — Groq by default (`llama-3.3-70b-versatile`). Optional; chat works in fallback mode without a key |
 | `CORS_ORIGINS` | Frontend origin(s), e.g. `http://localhost:3000` |
 | `DEFAULT_CURRENCY` | Default `INR` |
 | `DEFAULT_TIMEZONE` | Default `Asia/Kolkata` |
@@ -320,11 +320,26 @@ User Question → Intent Router → Context Retrieval → Tool Selection
     → Deterministic Financial Tool → Result → LLM Explanation → Safety Validation → Response
 ```
 
-- **Tools:** EMI, cash flow, savings, expenses, budget, debt, emergency buffer, credit readiness, loan simulation, schemes, financial summary
-- **Languages:** English and Hindi (including code-switching)
+- **Tools:** EMI, cash flow, savings, expenses, budget, debt, emergency buffer, credit readiness, loan simulation, schemes, financial summary, ML spending patterns, cash-flow forecast, ML savings capacity
+- **Languages:** English, Hindi, and Hinglish (including code-switching)
 - **Fallback:** When no LLM is configured, chat returns structured tool-based responses
+- **LLM provider:** Groq via the OpenAI-compatible client (no extra SDK needed)
 
-Configure LLM via `LLM_API_KEY`, `LLM_MODEL`, `LLM_BASE_URL` (OpenAI-compatible).
+Configure the LLM via environment variables:
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `LLM_API_KEY` | Groq API key (local `.env` only, never committed) | *(none)* |
+| `LLM_MODEL` | Groq model name | `llama-3.3-70b-versatile` |
+| `LLM_BASE_URL` | OpenAI-compatible endpoint | `https://api.groq.com/openai/v1` |
+
+Switch models by changing `LLM_MODEL` only. Timeouts and retries are controlled by
+`LLM_TIMEOUT_SECONDS`, `LLM_READ_TIMEOUT_SECONDS`, and `LLM_MAX_RETRIES`.
+
+The frontend never contacts Groq directly — it only calls FastAPI, which keeps
+the API key server-side. Personalized answers use backend-computed numbers
+(expenses, savings, readiness, ML outputs); the LLM explains them but never
+recalculates or invents figures.
 
 ---
 

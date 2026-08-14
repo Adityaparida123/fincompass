@@ -33,6 +33,21 @@ def get_provider() -> OpenAICompatibleProvider:
     return OpenAICompatibleProvider()
 
 
+async def _financial_context(
+    db: AsyncSession,
+    user_id: int,
+    intent: str,
+    message: str = "",
+) -> str | None:
+    """Build a minimal, consented financial context slice for LLM grounding.
+
+    Only the fields needed for the detected intent are included (data
+    minimization). Returns None when no personal context is needed.
+    """
+    slice_ = await build_context_for_intent(db, user_id, intent, message)
+    return slice_.text or None
+
+
 async def chat(
     db: AsyncSession,
     user_id: int,
@@ -82,7 +97,9 @@ async def chat(
     tool_results: list[dict[str, str]] = []
     tool_used: str | None = None
 
-    messages = build_messages(llm_history, financial_context=context_text)
+    messages = build_messages(
+        llm_history, financial_context=context_text, language=session.language
+    )
     llm_messages = list(messages)
 
     try:

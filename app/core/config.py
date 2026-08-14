@@ -39,9 +39,14 @@ class Settings(BaseSettings):
     COOKIE_SECURE: bool = False
     COOKIE_SAMESITE: str = "lax"
 
+    # LLM provider (Groq by default, OpenAI-compatible). Override via env:
+    # LLM_API_KEY, LLM_MODEL, LLM_BASE_URL.
     LLM_API_KEY: str | None = None
-    LLM_MODEL: str | None = None
-    LLM_BASE_URL: str | None = None
+    LLM_MODEL: str = "llama-3.3-70b-versatile"
+    LLM_BASE_URL: str = "https://api.groq.com/openai/v1"
+    LLM_TIMEOUT_SECONDS: float = 60.0
+    LLM_READ_TIMEOUT_SECONDS: float = 90.0
+    LLM_MAX_RETRIES: int = 2
 
     CORS_ORIGINS: str = "http://localhost:3000"
 
@@ -83,6 +88,21 @@ class Settings(BaseSettings):
     @classmethod
     def parse_cors_origins(cls, v: str) -> list[str]:
         return [origin.strip() for origin in v.split(",") if origin.strip()]
+
+    @field_validator("LLM_MODEL", "LLM_BASE_URL", mode="before")
+    @classmethod
+    def llm_blank_to_default(cls, v: str, info) -> str:
+        """Treat blank env values as unset so the Groq defaults apply."""
+        if isinstance(v, str) and not v.strip():
+            return cls.model_fields[info.field_name].default
+        return v
+
+    @field_validator("LLM_API_KEY", mode="before")
+    @classmethod
+    def llm_blank_key_to_none(cls, v: str) -> str | None:
+        if isinstance(v, str) and not v.strip():
+            return None
+        return v
 
     @property
     def is_production(self) -> bool:

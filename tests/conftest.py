@@ -7,6 +7,14 @@ without a Postgres/Redis instance.
 import os
 import tempfile
 
+import pytest
+import pytest_asyncio
+from httpx import ASGITransport, AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
+import app.db.models  # noqa: F401  # register all ORM models before create_all
+from app.db.base import Base
+
 os.environ.setdefault("APP_ENV", "test")
 os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///:memory:")
 os.environ.setdefault("RATE_LIMIT_ENABLED", "false")
@@ -14,13 +22,6 @@ os.environ.setdefault("JWT_SECRET_KEY", "test-secret-key")
 os.environ.setdefault("LLM_API_KEY", "")
 os.environ.setdefault("LLM_MODEL", "")
 os.environ.setdefault("LLM_BASE_URL", "")
-
-import pytest
-import pytest_asyncio
-from httpx import ASGITransport, AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-
-from app.db.base import Base
 
 _TEST_DB = os.path.join(tempfile.gettempdir(), "finai_test.sqlite3")
 
