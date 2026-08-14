@@ -9,7 +9,7 @@ import pandas as pd
 
 from app.core.cache import invalidate_user_financial_cache
 from app.core.exceptions import NotFoundError
-from app.db.models.savings import SavingsGoalStatus
+from app.db.enums import SavingsGoalStatus
 from app.db.mongo import Doc, MongoDatabase
 from app.services.ml.persistence import save_category_correction, save_ml_prediction
 from ml.config import MODEL_VERSIONS

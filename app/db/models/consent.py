@@ -1,25 +1,15 @@
 """Consent model for data-usage authorizations."""
 
 from datetime import datetime
-from enum import Enum
 
 from sqlalchemy import DateTime, ForeignKey, Integer
 from sqlalchemy import Enum as SqlEnum
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, IdMixin, TimestampMixin
+from app.db.enums import ConsentStatus, ConsentType
 
-
-class ConsentType(str, Enum):
-    financial_data_analysis = "financial_data_analysis"
-    personalized_recommendations = "personalized_recommendations"
-    chat_financial_context = "chat_financial_context"
-    ml_analysis = "ml_analysis"
-
-
-class ConsentStatus(str, Enum):
-    granted = "granted"
-    revoked = "revoked"
+__all__ = ["Consent", "ConsentStatus", "ConsentType"]
 
 
 class Consent(IdMixin, TimestampMixin, Base):

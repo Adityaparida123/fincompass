@@ -23,8 +23,8 @@ Layer 3 — FinAI / LLM (app/ai/)
 ## Quick Start
 
 ```bash
-# Install dependencies
-pip install -r requirements.txt
+# Install dependencies (runtime + training extras)
+pip install -r requirements.txt -r requirements-ml-train.txt
 
 # Generate synthetic data and train all models
 python -m ml.pipelines.training_pipeline

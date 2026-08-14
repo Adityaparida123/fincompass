@@ -5,7 +5,7 @@ from decimal import Decimal
 
 from app.core.cache import invalidate_user_financial_cache
 from app.core.exceptions import NotFoundError
-from app.db.models.transaction import TransactionSource, TransactionType
+from app.db.enums import TransactionSource, TransactionType
 from app.db.mongo import Doc, MongoDatabase
 from app.schemas.transaction import TransactionCreate, TransactionUpdate
 

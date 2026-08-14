@@ -58,6 +58,11 @@ async def lifespan(app: FastAPI):
         if count:
             logger.info("Seeded %d reference schemes.", count)
     except Exception:  # noqa: BLE001
+        # Production must fail fast: a running app without its database is a
+        # broken deployment that health checks would otherwise mask as healthy.
+        if settings.is_production:
+            logger.error("MongoDB startup failed in production; aborting startup.", exc_info=True)
+            raise
         logger.warning("Mongo connect/scheme seeding failed (database not ready?).", exc_info=True)
 
     logger.info("%s v%s starting (%s)", settings.APP_NAME, settings.APP_VERSION, settings.APP_ENV)

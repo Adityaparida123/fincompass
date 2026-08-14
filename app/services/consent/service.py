@@ -3,7 +3,7 @@
 from datetime import UTC, datetime
 
 from app.core.exceptions import ConflictError, ConsentDeniedError, NotFoundError
-from app.db.models.consent import ConsentStatus, ConsentType
+from app.db.enums import ConsentStatus, ConsentType
 from app.db.mongo import Doc, MongoDatabase
 from app.services.audit import log_audit
 

@@ -51,7 +51,14 @@ def _check_ml() -> dict:
 async def health() -> dict:
     db_status = await _check_database()
     redis_status = await _check_redis()
-    overall = "healthy" if db_status == "connected" else "degraded"
+
+    # Production requires both MongoDB and Redis (rate limiting + caching).
+    # Local dev treats Redis as optional so a missing local Redis does not
+    # report the API as degraded.
+    dependencies_healthy = db_status == "connected"
+    if settings.is_production:
+        dependencies_healthy = dependencies_healthy and redis_status == "connected"
+    overall = "healthy" if dependencies_healthy else "degraded"
 
     return {
         "status": overall,

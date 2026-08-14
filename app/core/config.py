@@ -56,7 +56,7 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS_REMEMBER: int = 90
 
     COOKIE_SECURE: bool = False
-    COOKIE_SAMESITE: str = "lax"
+    COOKIE_SAMESITE: str = ""
 
     # LLM provider (Groq by default, OpenAI-compatible). Override via env:
     # LLM_API_KEY, LLM_MODEL, LLM_BASE_URL.
@@ -175,6 +175,13 @@ class Settings(BaseSettings):
     @property
     def cookie_secure(self) -> bool:
         return self.COOKIE_SECURE or self.is_production
+
+    @property
+    def cookie_samesite(self) -> str:
+        # Cross-site deployment (Vercel frontend, Render backend) requires
+        # SameSite=None in production; defaulting here prevents a deployment
+        # from silently breaking refresh-token cookies.
+        return self.COOKIE_SAMESITE or ("none" if self.is_production else "lax")
 
     @property
     def database_url(self) -> str:

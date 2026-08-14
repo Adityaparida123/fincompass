@@ -1,6 +1,5 @@
 """Pydantic schemas for ML API responses."""
 
-from datetime import datetime
 from decimal import Decimal
 
 from pydantic import BaseModel, Field

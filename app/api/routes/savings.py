@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends
 
 from app.api.dependencies import get_current_user
 from app.core.exceptions import NotFoundError
-from app.db.models.consent import ConsentType
+from app.db.enums import ConsentType, SavingsGoalStatus
 from app.db.mongo import MongoDatabase
 from app.db.session import get_session
 from app.schemas.savings import (
@@ -39,7 +39,10 @@ async def create_goal(
     db: MongoDatabase = Depends(get_session),
 ) -> SavingsGoalRead:
     await require_consent(db, user.id, ConsentType.financial_data_analysis)
-    goal = await db.insert("savings_goals", {"user_id": user.id, **data.model_dump()})
+    goal = await db.insert(
+        "savings_goals",
+        {"user_id": user.id, **data.model_dump(), "status": SavingsGoalStatus.active.value},
+    )
     return SavingsGoalRead.model_validate(goal_to_read(goal))
 
 

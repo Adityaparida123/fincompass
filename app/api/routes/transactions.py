@@ -6,8 +6,7 @@ from decimal import Decimal
 from fastapi import APIRouter, Depends, Query
 
 from app.api.dependencies import get_current_user
-from app.db.models.consent import ConsentType
-from app.db.models.transaction import TransactionSource, TransactionType
+from app.db.enums import ConsentType, TransactionSource, TransactionType
 from app.db.mongo import MongoDatabase
 from app.db.session import get_session
 from app.schemas.common import Page

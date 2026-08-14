@@ -5,7 +5,7 @@ from decimal import Decimal
 
 from pydantic import BaseModel, Field
 
-from app.db.models.transaction import TransactionSource, TransactionType
+from app.db.enums import TransactionSource, TransactionType
 
 ESSENTIAL_CATEGORIES = {
     "housing",

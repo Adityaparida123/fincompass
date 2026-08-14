@@ -1,5 +1,45 @@
 """Integration tests for authentication flows."""
 
+from app.core.config import settings
+from app.services.auth.tokens import REFRESH_COOKIE_NAME, set_refresh_cookie
+
+
+async def test_refresh_cookie_is_secure_in_production(monkeypatch):
+    from fastapi import Response
+
+    monkeypatch.setattr(type(settings), "is_production", property(lambda self: True))
+
+    response = Response()
+    set_refresh_cookie(response, refresh_token="fake-token", remember_me=True)
+
+    cookie = response.headers["set-cookie"]
+    assert f"{REFRESH_COOKIE_NAME}=" in cookie
+    assert "HttpOnly" in cookie
+    assert "Secure" in cookie
+
+
+async def test_refresh_cookie_defaults_samesite_none_in_production(monkeypatch):
+    from fastapi import Response
+
+    monkeypatch.setattr(type(settings), "is_production", property(lambda self: True))
+    monkeypatch.setattr(settings, "COOKIE_SAMESITE", "")
+
+    response = Response()
+    set_refresh_cookie(response, refresh_token="fake-token", remember_me=True)
+
+    assert "SameSite=none" in response.headers["set-cookie"]
+
+
+async def test_refresh_cookie_httponly_in_dev():
+    from fastapi import Response
+
+    response = Response()
+    set_refresh_cookie(response, refresh_token="fake-token", remember_me=False)
+
+    cookie = response.headers["set-cookie"]
+    assert "HttpOnly" in cookie
+    assert "Secure" not in cookie
+
 
 async def test_register(client):
     response = await client.post(

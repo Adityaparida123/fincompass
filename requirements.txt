@@ -1,17 +1,16 @@
+# Runtime dependencies for the FinAI backend.
+# Install in production/containers with:  pip install -r requirements.txt
+# Test/lint tooling: see requirements-dev.txt
+# Legacy PostgreSQL migration tooling: see requirements-migration.txt
+
 fastapi==0.115.6
 uvicorn[standard]==0.34.0
 pydantic==2.10.4
 pydantic-settings==2.7.1
 email-validator==2.2.0
 
-sqlalchemy[asyncio]==2.0.36
-asyncpg==0.30.0
-aiosqlite==0.20.0
-alembic==1.14.0
-
 # MongoDB runtime (async PyMongo, no Motor)
 pymongo>=4.10,<5
-mongomock>=4.3,<5
 
 redis==5.2.1
 
@@ -22,20 +21,8 @@ python-multipart==0.0.20
 pandas==2.2.3
 numpy==2.2.1
 
-# ML layer
+# ML inference layer
 scikit-learn==1.6.1
 joblib==1.4.2
-shap==0.46.0
-mlflow==2.19.0
-matplotlib==3.10.0
 
 httpx==0.28.1
-pytest==8.3.4
-pytest-asyncio==0.25.0
-pytest-cov==6.0.0
-
-ruff==0.8.6
-black==24.10.0
-mypy==1.14.1
-
-orjson==3.10.12

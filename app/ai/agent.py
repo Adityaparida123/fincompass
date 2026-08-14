@@ -17,7 +17,7 @@ from app.ai.tools import TOOL_SPECS, ToolContext, execute_tool
 from app.core.config import settings
 from app.core.exceptions import ConsentDeniedError, LLMUnavailableError
 from app.core.logging import get_logger
-from app.db.models.consent import ConsentType
+from app.db.enums import ConsentType
 from app.db.mongo import MongoDatabase
 from app.knowledge.base import format_docs_for_context, get_knowledge_retriever
 from app.schemas.chat import ChatResponse

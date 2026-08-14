@@ -1,11 +1,10 @@
 """Unit tests for budget recommendation logic (uses actual transaction data)."""
 
-from datetime import date
 from decimal import Decimal
 
 import pytest
 
-from app.db.models.transaction import TransactionType
+from app.db.enums import TransactionType
 
 
 @pytest.mark.asyncio

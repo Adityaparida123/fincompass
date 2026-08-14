@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
 from app.api.dependencies import get_current_user
-from app.db.models.consent import ConsentType
+from app.db.enums import ConsentType
 from app.db.mongo import Doc, MongoDatabase
 from app.db.session import get_session
 from app.schemas.readiness import ReadinessResult, ScoreCorrectionResult

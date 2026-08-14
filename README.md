@@ -13,17 +13,17 @@ fincompass/
 ├── app/                 # FastAPI backend (API, auth, financial engine, FinAI)
 ├── frontend/            # Next.js 16 web app (i18n, dashboard, chat)
 ├── ml/                  # Machine learning layer (classifier, anomaly, forecast)
-├── alembic/             # Database migrations
+├── alembic/             # Legacy PostgreSQL migrations (data-migration tooling only)
 ├── knowledge_base/      # FinAI reference documents
 ├── tests/               # Backend integration & unit tests
-├── docker-compose.yml   # Local Postgres + Redis + API
+├── docker-compose.yml   # Local MongoDB + Redis + API
 ├── Dockerfile           # Production API container (Render)
 └── render.yaml          # Render Blueprint (backend deploy)
 ```
 
 | Component | Stack | Deploy target |
 |-----------|-------|---------------|
-| **Backend** (`app/`) | FastAPI, PostgreSQL, Redis, JWT | [Render](render.yaml) |
+| **Backend** (`app/`) | FastAPI, MongoDB, Redis, JWT | [Render](render.yaml) |
 | **Frontend** (`frontend/`) | Next.js 16, React 19, Tailwind | Vercel (root: `frontend/`) |
 | **ML** (`ml/`) | scikit-learn, SHAP, MLflow | Bundled with backend API |
 
@@ -37,8 +37,8 @@ fincompass/
 | **Financial Engine** | `app/services/finance/` | EMI, cash flow, savings, debt, loan simulation |
 | **ML Layer** | `ml/` | Transaction categorization, anomaly detection, forecasting |
 | **FinAI (LLM)** | `app/ai/` | Natural language, tool selection, Hindi/English |
-| **PostgreSQL** | managed | Authoritative user and financial data |
-| **Redis** | managed | Rate limiting |
+| **MongoDB** | managed (Atlas) | Authoritative user and financial data |
+| **Redis** | managed | Rate limiting, caching |
 
 ---
 
@@ -46,8 +46,8 @@ fincompass/
 
 **Backend**
 - Python 3.12+, FastAPI, Uvicorn, Pydantic v2
-- PostgreSQL + SQLAlchemy 2 async + Alembic + asyncpg
-- Redis (rate limiting), Argon2id, JWT
+- MongoDB (async PyMongo) — via a driver-agnostic facade in `app/db/mongo.py`
+- Redis (rate limiting, caching), Argon2id, JWT
 
 **Frontend**
 - Next.js 16, React 19, TypeScript, Tailwind CSS 4
@@ -68,8 +68,7 @@ python -m venv .venv
 .\.venv\Scripts\activate          # Windows
 pip install -r requirements.txt
 cp .env.example .env
-docker compose up -d postgres redis
-alembic upgrade head
+docker compose up -d mongodb redis
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
@@ -106,7 +105,7 @@ app/
 ├── main.py              # FastAPI app entry
 ├── core/                # Config, security, logging, middleware
 ├── api/routes/          # REST endpoints (/api/v1/...)
-├── db/models/           # SQLAlchemy models
+├── db/                  # MongoDB facade, models, enums, indexes
 ├── schemas/             # Pydantic request/response models
 ├── services/            # Business logic (auth, finance, ml, ...)
 ├── ai/                  # FinAI agent, tools, prompts
@@ -152,7 +151,8 @@ Edit `.env` with your values. **Never commit `.env`.**
 
 | Variable | Description |
 |----------|-------------|
-| `DATABASE_URL` | PostgreSQL async URL |
+| `MONGODB_URI` | MongoDB connection string (local or Atlas `mongodb+srv://...`) |
+| `MONGODB_DATABASE` | Database name (default `fincompass`) |
 | `REDIS_URL` | Redis URL for rate limiting |
 | `JWT_SECRET_KEY` | Strong random secret (change in production) |
 | `LLM_API_KEY`, `LLM_MODEL`, `LLM_BASE_URL` | LLM provider — Groq by default (`llama-3.3-70b-versatile`). Optional; chat works in fallback mode without a key |
@@ -167,25 +167,20 @@ Edit `.env` with your values. **Never commit `.env`.**
 ### Option A — Docker Compose (recommended)
 
 ```bash
-docker compose up -d postgres redis
+docker compose up -d mongodb redis
 ```
 
-### Option B — Local PostgreSQL
+### Option B — MongoDB Atlas
 
-Create a database named `finai` and set `DATABASE_URL` in `.env`.
+Create a cluster and set `MONGODB_URI=mongodb+srv://<user>:<password>@<cluster>.mongodb.net/` in `.env`.
 
-### Run migrations
+The API creates collections and indexes automatically at startup (see `app/db/indexes.py`); no migration step is required at runtime.
 
-```bash
-alembic upgrade head
-```
+### Legacy PostgreSQL data
 
-Create a new migration after model changes:
-
-```bash
-alembic revision --autogenerate -m "describe change"
-alembic upgrade head
-```
+The app previously ran on PostgreSQL. The one-time data migration tooling is kept in
+`alembic/`, `scripts/migrate_pg_to_mongo.py`, and `requirements-migration.txt` for reference;
+it is **not** part of the runtime or a normal deploy. See `MONGODB_MIGRATION_REPORT.md`.
 
 ---
 
@@ -203,20 +198,28 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 ## Running Tests
 
-Tests use an isolated SQLite database — no Postgres/Redis required.
+Tests use an in-memory MongoDB facade (`mongomock`) — no real MongoDB or Redis required.
 
 ```bash
+pip install -r requirements-dev.txt
 pytest
 pytest -v
 pytest tests/unit/
 pytest tests/integration/
 ```
 
+To validate against a real MongoDB/Atlas instance (optional, manual):
+
+```bash
+$env:FINCOMPASS_REAL_MONGO_URI="mongodb+srv://..."   # PowerShell
+pytest tests/integration/test_real_mongo.py -v
+```
+
 ---
 
 ## Running with Docker
 
-Full stack (API + Postgres + Redis):
+Full stack (API + MongoDB + Redis):
 
 ```bash
 docker compose up --build
@@ -347,7 +350,7 @@ recalculates or invents figures.
 
 - Argon2id password hashing — **plaintext passwords are never stored**
 - JWT access tokens + HttpOnly refresh cookies with rotation
-- CORS, input validation, SQL injection protection via ORM
+- CORS, input validation, query injection protection via server-side Mongo filters
 - Redis rate limiting on `/auth/*` and `/chat/*`
 - Request IDs on every response
 - Audit logs for sensitive actions (no secrets logged)
@@ -364,21 +367,24 @@ recalculates or invents figures.
 ## Deployment Notes
 
 1. Set `APP_ENV=production`, `DEBUG=false`, strong `JWT_SECRET_KEY`
-2. Set `COOKIE_SECURE=true` (HTTPS)
-3. Run `alembic upgrade head` before starting the API
+2. Set `COOKIE_SECURE=true` and `COOKIE_SAMESITE=none` (cross-site cookie between Vercel and Render)
+3. Provide `MONGODB_URI` (Atlas) and `REDIS_URL`; the API creates collections/indexes on startup
 4. Configure `CORS_ORIGINS` for your Next.js frontend domain
 5. Provide LLM credentials for full conversational FinAI
 
+See `render.yaml`, the `Dockerfile`, `SECURITY.md`, and `.env.production.example` for the production reference configuration. On Vercel, set `NEXT_PUBLIC_API_URL` to the Render API base URL (e.g. `https://finai-api.onrender.com/api/v1`).
+
 ---
 
-## Future Frontend Integration
+## Frontend Integration
 
-The backend is API-first and ready for a Next.js frontend:
+The Next.js frontend lives in `frontend/` and communicates with the backend at
+`NEXT_PUBLIC_API_URL` (default `http://localhost:8000/api/v1`):
 
-1. Point frontend API base URL to `http://localhost:8000/api/v1`
+1. Point `NEXT_PUBLIC_API_URL` to the API base URL (`http://localhost:8000/api/v1` locally)
 2. Use `Authorization: Bearer <access_token>` for authenticated routes
-3. Enable `credentials: 'include'` for refresh cookie flows
-4. Request consent before showing personalized dashboards
+3. `credentials: 'include'` is enabled for the HttpOnly refresh-cookie flow
+4. Consent is requested before showing personalized dashboards
 5. Use `/docs` OpenAPI spec for client code generation
 
 ---
@@ -386,7 +392,7 @@ The backend is API-first and ready for a Next.js frontend:
 ## Known Limitations
 
 - No external bank/UPI aggregation yet (manual transactions supported)
-- Knowledge retrieval is keyword-based (pgvector planned)
+- Knowledge retrieval is keyword-based (vector search planned)
 - Password reset uses token flow without email delivery (MVP stub)
 - Budget/debt/savings restore from recycle bin not yet implemented (transactions supported)
 - LLM streaming requires configured provider

@@ -2,20 +2,15 @@
 
 from datetime import date
 from decimal import Decimal
-from enum import Enum
 
 from sqlalchemy import Date, ForeignKey, Numeric, String
 from sqlalchemy import Enum as SqlEnum
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, IdMixin, TimestampMixin
+from app.db.enums import SavingsGoalStatus
 
-
-class SavingsGoalStatus(str, Enum):
-    active = "active"
-    completed = "completed"
-    paused = "paused"
-    abandoned = "abandoned"
+__all__ = ["SavingsGoal", "SavingsGoalStatus"]
 
 
 class SavingsGoal(IdMixin, TimestampMixin, Base):

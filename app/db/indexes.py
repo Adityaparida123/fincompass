@@ -56,7 +56,7 @@ _INDEX_SPECS: dict[str, list[tuple[list[tuple[str, int]], bool]]] = {
     ],
     "readiness_factors": [
         ([("id", 1)], False),
-        ([("user_id", 1), ("score_id", 1)], False),
+        ([("readiness_score_id", 1)], False),
     ],
     "chat_sessions": [
         ([("id", 1)], False),

@@ -4,7 +4,7 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
-from app.db.models.consent import ConsentType
+from app.db.enums import ConsentType
 
 
 class ConsentGrantRequest(BaseModel):

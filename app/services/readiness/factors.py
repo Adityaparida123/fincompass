@@ -3,7 +3,7 @@
 from datetime import date
 from decimal import Decimal
 
-from app.db.models.transaction import TransactionType
+from app.db.enums import TransactionType
 from app.db.mongo import MongoDatabase
 from app.schemas.transaction import is_essential
 from app.services.readiness.engine import ReadinessInput

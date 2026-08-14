@@ -2,26 +2,15 @@
 
 from datetime import date
 from decimal import Decimal
-from enum import Enum
 
 from sqlalchemy import Date, ForeignKey, Numeric, String
 from sqlalchemy import Enum as SqlEnum
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, IdMixin, TimestampMixin
+from app.db.enums import TransactionSource, TransactionType
 
-
-class TransactionType(str, Enum):
-    income = "income"
-    expense = "expense"
-
-
-class TransactionSource(str, Enum):
-    manual = "manual"
-    bank = "bank"
-    upi = "upi"
-    card = "card"
-    import_ = "import"
+__all__ = ["Transaction", "TransactionSource", "TransactionType"]
 
 
 class Transaction(IdMixin, TimestampMixin, Base):

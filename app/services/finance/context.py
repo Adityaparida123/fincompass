@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
 
-from app.db.models.transaction import TransactionType
+from app.db.enums import TransactionType
 from app.db.mongo import MongoDatabase
 from app.utils.dates import month_bounds
 

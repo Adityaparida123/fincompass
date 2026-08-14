@@ -373,7 +373,7 @@ async def tool_get_user_goals(ctx: ToolContext, args: dict[str, Any]) -> dict[st
 async def tool_create_budget(ctx: ToolContext, args: dict[str, Any]) -> dict[str, Any]:
     from datetime import date
 
-    from app.db.models.consent import ConsentType
+    from app.db.enums import ConsentType
     from app.services.consent.service import require_consent
 
     await require_consent(ctx.db, ctx.user_id, ConsentType.financial_data_analysis)
@@ -420,7 +420,7 @@ async def tool_find_government_schemes(ctx: ToolContext, args: dict[str, Any]) -
 
 @_register("get_spending_patterns")
 async def tool_get_spending_patterns(ctx: ToolContext, args: dict[str, Any]) -> dict[str, Any]:
-    from app.db.models.consent import ConsentType
+    from app.db.enums import ConsentType
     from app.services.consent.service import require_consent
     from app.services.ml import service as ml_service
 
@@ -436,7 +436,7 @@ async def tool_get_spending_patterns(ctx: ToolContext, args: dict[str, Any]) -> 
 
 @_register("get_cashflow_forecast")
 async def tool_get_cashflow_forecast(ctx: ToolContext, args: dict[str, Any]) -> dict[str, Any]:
-    from app.db.models.consent import ConsentType
+    from app.db.enums import ConsentType
     from app.services.consent.service import require_consent
     from app.services.ml import service as ml_service
 
@@ -453,7 +453,7 @@ async def tool_get_cashflow_forecast(ctx: ToolContext, args: dict[str, Any]) -> 
 
 @_register("get_ml_savings_capacity")
 async def tool_get_ml_savings_capacity(ctx: ToolContext, args: dict[str, Any]) -> dict[str, Any]:
-    from app.db.models.consent import ConsentType
+    from app.db.enums import ConsentType
     from app.services.consent.service import require_consent
     from app.services.ml import service as ml_service
 

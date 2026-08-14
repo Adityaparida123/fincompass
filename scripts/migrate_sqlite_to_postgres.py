@@ -28,7 +28,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from sqlalchemy import MetaData, Table, func, select, text
+from sqlalchemy import MetaData, Table, select, text
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 DEFAULT_SQLITE = "sqlite+aiosqlite:///./finai_dev.sqlite"

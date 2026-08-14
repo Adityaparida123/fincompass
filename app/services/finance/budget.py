@@ -3,7 +3,7 @@
 from datetime import date
 from decimal import Decimal
 
-from app.db.models.transaction import TransactionType
+from app.db.enums import TransactionType
 from app.db.mongo import Doc, MongoDatabase
 from app.utils.dates import month_period_from_string
 

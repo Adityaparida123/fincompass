@@ -5,7 +5,7 @@ from decimal import Decimal
 
 from pydantic import BaseModel, Field
 
-from app.db.models.savings import SavingsGoalStatus
+from app.db.enums import SavingsGoalStatus
 
 
 class SavingsGoalCreate(BaseModel):

@@ -17,10 +17,10 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+import app.db.models  # noqa: F401
 from app.core.config import settings
 from app.db.base import Base
 from app.db.engine import create_app_engine
-import app.db.models  # noqa: F401
 
 
 async def main() -> None:

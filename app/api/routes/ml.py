@@ -3,7 +3,7 @@
 from fastapi import APIRouter, Depends
 
 from app.api.dependencies import get_current_user, rate_limit_ml
-from app.db.models.consent import ConsentType
+from app.db.enums import ConsentType
 from app.db.mongo import Doc, MongoDatabase
 from app.db.session import get_session
 from app.schemas.ml import (

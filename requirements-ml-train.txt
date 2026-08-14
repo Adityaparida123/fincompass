@@ -1,0 +1,7 @@
+# Training/experimentation-only dependencies for the ML layer.
+# Runtime inference does NOT require these (see requirements.txt).
+# Install with:  pip install -r requirements-ml-train.txt
+
+mlflow==2.19.0
+shap==0.46.0
+matplotlib==3.10.0

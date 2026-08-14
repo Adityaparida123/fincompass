@@ -10,13 +10,14 @@ from app.db.models.recycle_bin import RecycleBinItem
 from app.db.models.refresh_token import RefreshTokenSession
 from app.db.models.savings import SavingsGoal, SavingsGoalStatus
 from app.db.models.scheme import GovernmentScheme
-from app.db.models.transaction import Transaction, TransactionSource
+from app.db.models.transaction import Transaction, TransactionSource, TransactionType
 from app.db.models.user import User
 
 __all__ = [
     "User",
     "Transaction",
     "TransactionSource",
+    "TransactionType",
     "Budget",
     "SavingsGoal",
     "SavingsGoalStatus",

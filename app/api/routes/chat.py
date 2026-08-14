@@ -17,7 +17,7 @@ from app.ai.memory import (
 from app.ai.prompts import build_messages
 from app.api.dependencies import get_current_user, rate_limit_chat
 from app.core.config import settings
-from app.db.models.consent import ConsentType
+from app.db.enums import ConsentType
 from app.db.mongo import MongoDatabase
 from app.db.session import get_session as get_db
 from app.schemas.chat import (

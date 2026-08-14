@@ -6,15 +6,14 @@ from decimal import Decimal
 import pytest
 
 from app.core.config import settings
-from app.db.models.consent import ConsentStatus, ConsentType
-from app.db.models.transaction import TransactionType
+from app.db.enums import ConsentStatus, ConsentType, TransactionType
+from app.schemas.transaction import TransactionCreate
 from app.services.consent.service import grant_consent, require_consent
 from app.services.finance.transactions import (
     create_transaction,
     get_transaction,
     soft_delete_transaction,
 )
-from app.schemas.transaction import TransactionCreate
 
 
 async def test_settings_support_mongodb_backend():
@@ -144,3 +143,43 @@ async def test_health_reports_mongodb_backend(client):
     assert payload["status"] in {"healthy", "degraded"}
     assert "database" in payload
     assert payload["database"]["backend"] == "mongodb"
+
+
+async def test_money_round_trip_keeps_two_decimal_places(db_session):
+    user = await db_session.insert(
+        "users",
+        {"email": "money@example.com", "password_hash": "hash", "full_name": "Money"},
+    )
+    tx = await create_transaction(
+        db_session,
+        user.id,
+        TransactionCreate(
+            date=date.today(),
+            description="Precision",
+            amount=Decimal("0.10"),
+            currency="INR",
+            transaction_type=TransactionType.expense,
+            category="other",
+        ),
+    )
+    await create_transaction(
+        db_session,
+        user.id,
+        TransactionCreate(
+            date=date.today(),
+            description="Precision",
+            amount=Decimal("0.20"),
+            currency="INR",
+            transaction_type=TransactionType.expense,
+            category="other",
+        ),
+    )
+
+    rows = await db_session.find("transactions", {"user_id": user.id})
+    total = sum(r.amount for r in rows)
+    assert total == Decimal("0.30")
+    assert total.as_tuple().exponent == -2
+
+    fetched = await db_session.find_one("transactions", {"id": tx.id})
+    assert isinstance(fetched.amount, Decimal)
+    assert fetched.amount == Decimal("0.10")
