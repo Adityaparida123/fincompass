@@ -54,11 +54,14 @@ class TransactionClassifier:
         if confidence < CLASSIFIER_CONFIDENCE_THRESHOLD:
             category = "other"
 
+        needs_review = confidence < CLASSIFIER_CONFIDENCE_THRESHOLD
+
         return {
             "prediction": {
                 "value": category,
                 "confidence": round(confidence, 3),
                 "confidence_label": confidence_label(confidence),
+                "needs_review": needs_review,
             },
             "model": {
                 "name": self.MODEL_NAME,

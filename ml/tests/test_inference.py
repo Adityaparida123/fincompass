@@ -53,6 +53,12 @@ def test_classifier_predict(trained_models):
     assert 0 <= result["prediction"]["confidence"] <= 1
 
 
+def test_classifier_low_confidence_needs_review(trained_models):
+    clf = TransactionClassifier()
+    result = clf.predict("misc payment", 10.0, "expense")
+    assert "needs_review" in result["prediction"]
+
+
 def test_category_correction():
     record = save_correction("tx_1", "food", "shopping", "user_1")
     assert record["original_prediction"] == "food"

@@ -42,6 +42,7 @@ async def categorize_transaction(
         category=pred["value"],
         confidence=pred["confidence"],
         confidence_label=pred.get("confidence_label", "medium"),
+        needs_review=pred.get("needs_review", False),
         model=MLModelMeta(**model),
         timestamp=result["timestamp"],
     )
@@ -55,7 +56,8 @@ async def correct_categorization(
 ) -> dict:
     await require_consent(db, user.id, ConsentType.financial_data_analysis)
     return await ml_service.correct_category(
-        str(user.id),
+        db,
+        user.id,
         body.transaction_id,
         body.original_prediction,
         body.corrected_category,

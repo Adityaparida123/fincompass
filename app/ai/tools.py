@@ -191,6 +191,30 @@ TOOL_SPECS: list[dict[str, Any]] = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_spending_patterns",
+            "description": "Detect interpretable spending patterns from consented transaction history (ML).",
+            "parameters": {"type": "object", "properties": {}},
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_cashflow_forecast",
+            "description": "Forecast next-month cash flow range from consented history (ML, not guaranteed).",
+            "parameters": {"type": "object", "properties": {}},
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_ml_savings_capacity",
+            "description": "Estimate monthly savings capacity range from consented history (ML estimate).",
+            "parameters": {"type": "object", "properties": {}},
+        },
+    },
 ]
 
 TOOL_REGISTRY: dict[str, Callable[[ToolContext, dict[str, Any]], Coroutine[Any, Any, Any]]] = {}
@@ -397,6 +421,56 @@ async def tool_find_government_schemes(ctx: ToolContext, args: dict[str, Any]) -
             }
             for m in matches
         ]
+    }
+
+
+@_register("get_spending_patterns")
+async def tool_get_spending_patterns(ctx: ToolContext, args: dict[str, Any]) -> dict[str, Any]:
+    from app.db.models.consent import ConsentType
+    from app.services.consent.service import require_consent
+    from app.services.ml import service as ml_service
+
+    await require_consent(ctx.db, ctx.user_id, ConsentType.financial_data_analysis)
+    result = await ml_service.get_spending_patterns(ctx.db, ctx.user_id)
+    return {
+        "patterns": result.get("patterns", []),
+        "confidence": result.get("prediction", {}).get("confidence"),
+        "model": result.get("model"),
+        "disclaimer": "Patterns are estimates based on recent spending history.",
+    }
+
+
+@_register("get_cashflow_forecast")
+async def tool_get_cashflow_forecast(ctx: ToolContext, args: dict[str, Any]) -> dict[str, Any]:
+    from app.db.models.consent import ConsentType
+    from app.services.consent.service import require_consent
+    from app.services.ml import service as ml_service
+
+    await require_consent(ctx.db, ctx.user_id, ConsentType.financial_data_analysis)
+    result = await ml_service.get_cashflow_forecast(ctx.db, ctx.user_id)
+    return {
+        "forecasts": result.get("forecasts", []),
+        "confidence": result.get("prediction", {}).get("confidence"),
+        "explanation": result.get("explanation", []),
+        "model": result.get("model"),
+        "disclaimer": "Forecast is probabilistic and not a guaranteed outcome.",
+    }
+
+
+@_register("get_ml_savings_capacity")
+async def tool_get_ml_savings_capacity(ctx: ToolContext, args: dict[str, Any]) -> dict[str, Any]:
+    from app.db.models.consent import ConsentType
+    from app.services.consent.service import require_consent
+    from app.services.ml import service as ml_service
+
+    await require_consent(ctx.db, ctx.user_id, ConsentType.financial_data_analysis)
+    result = await ml_service.get_savings_capacity(ctx.db, ctx.user_id)
+    return {
+        "savings_capacity": result.get("savings_capacity", {}),
+        "confidence": result.get("prediction", {}).get("confidence"),
+        "explanation": result.get("explanation", []),
+        "model": result.get("model"),
+        "disclaimer": "ML savings estimate is a range, not a guarantee.",
     }
 
 

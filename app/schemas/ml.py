@@ -43,6 +43,7 @@ class CategorizeResponse(BaseModel):
     category: str
     confidence: float
     confidence_label: str
+    needs_review: bool = False
     model: MLModelMeta
     timestamp: str
 

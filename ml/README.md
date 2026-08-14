@@ -43,11 +43,18 @@ All endpoints require authentication and `financial_data_analysis` consent.
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | POST | `/api/v1/ml/categorize` | Categorize a transaction |
-| POST | `/api/v1/ml/categorize/correct` | User category correction |
+| POST | `/api/v1/ml/categorize/correct` | User category correction (persisted) |
 | POST | `/api/v1/ml/anomaly` | Detect spending anomaly |
 | GET | `/api/v1/ml/spending-patterns` | Detect spending patterns |
 | GET | `/api/v1/ml/cashflow-forecast` | Forecast cash flow |
 | GET | `/api/v1/ml/savings-capacity` | Estimate savings capacity |
+| POST | `/api/v1/ml/recalculate` | Recalculate after correction |
+| GET | `/api/v1/ml/explanations` | Combined ML explanations |
+
+Predictions are persisted to the `ml_predictions` table. Category corrections update
+the authoritative transaction record when a numeric transaction ID is provided.
+
+FinAI can call ML tools: `get_spending_patterns`, `get_cashflow_forecast`, `get_ml_savings_capacity`.
 | POST | `/api/v1/ml/recalculate` | Recalculate after data correction |
 | GET | `/api/v1/ml/explanations` | Combined ML explanations |
 
