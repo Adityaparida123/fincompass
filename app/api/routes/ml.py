@@ -3,7 +3,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.dependencies import get_current_user
+from app.api.dependencies import get_current_user, rate_limit_ml
 from app.db.models.consent import ConsentType
 from app.db.models.user import User
 from app.db.session import get_session
@@ -23,7 +23,11 @@ from app.schemas.ml import (
 from app.services.consent.service import require_consent
 from app.services.ml import service as ml_service
 
-router = APIRouter(prefix="/ml", tags=["Machine Learning"])
+router = APIRouter(
+    prefix="/ml",
+    tags=["Machine Learning"],
+    dependencies=[Depends(rate_limit_ml)],
+)
 
 
 @router.post("/categorize", response_model=CategorizeResponse)

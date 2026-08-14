@@ -2,6 +2,7 @@
 
 from abc import ABC, abstractmethod
 
+from app.core.config import settings
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -14,9 +15,23 @@ class EmailProvider(ABC):
 
 
 class ConsoleEmailProvider(EmailProvider):
-    """Development provider that logs emails to stdout."""
+    """Development provider that logs emails to stdout.
+
+    In production this provider must never leak email bodies (they can contain
+    password-reset tokens). If EMAIL_PROVIDER is left at the console default in
+    production, we log a warning and skip delivery so secrets never reach the logs.
+    """
 
     async def send(self, to: str, subject: str, body: str) -> None:
+        if settings.is_production:
+            logger.warning(
+                "EMAIL (console) attempted in production to=%s subject=%s — "
+                "message NOT delivered and body NOT logged. Configure a real "
+                "EMAIL_PROVIDER (SMTP) for production.",
+                to,
+                subject,
+            )
+            return
         logger.info(
             "EMAIL (console) to=%s subject=%s\n%s",
             to,

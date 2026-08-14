@@ -33,6 +33,20 @@ async def _check_redis() -> str:
         return "disconnected"
 
 
+def _check_ml() -> dict:
+    from ml.config import ARTIFACTS_DIR
+
+    required = [
+        "transaction_classifier.joblib",
+        "anomaly_detector.joblib",
+        "cashflow_forecaster.joblib",
+        "savings_predictor.joblib",
+    ]
+    return {
+        "models_available": all((ARTIFACTS_DIR / name).exists() for name in required),
+    }
+
+
 @router.get("/health")
 async def health() -> dict:
     db_status = await _check_database()
@@ -51,4 +65,5 @@ async def health() -> dict:
         "redis": {
             "status": redis_status,
         },
+        "ml": _check_ml(),
     }

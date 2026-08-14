@@ -50,6 +50,17 @@ async def rate_limit_chat(request: Request) -> None:
     )
 
 
+async def rate_limit_ml(request: Request) -> None:
+    from app.core.config import settings
+
+    await _rate_limit(
+        request,
+        "ml",
+        limit=settings.RATE_LIMIT_ML_LIMIT,
+        window=settings.RATE_LIMIT_ML_WINDOW,
+    )
+
+
 async def _rate_limit(request: Request, scope: str, limit: int, window: int) -> None:
     from app.core.config import settings
 

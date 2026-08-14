@@ -20,9 +20,12 @@ finai_dev.sqlite
 
 frontend/
 tests/
+docs/
+finai-backend/
 mlruns/
 ml/mlruns/
 ml/mlflow.db
+ml/data/synthetic/
 
 README.md
 AUDIT.md

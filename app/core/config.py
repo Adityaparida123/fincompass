@@ -6,8 +6,20 @@ the environment or a `.env` file (which must never be committed).
 
 from functools import lru_cache
 
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Secrets/values that are never acceptable in production.
+_WEAK_JWT_SECRETS = frozenset({
+    "",
+    "change-me",
+    "change_me",
+    "changeme",
+    "secret",
+    "test-secret-key",
+    "dev-secret",
+    "dev-local-secret-change-in-production",
+})
 
 
 class Settings(BaseSettings):
@@ -30,6 +42,9 @@ class Settings(BaseSettings):
     DB_POOL_SIZE: int = 5
     DB_MAX_OVERFLOW: int = 10
 
+    # Development fallback only. Production requires a strong JWT_SECRET_KEY
+    # (enforced by the model_validator below — the app fails fast, it never
+    # silently falls back to a weak secret).
     JWT_SECRET_KEY: str = "change-me"
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
@@ -60,6 +75,8 @@ class Settings(BaseSettings):
     RATE_LIMIT_AUTH_WINDOW: int = 60
     RATE_LIMIT_CHAT_LIMIT: int = 30
     RATE_LIMIT_CHAT_WINDOW: int = 60
+    RATE_LIMIT_ML_LIMIT: int = 60
+    RATE_LIMIT_ML_WINDOW: int = 60
 
     CACHE_ENABLED: bool = True
     CACHE_TTL_SECONDS: int = 300
@@ -103,6 +120,27 @@ class Settings(BaseSettings):
         if isinstance(v, str) and not v.strip():
             return None
         return v
+
+    @model_validator(mode="after")
+    def enforce_production_safety(self) -> "Settings":
+        """Fail fast (at startup) when production settings are unsafe.
+
+        Never silently fall back to a weak JWT secret or an unsupported
+        database in production.
+        """
+        if self.is_production:
+            secret = self.JWT_SECRET_KEY or ""
+            if secret in _WEAK_JWT_SECRETS or len(secret) < 32:
+                raise ValueError(
+                    "APP_ENV=production requires a strong JWT_SECRET_KEY "
+                    "(at least 32 random characters). Refusing to start with a weak secret."
+                )
+            if self.is_sqlite:
+                raise ValueError(
+                    "APP_ENV=production requires PostgreSQL "
+                    "(e.g. postgresql+asyncpg://...). SQLite is only for local development."
+                )
+        return self
 
     @property
     def is_production(self) -> bool:

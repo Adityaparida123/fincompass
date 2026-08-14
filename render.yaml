@@ -31,8 +31,12 @@ services:
           property: connectionString
       - key: JWT_SECRET_KEY
         generateValue: true
+      - key: JWT_ALGORITHM
+        value: HS256
       - key: COOKIE_SECURE
         value: "true"
+      - key: COOKIE_SAMESITE
+        value: none
       - key: CORS_ORIGINS
         sync: false
       - key: LLM_API_KEY
@@ -45,8 +49,20 @@ services:
         value: INR
       - key: DEFAULT_TIMEZONE
         value: Asia/Kolkata
+      - key: LOG_LEVEL
+        value: INFO
       - key: RATE_LIMIT_ENABLED
         value: "true"
+      - key: EMAIL_PROVIDER
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USERNAME
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
 
   - type: keyvalue
     name: finai-redis

@@ -28,11 +28,14 @@ Thumbs.db
 *.sqlite
 finai_dev.sqlite
 
-# ML artifacts and experiment tracking
-ml/models/artifacts/*.joblib
+# ML experiment tracking (artifacts under ml/models/artifacts/*.joblib are
+# intentionally tracked so Render builds include the trained models)
 ml/mlflow.db
 ml/mlruns/
 ml/data/synthetic/*.csv
+
+# Stray local leftovers
+finai-backend/
 
 # Frontend
 frontend/node_modules/
