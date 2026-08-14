@@ -1,11 +1,10 @@
 """ML API endpoints — categorization, anomaly, forecasting, savings, patterns."""
 
 from fastapi import APIRouter, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_current_user, rate_limit_ml
 from app.db.models.consent import ConsentType
-from app.db.models.user import User
+from app.db.mongo import Doc, MongoDatabase
 from app.db.session import get_session
 from app.schemas.ml import (
     AnomalyRequest,
@@ -33,8 +32,8 @@ router = APIRouter(
 @router.post("/categorize", response_model=CategorizeResponse)
 async def categorize_transaction(
     body: CategorizeRequest,
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_session),
+    user: Doc = Depends(get_current_user),
+    db: MongoDatabase = Depends(get_session),
 ) -> CategorizeResponse:
     await require_consent(db, user.id, ConsentType.financial_data_analysis)
     result = await ml_service.categorize_transaction(
@@ -55,8 +54,8 @@ async def categorize_transaction(
 @router.post("/categorize/correct")
 async def correct_categorization(
     body: CategoryCorrectionRequest,
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_session),
+    user: Doc = Depends(get_current_user),
+    db: MongoDatabase = Depends(get_session),
 ) -> dict:
     await require_consent(db, user.id, ConsentType.financial_data_analysis)
     return await ml_service.correct_category(
@@ -71,8 +70,8 @@ async def correct_categorization(
 @router.post("/anomaly", response_model=AnomalyResponse)
 async def detect_anomaly(
     body: AnomalyRequest | None = None,
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_session),
+    user: Doc = Depends(get_current_user),
+    db: MongoDatabase = Depends(get_session),
 ) -> AnomalyResponse:
     await require_consent(db, user.id, ConsentType.financial_data_analysis)
     amount = body.amount if body else None
@@ -89,8 +88,8 @@ async def detect_anomaly(
 
 @router.get("/spending-patterns", response_model=SpendingPatternResponse)
 async def spending_patterns(
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_session),
+    user: Doc = Depends(get_current_user),
+    db: MongoDatabase = Depends(get_session),
 ) -> SpendingPatternResponse:
     await require_consent(db, user.id, ConsentType.financial_data_analysis)
     result = await ml_service.get_spending_patterns(db, user.id)
@@ -104,8 +103,8 @@ async def spending_patterns(
 
 @router.get("/cashflow-forecast", response_model=CashflowForecastResponse)
 async def cashflow_forecast(
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_session),
+    user: Doc = Depends(get_current_user),
+    db: MongoDatabase = Depends(get_session),
 ) -> CashflowForecastResponse:
     await require_consent(db, user.id, ConsentType.financial_data_analysis)
     result = await ml_service.get_cashflow_forecast(db, user.id)
@@ -120,8 +119,8 @@ async def cashflow_forecast(
 
 @router.get("/savings-capacity", response_model=SavingsCapacityResponse)
 async def savings_capacity(
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_session),
+    user: Doc = Depends(get_current_user),
+    db: MongoDatabase = Depends(get_session),
 ) -> SavingsCapacityResponse:
     await require_consent(db, user.id, ConsentType.financial_data_analysis)
     result = await ml_service.get_savings_capacity(db, user.id)
@@ -141,8 +140,8 @@ async def savings_capacity(
 
 @router.post("/recalculate", response_model=RecalculateResponse)
 async def recalculate_predictions(
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_session),
+    user: Doc = Depends(get_current_user),
+    db: MongoDatabase = Depends(get_session),
 ) -> RecalculateResponse:
     """Recalculate all ML predictions after user data correction."""
     await require_consent(db, user.id, ConsentType.financial_data_analysis)
@@ -157,8 +156,8 @@ async def recalculate_predictions(
 
 @router.get("/explanations")
 async def get_explanations(
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_session),
+    user: Doc = Depends(get_current_user),
+    db: MongoDatabase = Depends(get_session),
 ) -> dict:
     """Combined ML explanations for the user's financial profile."""
     await require_consent(db, user.id, ConsentType.financial_data_analysis)

@@ -4,11 +4,10 @@ from datetime import date, timedelta
 from decimal import Decimal
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_current_user
 from app.db.models.consent import ConsentType
-from app.db.models.user import User
+from app.db.mongo import Doc, MongoDatabase
 from app.db.session import get_session
 from app.schemas.expense import (
     CategoryBreakdown,
@@ -31,7 +30,7 @@ router = APIRouter(prefix="/expenses", tags=["expenses"])
 GRANULARITIES = {"day", "week", "month", "year"}
 
 
-async def _ensure_consent(db: AsyncSession, user_id: int) -> None:
+async def _ensure_consent(db: MongoDatabase, user_id: int) -> None:
     await require_consent(db, user_id, ConsentType.financial_data_analysis)
 
 
@@ -52,7 +51,7 @@ def _trend_direction(change: Decimal | None) -> str | None:
 
 
 async def _enhanced_summary(
-    db: AsyncSession,
+    db: MongoDatabase,
     user_id: int,
     start: date,
     end: date,
@@ -109,7 +108,7 @@ def _build_expense_summary(period: str, data: dict) -> ExpenseSummary:
     )
 
 
-async def _summary(db: AsyncSession, user_id: int, start: date, end: date) -> dict:
+async def _summary(db: MongoDatabase, user_id: int, start: date, end: date) -> dict:
     total_exp, count = await expense_totals(db, user_id, start, end)
     income = await income_totals(db, user_id, start, end)
     cats = await category_totals(db, user_id, start, end)
@@ -125,8 +124,8 @@ async def _summary(db: AsyncSession, user_id: int, start: date, end: date) -> di
 async def weekly(
     year: int = Query(..., ge=2000),
     week: int = Query(..., ge=1, le=53),
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_session),
+    user: Doc = Depends(get_current_user),
+    db: MongoDatabase = Depends(get_session),
 ) -> ExpenseSummary:
     await _ensure_consent(db, user.id)
     iso = date.fromisocalendar(year, min(week, 52), 1)
@@ -143,8 +142,8 @@ async def weekly(
 @router.get("/monthly", response_model=ExpenseSummary)
 async def monthly(
     period: str = Query(..., pattern=r"^\d{4}-\d{2}$", description="YYYY-MM"),
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_session),
+    user: Doc = Depends(get_current_user),
+    db: MongoDatabase = Depends(get_session),
 ) -> ExpenseSummary:
     await _ensure_consent(db, user.id)
     year, month = (int(p) for p in period.split("-"))
@@ -163,8 +162,8 @@ async def monthly(
 async def categories(
     start: date | None = None,
     end: date | None = None,
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_session),
+    user: Doc = Depends(get_current_user),
+    db: MongoDatabase = Depends(get_session),
 ) -> list[CategoryBreakdown]:
     await _ensure_consent(db, user.id)
     end = end or date.today()
@@ -186,8 +185,8 @@ async def categories(
 async def trends(
     granularity: str = Query("month", pattern="^(day|week|month|year)$"),
     months: int = Query(6, ge=2, le=24),
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_session),
+    user: Doc = Depends(get_current_user),
+    db: MongoDatabase = Depends(get_session),
 ) -> ExpenseTrends:
     await _ensure_consent(db, user.id)
     end = date.today()

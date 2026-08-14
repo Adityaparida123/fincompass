@@ -7,13 +7,11 @@ API keys, or raw financial values here.
 import json
 from typing import Any
 
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from app.db.models.audit import AuditLog
+from app.db.mongo import MongoDatabase
 
 
 async def log_audit(
-    db: AsyncSession,
+    db: MongoDatabase,
     action: str,
     resource_type: str,
     *,
@@ -22,15 +20,16 @@ async def log_audit(
     metadata: dict[str, Any] | None = None,
 ) -> None:
     safe_meta = _sanitize(metadata)
-    entry = AuditLog(
-        user_id=user_id,
-        action=action,
-        resource_type=resource_type,
-        resource_id=str(resource_id) if resource_id is not None else None,
-        metadata_payload=safe_meta,
+    await db.insert(
+        "audit_logs",
+        {
+            "user_id": user_id,
+            "action": action,
+            "resource_type": resource_type,
+            "resource_id": str(resource_id) if resource_id is not None else None,
+            "metadata_payload": safe_meta,
+        },
     )
-    db.add(entry)
-    await db.flush()
 
 
 _SENSITIVE_KEYS = {

@@ -2,17 +2,14 @@
 
 from datetime import UTC, datetime
 
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from app.db.models.readiness import ReadinessFactor, ReadinessScore
+from app.db.mongo import Doc, MongoDatabase
 from app.schemas.readiness import ReadinessFactorOut, ReadinessResult, ScoreCorrectionResult
 from app.services.audit import log_audit
 from app.services.readiness.engine import VERSION, ReadinessInput, compute_readiness
 from app.services.readiness.factors import build_readiness_input
 
 
-async def get_current_readiness(db: AsyncSession, user_id: int) -> ReadinessResult:
+async def get_current_readiness(db: MongoDatabase, user_id: int) -> ReadinessResult:
     score = await latest_score(db, user_id)
     if score is not None:
         factors = await load_factors(db, score.id)
@@ -20,23 +17,22 @@ async def get_current_readiness(db: AsyncSession, user_id: int) -> ReadinessResu
     return await compute_and_store(db, user_id)
 
 
-async def latest_score(db: AsyncSession, user_id: int) -> ReadinessScore | None:
-    stmt = (
-        select(ReadinessScore)
-        .where(ReadinessScore.user_id == user_id)
-        .order_by(ReadinessScore.created_at.desc())
-        .limit(1)
+async def latest_score(db: MongoDatabase, user_id: int) -> Doc | None:
+    scores = await db.find(
+        "readiness_scores",
+        {"user_id": user_id},
+        sort=[("created_at", -1)],
+        limit=1,
     )
-    return (await db.execute(stmt)).scalar_one_or_none()
+    return scores[0] if scores else None
 
 
-async def load_factors(db: AsyncSession, score_id: int) -> list[ReadinessFactor]:
-    stmt = select(ReadinessFactor).where(ReadinessFactor.readiness_score_id == score_id)
-    return list((await db.execute(stmt)).scalars().all())
+async def load_factors(db: MongoDatabase, score_id: int) -> list[Doc]:
+    return await db.find("readiness_factors", {"readiness_score_id": score_id})
 
 
 async def compute_and_store(
-    db: AsyncSession, user_id: int, *, input_override: ReadinessInput | None = None
+    db: MongoDatabase, user_id: int, *, input_override: ReadinessInput | None = None
 ) -> ReadinessResult:
     data = input_override or await build_readiness_input(db, user_id)
     result = compute_readiness(data)
@@ -44,28 +40,30 @@ async def compute_and_store(
     previous = await latest_score(db, user_id)
     previous_value = previous.score if previous else None
 
-    score_row = ReadinessScore(
-        user_id=user_id,
-        score=result.score,
-        version=VERSION,
-        model_version=VERSION,
-        feature_version=VERSION,
-        calculated_at=datetime.now(UTC),
-        previous_score=previous_value,
+    score_row = await db.insert(
+        "readiness_scores",
+        {
+            "user_id": user_id,
+            "score": result.score,
+            "version": VERSION,
+            "model_version": VERSION,
+            "feature_version": VERSION,
+            "calculated_at": datetime.now(UTC),
+            "previous_score": previous_value,
+        },
     )
-    db.add(score_row)
-    await db.flush()
 
     for factor in result.factors:
-        db.add(
-            ReadinessFactor(
-                readiness_score_id=score_row.id,
-                factor_name=factor.name,
-                impact=factor.impact,
-                direction=factor.direction,
-                explanation=factor.explanation,
-                value=factor.value,
-            )
+        await db.insert(
+            "readiness_factors",
+            {
+                "readiness_score_id": score_row.id,
+                "factor_name": factor.name,
+                "impact": factor.impact,
+                "direction": factor.direction,
+                "explanation": factor.explanation,
+                "value": factor.value,
+            },
         )
 
     await log_audit(
@@ -76,11 +74,10 @@ async def compute_and_store(
         resource_id=score_row.id,
         metadata={"score": result.score, "previous": previous_value},
     )
-    await db.flush()
     return result
 
 
-def _build_result(score: int, factors: list[ReadinessFactor]) -> ReadinessResult:
+def _build_result(score: int, factors: list[Doc]) -> ReadinessResult:
     return ReadinessResult(
         score=score,
         version=VERSION,
@@ -89,7 +86,7 @@ def _build_result(score: int, factors: list[ReadinessFactor]) -> ReadinessResult
     )
 
 
-def _factor_out(f: ReadinessFactor) -> ReadinessFactorOut:
+def _factor_out(f: Doc) -> ReadinessFactorOut:
     return ReadinessFactorOut(
         name=f.factor_name,
         impact=f.impact,
@@ -108,37 +105,39 @@ def _summary_text(score: int) -> str:
 
 
 async def correct_score(
-    db: AsyncSession, user_id: int, updated: ReadinessInput, reason: str
+    db: MongoDatabase, user_id: int, updated: ReadinessInput, reason: str
 ) -> ScoreCorrectionResult:
     previous_result = await get_current_readiness(db, user_id)
 
     result = compute_readiness(updated)
 
-    score_row = ReadinessScore(
-        user_id=user_id,
-        score=result.score,
-        version=VERSION,
-        model_version=VERSION,
-        feature_version=VERSION,
-        calculated_at=datetime.now(UTC),
-        previous_score=previous_result.score,
-        change_reason=reason,
+    score_row = await db.insert(
+        "readiness_scores",
+        {
+            "user_id": user_id,
+            "score": result.score,
+            "version": VERSION,
+            "model_version": VERSION,
+            "feature_version": VERSION,
+            "calculated_at": datetime.now(UTC),
+            "previous_score": previous_result.score,
+            "change_reason": reason,
+        },
     )
-    db.add(score_row)
-    await db.flush()
 
     changed: list[ReadinessFactorOut] = []
     prev_by_name = {f.name: f.impact for f in previous_result.factors}
     for factor in result.factors:
-        db.add(
-            ReadinessFactor(
-                readiness_score_id=score_row.id,
-                factor_name=factor.name,
-                impact=factor.impact,
-                direction=factor.direction,
-                explanation=factor.explanation,
-                value=factor.value,
-            )
+        await db.insert(
+            "readiness_factors",
+            {
+                "readiness_score_id": score_row.id,
+                "factor_name": factor.name,
+                "impact": factor.impact,
+                "direction": factor.direction,
+                "explanation": factor.explanation,
+                "value": factor.value,
+            },
         )
         if prev_by_name.get(factor.name) != factor.impact:
             changed.append(factor)
@@ -155,7 +154,6 @@ async def correct_score(
             "reason": reason,
         },
     )
-    await db.flush()
 
     return ScoreCorrectionResult(
         previous_score=previous_result.score,

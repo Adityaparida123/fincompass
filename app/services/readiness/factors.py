@@ -3,12 +3,8 @@
 from datetime import date
 from decimal import Decimal
 
-from sqlalchemy import func, select
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from app.db.models.debt import DebtObligation
-from app.db.models.savings import SavingsGoal
-from app.db.models.transaction import Transaction, TransactionType
+from app.db.models.transaction import TransactionType
+from app.db.mongo import MongoDatabase
 from app.schemas.transaction import is_essential
 from app.services.readiness.engine import ReadinessInput
 
@@ -16,28 +12,22 @@ HISTORY_MONTHS = 3
 
 
 async def _monthly_totals(
-    db: AsyncSession,
+    db: MongoDatabase,
     user_id: int,
     tx_type: TransactionType,
     start: date,
     end: date,
 ) -> dict[str, Decimal]:
-    stmt = (
-        select(Transaction.date, func.sum(Transaction.amount))
-        .where(
-            Transaction.user_id == user_id,
-            Transaction.transaction_type == tx_type,
-            Transaction.is_deleted.is_(False),
-            Transaction.date >= start,
-            Transaction.date < end,
-        )
-        .group_by(Transaction.date)
-    )
-    rows = (await db.execute(stmt)).all()
+    filt = {
+        "user_id": user_id,
+        "transaction_type": tx_type.value,
+        "is_deleted": False,
+        "date": {"$gte": start, "$lt": end},
+    }
     totals: dict[str, Decimal] = {}
-    for day, amount in rows:
-        key = f"{day.year}-{day.month:02d}"
-        totals[key] = totals.get(key, Decimal("0")) + Decimal(amount)
+    for row in await db.find("transactions", filt):
+        key = row.date[:7]
+        totals[key] = totals.get(key, Decimal("0")) + row.amount
     return totals
 
 
@@ -55,7 +45,7 @@ async def _month_bounds(today: date) -> list[tuple[date, date]]:
     return list(reversed(bounds))
 
 
-async def build_readiness_input(db: AsyncSession, user_id: int) -> ReadinessInput:
+async def build_readiness_input(db: MongoDatabase, user_id: int) -> ReadinessInput:
     today = date.today()
     bounds = await _month_bounds(today)
     window_start = bounds[0][0]
@@ -65,35 +55,23 @@ async def build_readiness_input(db: AsyncSession, user_id: int) -> ReadinessInpu
     expense_by_month = await _monthly_totals(db, user_id, TransactionType.expense, window_start, window_end)
 
     essential_by_month: dict[str, Decimal] = {}
-    stmt = (
-        select(Transaction.date, Transaction.category, Transaction.amount)
-        .where(
-            Transaction.user_id == user_id,
-            Transaction.transaction_type == TransactionType.expense,
-            Transaction.is_deleted.is_(False),
-            Transaction.date >= window_start,
-            Transaction.date < window_end,
-        )
-    )
-    rows = (await db.execute(stmt)).all()
-    for day, category, amount in rows:
-        if is_essential(category):
-            key = f"{day.year}-{day.month:02d}"
-            essential_by_month[key] = essential_by_month.get(key, Decimal("0")) + Decimal(amount)
+    filt = {
+        "user_id": user_id,
+        "transaction_type": TransactionType.expense.value,
+        "is_deleted": False,
+        "date": {"$gte": window_start, "$lt": window_end},
+    }
+    for row in await db.find("transactions", filt):
+        if is_essential(row.category):
+            key = row.date[:7]
+            essential_by_month[key] = essential_by_month.get(key, Decimal("0")) + row.amount
 
     income_months = [income_by_month.get(key, Decimal("0")) for key, _ in bounds]
     expense_months = [expense_by_month.get(key, Decimal("0")) for key, _ in bounds]
     essential_months = [essential_by_month.get(key, Decimal("0")) for key, _ in bounds]
 
-    total_debt_stmt = select(func.coalesce(func.sum(DebtObligation.monthly_payment), 0)).where(
-        DebtObligation.user_id == user_id
-    )
-    monthly_debt = Decimal((await db.execute(total_debt_stmt)).scalar_one())
-
-    total_savings_stmt = select(func.coalesce(func.sum(SavingsGoal.current_amount), 0)).where(
-        SavingsGoal.user_id == user_id
-    )
-    savings = Decimal((await db.execute(total_savings_stmt)).scalar_one())
+    monthly_debt = await db.sum_field("debt_obligations", {"user_id": user_id}, "monthly_payment")
+    savings = await db.sum_field("savings_goals", {"user_id": user_id}, "current_amount")
 
     def _avg(values: list[Decimal]) -> Decimal:
         return (sum(values) / Decimal(len(values))).quantize(Decimal("0.01")) if values else Decimal("0")

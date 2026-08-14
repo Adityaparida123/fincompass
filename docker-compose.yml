@@ -7,10 +7,11 @@ services:
     env_file:
       - .env
     environment:
-      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/finai
+      - MONGODB_URI=mongodb://mongodb:27017
+      - MONGODB_DATABASE=fincompass_dev
       - REDIS_URL=redis://redis:6379/0
     depends_on:
-      postgres:
+      mongodb:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -21,19 +22,15 @@ services:
       retries: 3
       start_period: 10s
 
-  postgres:
-    image: postgres:16-alpine
-    container_name: finai-postgres
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: finai
+  mongodb:
+    image: mongo:7
+    container_name: finai-mongodb
     ports:
-      - "5432:5432"
+      - "27017:27017"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - mongodb_data:/data/db
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -52,5 +49,5 @@ services:
       retries: 5
 
 volumes:
-  postgres_data:
+  mongodb_data:
   redis_data:

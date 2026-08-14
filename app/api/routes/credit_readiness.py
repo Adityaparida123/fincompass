@@ -4,11 +4,10 @@ from decimal import Decimal
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_current_user
 from app.db.models.consent import ConsentType
-from app.db.models.user import User
+from app.db.mongo import Doc, MongoDatabase
 from app.db.session import get_session
 from app.schemas.readiness import ReadinessResult, ScoreCorrectionResult
 from app.services.consent.service import require_consent
@@ -29,8 +28,8 @@ class CorrectionInput(BaseModel):
 
 @router.get("", response_model=ReadinessResult)
 async def get_readiness(
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_session),
+    user: Doc = Depends(get_current_user),
+    db: MongoDatabase = Depends(get_session),
 ) -> ReadinessResult:
     await require_consent(db, user.id, ConsentType.financial_data_analysis)
     result = await get_current_readiness(db, user.id)
@@ -41,8 +40,8 @@ async def get_readiness(
 @router.post("/correct", response_model=ScoreCorrectionResult)
 async def correct(
     data: CorrectionInput,
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_session),
+    user: Doc = Depends(get_current_user),
+    db: MongoDatabase = Depends(get_session),
 ) -> ScoreCorrectionResult:
     await require_consent(db, user.id, ConsentType.financial_data_analysis)
     updated = ReadinessInput(

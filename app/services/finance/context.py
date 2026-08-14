@@ -4,10 +4,8 @@ from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
 
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from app.db.models.transaction import Transaction, TransactionType
+from app.db.models.transaction import TransactionType
+from app.db.mongo import MongoDatabase
 from app.utils.dates import month_bounds
 
 
@@ -20,23 +18,20 @@ class FinancialContextSlice:
 
 
 async def _category_spend(
-    db: AsyncSession, user_id: int, category: str, start: date, end: date
+    db: MongoDatabase, user_id: int, category: str, start: date, end: date
 ) -> Decimal:
-    from sqlalchemy import func
-
-    stmt = select(func.coalesce(func.sum(Transaction.amount), 0)).where(
-        Transaction.user_id == user_id,
-        Transaction.transaction_type == TransactionType.expense,
-        Transaction.is_deleted.is_(False),
-        Transaction.category == category,
-        Transaction.date >= start,
-        Transaction.date < end,
-    )
-    return Decimal((await db.execute(stmt)).scalar_one())
+    filt = {
+        "user_id": user_id,
+        "transaction_type": TransactionType.expense.value,
+        "is_deleted": False,
+        "category": category,
+        "date": {"$gte": start, "$lt": end},
+    }
+    return await db.sum_field("transactions", filt, "amount")
 
 
 async def build_context_for_intent(
-    db: AsyncSession,
+    db: MongoDatabase,
     user_id: int,
     intent: str,
     message: str,

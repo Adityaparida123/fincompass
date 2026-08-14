@@ -1,71 +1,66 @@
-"""Expense analysis helpers (deterministic aggregation)."""
+"""Expense analysis helpers (deterministic aggregation).
+
+All monetary arithmetic uses Decimal. Aggregation happens in Python over a
+filtered document cursor so results are exact and driver-agnostic.
+"""
 
 from collections import defaultdict
 from datetime import date, timedelta
 from decimal import Decimal
 
 from pydantic import BaseModel
-from sqlalchemy import Select, func, select
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.models.transaction import Transaction, TransactionType
+from app.db.mongo import MongoDatabase
 from app.utils.dates import period_key
 
 MONTHLY_REPORT_PERIODS = 6
 
+_TRANSACTION_TYPE = "expense"
+
 
 async def expense_totals(
-    db: AsyncSession,
+    db: MongoDatabase,
     user_id: int,
     start: date,
     end: date,
 ) -> tuple[Decimal, int]:
-    stmt = select(func.coalesce(func.sum(Transaction.amount), 0), func.count()).where(
-        Transaction.user_id == user_id,
-        Transaction.transaction_type == TransactionType.expense,
-        Transaction.is_deleted.is_(False),
-        Transaction.date >= start,
-        Transaction.date < end,
-    )
-    row = (await db.execute(stmt)).one()
-    return Decimal(row[0]), int(row[1])
+    filt = {
+        "user_id": user_id,
+        "transaction_type": _TRANSACTION_TYPE,
+        "is_deleted": False,
+        "date": {"$gte": start, "$lt": end},
+    }
+    rows = await db.find("transactions", filt)
+    total = sum((row.amount for row in rows), Decimal("0"))
+    return total, len(rows)
 
 
-async def income_totals(db: AsyncSession, user_id: int, start: date, end: date) -> Decimal:
-    stmt = select(func.coalesce(func.sum(Transaction.amount), 0)).where(
-        Transaction.user_id == user_id,
-        Transaction.transaction_type == TransactionType.income,
-        Transaction.is_deleted.is_(False),
-        Transaction.date >= start,
-        Transaction.date < end,
-    )
-    value = (await db.execute(stmt)).scalar_one()
-    return Decimal(value)
-
-
-def category_totals_stmt(user_id: int, start: date, end: date) -> Select:
-    return (
-        select(
-            Transaction.category,
-            func.sum(Transaction.amount).label("total"),
-            func.count().label("count"),
-        )
-        .where(
-            Transaction.user_id == user_id,
-            Transaction.transaction_type == TransactionType.expense,
-            Transaction.is_deleted.is_(False),
-            Transaction.date >= start,
-            Transaction.date < end,
-        )
-        .group_by(Transaction.category)
-    )
+async def income_totals(db: MongoDatabase, user_id: int, start: date, end: date) -> Decimal:
+    filt = {
+        "user_id": user_id,
+        "transaction_type": "income",
+        "is_deleted": False,
+        "date": {"$gte": start, "$lt": end},
+    }
+    return await db.sum_field("transactions", filt, "amount")
 
 
 async def category_totals(
-    db: AsyncSession, user_id: int, start: date, end: date
+    db: MongoDatabase, user_id: int, start: date, end: date
 ) -> list[tuple[str, Decimal, int]]:
-    rows = (await db.execute(category_totals_stmt(user_id, start, end))).all()
-    return [(r.category, Decimal(r.total), int(r.count)) for r in rows]
+    filt = {
+        "user_id": user_id,
+        "transaction_type": _TRANSACTION_TYPE,
+        "is_deleted": False,
+        "date": {"$gte": start, "$lt": end},
+    }
+    totals: dict[str, Decimal] = {}
+    counts: dict[str, int] = {}
+    for row in await db.find("transactions", filt):
+        category = row.category
+        totals[category] = totals.get(category, Decimal("0")) + row.amount
+        counts[category] = counts.get(category, 0) + 1
+    return [(cat, totals[cat], counts[cat]) for cat in sorted(totals)]
 
 
 def bucket_rows_by_period(
@@ -79,25 +74,21 @@ def bucket_rows_by_period(
 
 
 async def expense_series(
-    db: AsyncSession,
+    db: MongoDatabase,
     user_id: int,
     start: date,
     end: date,
     granularity: str,
 ) -> dict[str, Decimal]:
-    stmt = (
-        select(Transaction.date, Transaction.category, Transaction.amount)
-        .where(
-            Transaction.user_id == user_id,
-            Transaction.transaction_type == TransactionType.expense,
-            Transaction.is_deleted.is_(False),
-            Transaction.date >= start,
-            Transaction.date < end,
-        )
-        .order_by(Transaction.date)
-    )
-    rows = (await db.execute(stmt)).all()
-    return bucket_rows_by_period(list(rows), granularity)
+    filt = {
+        "user_id": user_id,
+        "transaction_type": _TRANSACTION_TYPE,
+        "is_deleted": False,
+        "date": {"$gte": start, "$lt": end},
+    }
+    rows = await db.find("transactions", filt, sort=[("date", 1)])
+    parsed = [(date.fromisoformat(row.date), row.category, row.amount) for row in rows]
+    return bucket_rows_by_period(parsed, granularity)
 
 
 class RecurringPattern(BaseModel):
@@ -119,7 +110,7 @@ _RECURRING_HINTS: dict[str, list[str]] = {
 
 
 async def detect_recurring_patterns(
-    db: AsyncSession,
+    db: MongoDatabase,
     user_id: int,
     *,
     lookback_days: int = 120,
@@ -127,22 +118,19 @@ async def detect_recurring_patterns(
     """Detect likely recurring transactions with confidence labels."""
     end = date.today()
     start = end - timedelta(days=lookback_days)
-    stmt = (
-        select(Transaction.date, Transaction.category, Transaction.description, Transaction.amount)
-        .where(
-            Transaction.user_id == user_id,
-            Transaction.is_deleted.is_(False),
-            Transaction.date >= start,
-            Transaction.date <= end,
-        )
-        .order_by(Transaction.date)
-    )
-    rows = (await db.execute(stmt)).all()
+    filt = {
+        "user_id": user_id,
+        "is_deleted": False,
+        "date": {"$gte": start, "$lte": end},
+    }
+    rows = await db.find("transactions", filt, sort=[("date", 1)])
     by_key: dict[tuple[str, str], list[tuple[date, Decimal]]] = defaultdict(list)
     for row in rows:
         label = _classify_recurring(row.category, row.description)
         if label:
-            by_key[(label, row.category)].append((row.date, Decimal(row.amount)))
+            by_key[(label, row.category)].append(
+                (date.fromisoformat(row.date), row.amount)
+            )
 
     patterns: list[RecurringPattern] = []
     for (label, category), events in by_key.items():

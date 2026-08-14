@@ -7,16 +7,11 @@ guaranteed; official verification is always required.
 
 from decimal import Decimal
 
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from app.db.models.scheme import GovernmentScheme
+from app.db.mongo import Doc, MongoDatabase
 from app.schemas.scheme import SchemeMatch, SchemeMatchInput, SchemeRead
 
-SENSITIVE_WORDS = {"female", "women", "gender"}
 
-
-def _to_read(scheme: GovernmentScheme) -> SchemeRead:
+def _to_read(scheme: Doc) -> SchemeRead:
     return SchemeRead(
         id=scheme.id,
         name=scheme.name,
@@ -30,7 +25,7 @@ def _to_read(scheme: GovernmentScheme) -> SchemeRead:
     )
 
 
-def _score_scheme(scheme: GovernmentScheme, data: SchemeMatchInput) -> tuple[Decimal, list[str]]:
+def _score_scheme(scheme: Doc, data: SchemeMatchInput) -> tuple[Decimal, list[str]]:
     score = Decimal("0")
     reasons: list[str] = []
 
@@ -69,7 +64,7 @@ def _score_scheme(scheme: GovernmentScheme, data: SchemeMatchInput) -> tuple[Dec
     return score, reasons
 
 
-def _age_low(scheme: GovernmentScheme) -> int | None:
+def _age_low(scheme: Doc) -> int | None:
     text = f"{scheme.eligibility} {scheme.description}".lower()
     for token, value in (("18 years", 18), ("18 years and above", 18), ("above 18", 18)):
         if token in text:
@@ -77,7 +72,7 @@ def _age_low(scheme: GovernmentScheme) -> int | None:
     return None
 
 
-def _age_high(scheme: GovernmentScheme) -> int | None:
+def _age_high(scheme: Doc) -> int | None:
     text = f"{scheme.eligibility} {scheme.description}".lower()
     for token, value in (("60 years", 60), ("below 60", 60), ("60 to", 60)):
         if token in text:
@@ -86,20 +81,19 @@ def _age_high(scheme: GovernmentScheme) -> int | None:
 
 
 async def list_schemes(
-    db: AsyncSession, *, jurisdiction: str | None = None, active_only: bool = True
-) -> list[GovernmentScheme]:
-    stmt = select(GovernmentScheme)
+    db: MongoDatabase, *, jurisdiction: str | None = None, active_only: bool = True
+) -> list[Doc]:
+    filt: dict = {}
     if jurisdiction:
-        stmt = stmt.where(GovernmentScheme.jurisdiction == jurisdiction)
+        filt["jurisdiction"] = jurisdiction
     if active_only:
-        stmt = stmt.where(GovernmentScheme.active.is_(True))
-    stmt = stmt.order_by(GovernmentScheme.name)
-    return list((await db.execute(stmt)).scalars().all())
+        filt["active"] = True
+    return await db.find("government_schemes", filt, sort=[("name", 1)])
 
 
-async def match_schemes(db: AsyncSession, data: SchemeMatchInput) -> list[SchemeMatch]:
+async def match_schemes(db: MongoDatabase, data: SchemeMatchInput) -> list[SchemeMatch]:
     schemes = await list_schemes(db)
-    scored: list[tuple[Decimal, GovernmentScheme, list[str]]] = []
+    scored: list[tuple[Decimal, Doc, list[str]]] = []
     for scheme in schemes:
         score, reasons = _score_scheme(scheme, data)
         if score > 0:
@@ -107,7 +101,7 @@ async def match_schemes(db: AsyncSession, data: SchemeMatchInput) -> list[Scheme
 
     scored.sort(key=lambda item: item[0], reverse=True)
     matches: list[SchemeMatch] = []
-    for score, scheme, reasons in scored[:10]:
+    for _score, scheme, reasons in scored[:10]:
         reason = "; ".join(reasons) if reasons else "Possible alignment with scheme objectives."
         matches.append(
             SchemeMatch(

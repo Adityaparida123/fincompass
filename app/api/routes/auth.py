@@ -1,13 +1,12 @@
 """Authentication routes."""
 
 from fastapi import APIRouter, Cookie, Depends, Response
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_current_user, rate_limit_auth
 from app.core.exceptions import UnauthorizedError
 from app.core.logging import get_logger
 from app.core.security import TokenError, refresh_token_metadata
-from app.db.models.user import User
+from app.db.mongo import Doc, MongoDatabase
 from app.db.session import get_session
 from app.schemas.auth import (
     AuthResponse,
@@ -37,7 +36,7 @@ logger = get_logger(__name__)
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-def _auth_response(user: User, tokens: TokenPair, remember_me: bool, response: Response) -> AuthResponse:
+def _auth_response(user: Doc, tokens: TokenPair, remember_me: bool, response: Response) -> AuthResponse:
     set_refresh_cookie(response, tokens.refresh_token, remember_me=remember_me)
     return AuthResponse(user=auth_service.user_summary(user), tokens=tokens)
 
@@ -46,7 +45,7 @@ def _auth_response(user: User, tokens: TokenPair, remember_me: bool, response: R
 async def register(
     data: RegisterRequest,
     response: Response,
-    db: AsyncSession = Depends(get_session),
+    db: MongoDatabase = Depends(get_session),
     _: None = Depends(rate_limit_auth),
 ) -> AuthResponse:
     user, tokens = await auth_service.register(db, data)
@@ -58,7 +57,7 @@ async def register(
 async def login(
     data: LoginRequest,
     response: Response,
-    db: AsyncSession = Depends(get_session),
+    db: MongoDatabase = Depends(get_session),
     _: None = Depends(rate_limit_auth),
 ) -> AuthResponse:
     user, tokens = await auth_service.login(db, data.email, data.password, data.remember_me)
@@ -70,7 +69,7 @@ async def login(
 async def refresh(
     data: RefreshRequest,
     response: Response,
-    db: AsyncSession = Depends(get_session),
+    db: MongoDatabase = Depends(get_session),
     refresh_cookie: str | None = Cookie(default=None, alias=REFRESH_COOKIE_NAME),
     _: None = Depends(rate_limit_auth),
 ) -> TokenPair:
@@ -88,7 +87,7 @@ async def refresh(
 async def logout(
     response: Response,
     data: LogoutRequest | None = None,
-    db: AsyncSession = Depends(get_session),
+    db: MongoDatabase = Depends(get_session),
     refresh_cookie: str | None = Cookie(default=None, alias=REFRESH_COOKIE_NAME),
 ) -> None:
     token = (data.refresh_token if data else None) or refresh_cookie
@@ -105,7 +104,7 @@ async def logout(
 @router.post("/forgot-password", status_code=200)
 async def forgot_password(
     data: ForgotPasswordRequest,
-    db: AsyncSession = Depends(get_session),
+    db: MongoDatabase = Depends(get_session),
     _: None = Depends(rate_limit_auth),
 ) -> dict:
     await auth_service.forgot_password(db, data.email)
@@ -116,7 +115,7 @@ async def forgot_password(
 @router.post("/reset-password", status_code=200)
 async def reset_password(
     data: ResetPasswordRequest,
-    db: AsyncSession = Depends(get_session),
+    db: MongoDatabase = Depends(get_session),
     _: None = Depends(rate_limit_auth),
 ) -> dict:
     user = await auth_service.reset_password(db, data.token, data.new_password)
@@ -127,7 +126,7 @@ async def reset_password(
 
 @router.get("/me", response_model=MeResponse)
 async def me(
-    user: User = Depends(get_current_user),
+    user: Doc = Depends(get_current_user),
 ) -> MeResponse:
     return MeResponse(
         user=auth_service.user_summary(user),

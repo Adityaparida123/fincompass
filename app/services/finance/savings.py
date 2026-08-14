@@ -2,19 +2,19 @@
 
 from decimal import Decimal
 
-from app.db.models.savings import SavingsGoal
+from app.db.mongo import Doc
 
 RECOMMENDED_MONTHS = 6
 
 
-def progress_percent(goal: SavingsGoal) -> Decimal:
+def progress_percent(goal: Doc) -> Decimal:
     if goal.target_amount <= 0:
         return Decimal("0")
     value = (goal.current_amount / goal.target_amount) * Decimal("100")
     return value.quantize(Decimal("0.01"))
 
 
-def goal_to_read(goal: SavingsGoal) -> dict:
+def goal_to_read(goal: Doc) -> dict:
     return {
         "id": goal.id,
         "name": goal.name,

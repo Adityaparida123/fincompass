@@ -6,14 +6,11 @@ from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 
 import pandas as pd
-from sqlalchemy import func, select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.cache import invalidate_user_financial_cache
 from app.core.exceptions import NotFoundError
-from app.db.models.debt import DebtObligation
-from app.db.models.savings import SavingsGoal, SavingsGoalStatus
-from app.db.models.transaction import Transaction
+from app.db.models.savings import SavingsGoalStatus
+from app.db.mongo import Doc, MongoDatabase
 from app.services.ml.persistence import save_category_correction, save_ml_prediction
 from ml.config import MODEL_VERSIONS
 from ml.pipelines.inference_pipeline import get_pipeline
@@ -41,53 +38,49 @@ def _degraded_result(model_name: str, *, message: str = _MODEL_UNAVAILABLE, extr
 
 
 async def _fetch_transactions(
-    db: AsyncSession,
+    db: MongoDatabase,
     user_id: int,
     months: int = 12,
 ) -> pd.DataFrame:
     """Retrieve minimum required transaction data for ML inference."""
     start = date.today() - timedelta(days=months * 30)
-    stmt = (
-        select(Transaction)
-        .where(
-            Transaction.user_id == user_id,
-            Transaction.is_deleted.is_(False),
-            Transaction.date >= start,
-        )
-        .order_by(Transaction.date)
+    rows = await db.find(
+        "transactions",
+        {"user_id": user_id, "is_deleted": False, "date": {"$gte": start}},
+        sort=[("date", 1)],
     )
-    rows = (await db.execute(stmt)).scalars().all()
     if not rows:
         return pd.DataFrame(columns=["user_id", "date", "amount", "type", "category", "description"])
 
     return pd.DataFrame([
         {
             "user_id": str(user_id),
-            "date": r.date.isoformat(),
-            "amount": float(r.amount),
-            "type": r.transaction_type.value,
-            "category": r.category,
-            "description": r.description,
+            "date": row.date,
+            "amount": float(row.amount),
+            "type": row.transaction_type,
+            "category": row.category,
+            "description": row.description,
         }
-        for r in rows
+        for row in rows
     ])
 
 
-async def _user_debt_and_savings(db: AsyncSession, user_id: int) -> tuple[float, float]:
-    debt_stmt = select(func.coalesce(func.sum(DebtObligation.monthly_payment), 0)).where(
-        DebtObligation.user_id == user_id
+async def _user_debt_and_savings(db: MongoDatabase, user_id: int) -> tuple[float, float]:
+    debt_payment = float(
+        await db.sum_field("debt_obligations", {"user_id": user_id}, "monthly_payment")
     )
-    savings_stmt = select(func.coalesce(func.sum(SavingsGoal.current_amount), 0)).where(
-        SavingsGoal.user_id == user_id,
-        SavingsGoal.status == SavingsGoalStatus.active,
+    current_savings = float(
+        await db.sum_field(
+            "savings_goals",
+            {"user_id": user_id, "status": SavingsGoalStatus.active.value},
+            "current_amount",
+        )
     )
-    debt_payment = float((await db.execute(debt_stmt)).scalar_one())
-    current_savings = float((await db.execute(savings_stmt)).scalar_one())
     return debt_payment, current_savings
 
 
 async def _persist_result(
-    db: AsyncSession,
+    db: MongoDatabase,
     user_id: int,
     prediction_type: str,
     result: dict,
@@ -138,7 +131,7 @@ async def categorize_transaction(
 
 
 async def detect_anomaly(
-    db: AsyncSession,
+    db: MongoDatabase,
     user_id: int,
     amount: Decimal | None = None,
 ) -> dict:
@@ -158,7 +151,7 @@ async def detect_anomaly(
         )
 
 
-async def get_spending_patterns(db: AsyncSession, user_id: int) -> dict:
+async def get_spending_patterns(db: MongoDatabase, user_id: int) -> dict:
     try:
         pipeline = get_pipeline()
         tx_df = await _fetch_transactions(db, user_id)
@@ -168,7 +161,7 @@ async def get_spending_patterns(db: AsyncSession, user_id: int) -> dict:
         return _degraded_result("spending_patterns", extra={"patterns": []})
 
 
-async def get_cashflow_forecast(db: AsyncSession, user_id: int) -> dict:
+async def get_cashflow_forecast(db: MongoDatabase, user_id: int) -> dict:
     try:
         pipeline = get_pipeline()
         tx_df = await _fetch_transactions(db, user_id)
@@ -181,7 +174,7 @@ async def get_cashflow_forecast(db: AsyncSession, user_id: int) -> dict:
         )
 
 
-async def get_savings_capacity(db: AsyncSession, user_id: int) -> dict:
+async def get_savings_capacity(db: MongoDatabase, user_id: int) -> dict:
     try:
         pipeline = get_pipeline()
         tx_df = await _fetch_transactions(db, user_id)
@@ -206,7 +199,7 @@ async def get_savings_capacity(db: AsyncSession, user_id: int) -> dict:
 
 
 async def correct_category(
-    db: AsyncSession,
+    db: MongoDatabase,
     user_id: int,
     transaction_id: str,
     original: str,
@@ -223,15 +216,21 @@ async def correct_category(
     )
 
     if transaction_id.isdigit():
-        stmt = select(Transaction).where(
-            Transaction.id == int(transaction_id),
-            Transaction.user_id == user_id,
-            Transaction.is_deleted.is_(False),
+        tx: Doc | None = await db.find_one(
+            "transactions",
+            {
+                "id": int(transaction_id),
+                "user_id": user_id,
+                "is_deleted": False,
+            },
         )
-        tx = (await db.execute(stmt)).scalar_one_or_none()
         if tx is None:
             raise NotFoundError("Transaction not found.")
-        tx.category = corrected
+        await db.update_one(
+            "transactions",
+            {"id": tx.id, "user_id": user_id},
+            {"category": corrected},
+        )
 
     await save_category_correction(
         db,
@@ -248,7 +247,7 @@ async def correct_category(
     return record
 
 
-async def recalculate_all(db: AsyncSession, user_id: int) -> dict:
+async def recalculate_all(db: MongoDatabase, user_id: int) -> dict:
     tx_df = await _fetch_transactions(db, user_id)
     debt_payment, current_savings = await _user_debt_and_savings(db, user_id)
     try:

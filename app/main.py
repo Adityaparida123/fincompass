@@ -35,7 +35,7 @@ from app.core.exceptions import (
 )
 from app.core.logging import setup_logging
 from app.core.middleware import AuditContextMiddleware, RequestIDMiddleware
-from app.db.session import SessionLocal
+from app.db.mongo import connect, disconnect, get_database
 
 
 @asynccontextmanager
@@ -45,20 +45,27 @@ async def lifespan(app: FastAPI):
 
     logger = get_logger("app.main")
 
-    # Seed reference government schemes if the table is empty.
+    # Connect to MongoDB, ensure indexes, and seed reference schemes if empty.
     try:
-        async with SessionLocal() as db:
-            from app.services.schemes.service import ensure_seed_schemes
+        await connect()
+        db = get_database()
+        from app.db.indexes import ensure_indexes
 
-            count = await ensure_seed_schemes(db)
-            if count:
-                await db.commit()
-                logger.info("Seeded %d reference schemes.", count)
+        await ensure_indexes(db)
+        from app.services.schemes.service import ensure_seed_schemes
+
+        count = await ensure_seed_schemes(db)
+        if count:
+            logger.info("Seeded %d reference schemes.", count)
     except Exception:  # noqa: BLE001
-        logger.warning("Scheme seeding skipped (database not ready?).", exc_info=True)
+        logger.warning("Mongo connect/scheme seeding failed (database not ready?).", exc_info=True)
 
     logger.info("%s v%s starting (%s)", settings.APP_NAME, settings.APP_VERSION, settings.APP_ENV)
     yield
+    try:
+        await disconnect()
+    except Exception:  # noqa: BLE001
+        logger.debug("Mongo disconnect error ignored.", exc_info=True)
 
 
 app = FastAPI(

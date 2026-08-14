@@ -1,56 +1,52 @@
 """Shared fixtures for integration tests.
 
-Tests run against an in-memory SQLite database so the suite is runnable
-without a Postgres/Redis instance.
+Tests run against an in-memory mongomock database behind the Mongo facade so
+the suite is runnable without a MongoDB instance.
 """
 
 import os
-import tempfile
 
-import pytest
-import pytest_asyncio
-from httpx import ASGITransport, AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-
-import app.db.models  # noqa: F401  # register all ORM models before create_all
-from app.db.base import Base
-
+# Must be set BEFORE any app import so the settings singleton (cached at first
+# app.core.config import) picks up test values instead of the repo .env file.
 os.environ.setdefault("APP_ENV", "test")
-os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///:memory:")
+os.environ.setdefault("MONGODB_URI", "mongodb://localhost:27017")
 os.environ.setdefault("RATE_LIMIT_ENABLED", "false")
 os.environ.setdefault("JWT_SECRET_KEY", "test-secret-key")
 os.environ.setdefault("LLM_API_KEY", "")
 os.environ.setdefault("LLM_MODEL", "")
 os.environ.setdefault("LLM_BASE_URL", "")
 
-_TEST_DB = os.path.join(tempfile.gettempdir(), "finai_test.sqlite3")
+import mongomock
+import pytest
+import pytest_asyncio
+from httpx import ASGITransport, AsyncClient
 
-engine = create_async_engine(
-    f"sqlite+aiosqlite:///{_TEST_DB}",
-    connect_args={"check_same_thread": False},
-)
-SessionTest = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+from app.db.mongo import MongoDatabase, MongoMockBackend, set_database
+
+
+def _fresh_db() -> MongoDatabase:
+    client = mongomock.MongoClient()
+    return MongoDatabase(MongoMockBackend(client.finai_test))
 
 
 @pytest_asyncio.fixture(autouse=True)
 async def _setup_db():
-    if os.path.exists(_TEST_DB):
-        os.remove(_TEST_DB)
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    async with SessionTest() as session:
-        from app.services.schemes.service import ensure_seed_schemes
+    db = _fresh_db()
+    set_database(db)
+    from app.services.schemes.service import ensure_seed_schemes
 
-        await ensure_seed_schemes(session)
-        await session.commit()
-    yield
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
+    await ensure_seed_schemes(db)
+    return db
 
 
 async def _override_session():
-    async with SessionTest() as session:
-        yield session
+    from app.db.mongo import get_database
+
+    db = get_database()
+    if db is None:
+        db = _fresh_db()
+        set_database(db)
+    yield db
 
 
 @pytest.fixture
@@ -73,8 +69,9 @@ async def client(app):
 
 @pytest_asyncio.fixture
 async def db_session():
-    async with SessionTest() as session:
-        yield session
+    from app.db.mongo import get_database
+
+    yield get_database()
 
 
 @pytest_asyncio.fixture

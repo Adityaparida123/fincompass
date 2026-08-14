@@ -4,7 +4,6 @@ import json
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.ai.agent import chat, get_provider
 from app.ai.memory import (
@@ -19,7 +18,7 @@ from app.ai.prompts import build_messages
 from app.api.dependencies import get_current_user, rate_limit_chat
 from app.core.config import settings
 from app.db.models.consent import ConsentType
-from app.db.models.user import User
+from app.db.mongo import MongoDatabase
 from app.db.session import get_session as get_db
 from app.schemas.chat import (
     ChatMessageRead,
@@ -35,8 +34,8 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 @router.post("", response_model=ChatResponse)
 async def post_chat(
     data: ChatRequest,
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user),
+    db: MongoDatabase = Depends(get_db),
     _: None = Depends(rate_limit_chat),
 ) -> ChatResponse:
     return await chat(db, user.id, data.message, session_id=data.session_id, language=data.language)
@@ -45,8 +44,8 @@ async def post_chat(
 @router.post("/stream")
 async def stream_chat(
     data: ChatRequest,
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user),
+    db: MongoDatabase = Depends(get_db),
     _: None = Depends(rate_limit_chat),
 ) -> StreamingResponse:
     from app.ai.memory import to_llm_history
@@ -65,6 +64,11 @@ async def stream_chat(
     else:
         session = await create_session(db, user.id, title=data.message[:60])
     if data.language:
+        await db.update_one(
+            "chat_sessions",
+            {"id": session.id, "user_id": user.id},
+            {"language": data.language},
+        )
         session.language = data.language
     await add_message(db, session.id, "user", data.message, intent=intent)
 
@@ -72,7 +76,6 @@ async def stream_chat(
         async def no_llm_generator():
             reply = await _stream_fallback_reply(db, user.id, data.message, intent, session.id)
             await add_message(db, session.id, "assistant", reply, intent=intent)
-            await db.commit()
             yield f"data: {json.dumps({'delta': reply}, ensure_ascii=False)}\n\n"
             yield "data: [DONE]\n\n"
 
@@ -103,14 +106,13 @@ async def stream_chat(
         finally:
             full = "".join(collected)
             await add_message(db, session.id, "assistant", full, intent=intent)
-            await db.commit()
             yield "data: [DONE]\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 
 async def _stream_fallback_reply(
-    db: AsyncSession,
+    db: MongoDatabase,
     user_id: int,
     message: str,
     intent: str,
@@ -166,8 +168,8 @@ async def _stream_fallback_reply(
 
 @router.get("/sessions", response_model=list[ChatSessionRead])
 async def get_chat_sessions(
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user),
+    db: MongoDatabase = Depends(get_db),
 ) -> list[ChatSessionRead]:
     sessions = await list_sessions(db, user.id)
     return [ChatSessionRead.model_validate(s) for s in sessions]
@@ -176,8 +178,8 @@ async def get_chat_sessions(
 @router.get("/sessions/{session_id}", response_model=list[ChatMessageRead])
 async def get_chat_session(
     session_id: int,
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user),
+    db: MongoDatabase = Depends(get_db),
 ) -> list[ChatMessageRead]:
     await get_session(db, user.id, session_id)
     messages = await get_messages(db, session_id, limit=100)
@@ -187,9 +189,8 @@ async def get_chat_session(
 @router.delete("/sessions/{session_id}", status_code=200)
 async def delete_chat_session(
     session_id: int,
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user),
+    db: MongoDatabase = Depends(get_db),
 ) -> dict:
     await delete_session(db, user.id, session_id)
-    await db.commit()
     return {"message": "Chat session deleted."}

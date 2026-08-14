@@ -3,72 +3,76 @@
 from datetime import date
 from decimal import Decimal
 
-from sqlalchemy import func, select
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from app.core.cache import invalidate_user_financial_cache
 from app.core.exceptions import NotFoundError
-from app.db.models.transaction import Transaction, TransactionSource, TransactionType
+from app.db.models.transaction import TransactionSource, TransactionType
+from app.db.mongo import Doc, MongoDatabase
 from app.schemas.transaction import TransactionCreate, TransactionUpdate
 
 
 async def create_transaction(
-    db: AsyncSession, user_id: int, data: TransactionCreate
-) -> Transaction:
-    tx = Transaction(
-        user_id=user_id,
-        date=data.date,
-        description=data.description,
-        amount=data.amount,
-        currency=data.currency,
-        transaction_type=data.transaction_type,
-        category=data.category,
-        subcategory=data.subcategory,
-        source=data.source,
+    db: MongoDatabase, user_id: int, data: TransactionCreate
+) -> Doc:
+    tx = await db.insert(
+        "transactions",
+        {
+            "user_id": user_id,
+            "date": data.date,
+            "description": data.description,
+            "amount": data.amount,
+            "currency": data.currency,
+            "transaction_type": data.transaction_type.value,
+            "category": data.category,
+            "subcategory": data.subcategory,
+            "source": data.source.value,
+            "is_deleted": False,
+        },
     )
-    db.add(tx)
-    await db.flush()
     await invalidate_user_financial_cache(user_id)
     return tx
 
 
 async def get_transaction(
-    db: AsyncSession, user_id: int, transaction_id: int
-) -> Transaction:
-    stmt = select(Transaction).where(
-        Transaction.id == transaction_id,
-        Transaction.user_id == user_id,
-        Transaction.is_deleted.is_(False),
+    db: MongoDatabase, user_id: int, transaction_id: int
+) -> Doc:
+    tx = await db.find_one(
+        "transactions",
+        {"id": transaction_id, "user_id": user_id, "is_deleted": False},
     )
-    tx = (await db.execute(stmt)).scalar_one_or_none()
     if tx is None:
         raise NotFoundError("Transaction not found.")
     return tx
 
 
 async def update_transaction(
-    db: AsyncSession, user_id: int, transaction_id: int, data: TransactionUpdate
-) -> Transaction:
+    db: MongoDatabase, user_id: int, transaction_id: int, data: TransactionUpdate
+) -> Doc:
     tx = await get_transaction(db, user_id, transaction_id)
     updates = data.model_dump(exclude_unset=True)
-    for field, value in updates.items():
-        setattr(tx, field, value)
-    await db.flush()
+    if "transaction_type" in updates and hasattr(updates["transaction_type"], "value"):
+        updates["transaction_type"] = updates["transaction_type"].value
+    if "source" in updates and hasattr(updates["source"], "value"):
+        updates["source"] = updates["source"].value
+    await db.update_one("transactions", {"id": tx.id, "user_id": user_id}, updates)
     await invalidate_user_financial_cache(user_id)
-    return tx
+    return await get_transaction(db, user_id, transaction_id)
 
 
 async def soft_delete_transaction(
-    db: AsyncSession, user_id: int, transaction_id: int
-) -> Transaction:
+    db: MongoDatabase, user_id: int, transaction_id: int
+) -> Doc:
     tx = await get_transaction(db, user_id, transaction_id)
+    await db.update_one(
+        "transactions",
+        {"id": tx.id, "user_id": user_id},
+        {"is_deleted": True},
+    )
     tx.is_deleted = True
-    await db.flush()
     await invalidate_user_financial_cache(user_id)
     return tx
 
 
-def transaction_filter_stmt(
+def transaction_filter(
     user_id: int,
     *,
     transaction_type: TransactionType | None = None,
@@ -76,43 +80,40 @@ def transaction_filter_stmt(
     start: date | None = None,
     end: date | None = None,
     source: TransactionSource | None = None,
+) -> dict:
+    filt: dict = {"user_id": user_id, "is_deleted": False}
+    if transaction_type is not None:
+        filt["transaction_type"] = transaction_type.value
+    if category:
+        filt["category"] = category
+    if source is not None:
+        filt["source"] = source.value
+    if start:
+        filt["date"] = {"$gte": start}
+    if end:
+        filt["date"] = {"$lte": end}
+    return filt
+
+
+def amount_in_range(
+    amount: Decimal,
+    *,
     min_amount: Decimal | None = None,
     max_amount: Decimal | None = None,
-):
-    stmt = select(Transaction).where(
-        Transaction.user_id == user_id,
-        Transaction.is_deleted.is_(False),
-    )
-    if transaction_type is not None:
-        stmt = stmt.where(Transaction.transaction_type == transaction_type)
-    if category:
-        stmt = stmt.where(Transaction.category == category)
-    if source is not None:
-        stmt = stmt.where(Transaction.source == source)
-    if start:
-        stmt = stmt.where(Transaction.date >= start)
-    if end:
-        stmt = stmt.where(Transaction.date <= end)
-    if min_amount is not None:
-        stmt = stmt.where(Transaction.amount >= min_amount)
-    if max_amount is not None:
-        stmt = stmt.where(Transaction.amount <= max_amount)
-    return stmt
+) -> bool:
+    if min_amount is not None and amount < min_amount:
+        return False
+    if max_amount is not None and amount > max_amount:
+        return False
+    return True
 
 
 async def count_transactions(
-    db: AsyncSession,
+    db: MongoDatabase,
     user_id: int,
     *,
     start: date | None = None,
     end: date | None = None,
 ) -> int:
-    stmt = select(func.count()).select_from(Transaction).where(
-        Transaction.user_id == user_id,
-        Transaction.is_deleted.is_(False),
-    )
-    if start:
-        stmt = stmt.where(Transaction.date >= start)
-    if end:
-        stmt = stmt.where(Transaction.date <= end)
-    return int((await db.execute(stmt)).scalar_one())
+    filt = transaction_filter(user_id, start=start, end=end)
+    return await db.count("transactions", filt)

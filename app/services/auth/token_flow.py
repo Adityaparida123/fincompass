@@ -2,16 +2,15 @@
 
 from datetime import UTC, datetime
 
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from app.core.security import refresh_token_metadata
+from app.db.mongo import MongoDatabase
 from app.schemas.auth import TokenPair
 from app.services.auth.refresh_sessions import register_refresh_session
 from app.services.auth.tokens import issue_token_pair
 
 
 async def issue_and_persist_tokens(
-    db: AsyncSession,
+    db: MongoDatabase,
     user_id: int,
     *,
     remember_me: bool,

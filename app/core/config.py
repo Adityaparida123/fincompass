@@ -35,7 +35,11 @@ class Settings(BaseSettings):
     APP_ENV: str = "development"
     DEBUG: bool = True
 
-    # Local development default — switch to PostgreSQL for Docker/production.
+    # Runtime database is MongoDB (Atlas in production).
+    # DATABASE_URL remains for Alembic / data-migration tooling only.
+    MONGODB_URI: str = "mongodb://localhost:27017"
+    MONGODB_DATABASE: str | None = None
+
     DATABASE_URL: str = "sqlite+aiosqlite:///./finai_dev.sqlite"
     REDIS_URL: str = "redis://localhost:6379/0"
 
@@ -135,10 +139,12 @@ class Settings(BaseSettings):
                     "APP_ENV=production requires a strong JWT_SECRET_KEY "
                     "(at least 32 random characters). Refusing to start with a weak secret."
                 )
-            if self.is_sqlite:
+            mongo_uri = (self.MONGODB_URI or "").strip()
+            if not mongo_uri or mongo_uri == "mongodb://localhost:27017":
                 raise ValueError(
-                    "APP_ENV=production requires PostgreSQL "
-                    "(e.g. postgresql+asyncpg://...). SQLite is only for local development."
+                    "APP_ENV=production requires MONGODB_URI pointing to a "
+                    "managed MongoDB instance (e.g. MongoDB Atlas). "
+                    "Refusing to start with a local/empty Mongo URI."
                 )
         return self
 
@@ -155,12 +161,16 @@ class Settings(BaseSettings):
         return "postgresql" in self.DATABASE_URL
 
     @property
+    def is_mongodb(self) -> bool:
+        return bool(self.MONGODB_URI)
+
+    @property
+    def mongo_database(self) -> str:
+        return self.MONGODB_DATABASE or ("fincompass" if self.is_production else "fincompass_dev")
+
+    @property
     def database_backend(self) -> str:
-        if self.is_sqlite:
-            return "sqlite"
-        if self.is_postgresql:
-            return "postgresql"
-        return "unknown"
+        return "mongodb"
 
     @property
     def cookie_secure(self) -> bool:

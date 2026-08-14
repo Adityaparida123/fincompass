@@ -1,20 +1,20 @@
 """Health check endpoint with optional database and Redis probes."""
 
 from fastapi import APIRouter
-from sqlalchemy import text
 
 from app import __version__
 from app.core.config import settings
-from app.db.session import engine
+from app.db.mongo import get_database
 
 router = APIRouter(tags=["health"])
 
 
 async def _check_database() -> str:
     try:
-        async with engine.connect() as conn:
-            await conn.execute(text("SELECT 1"))
-        return "connected"
+        db = get_database()
+        if await db.ping():
+            return "connected"
+        return "disconnected"
     except Exception:
         return "disconnected"
 

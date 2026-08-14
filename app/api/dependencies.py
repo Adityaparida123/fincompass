@@ -1,20 +1,19 @@
 """Shared FastAPI dependencies: authentication, rate limiting, pagination."""
 
 from fastapi import Depends, Header, Request
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import RateLimitError, UnauthorizedError
 from app.core.security import require_valid_access_token
-from app.db.models.user import User
+from app.db.mongo import MongoDatabase
 from app.db.session import get_session
 from app.services.auth.service import get_user_by_id
 
 
 async def get_current_user(
     request: Request,
-    db: AsyncSession = Depends(get_session),
+    db: MongoDatabase = Depends(get_session),
     authorization: str | None = Header(default=None),
-) -> User:
+) -> object:
     token = None
     if authorization and authorization.lower().startswith("bearer "):
         token = authorization[7:].strip()

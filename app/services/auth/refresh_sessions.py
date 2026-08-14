@@ -2,70 +2,67 @@
 
 from datetime import UTC, datetime
 
-from sqlalchemy import select, update
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from app.core.exceptions import UnauthorizedError
 from app.core.security import REFRESH_TOKEN_TYPE, TokenError, decode_token
-from app.db.models.refresh_token import RefreshTokenSession
+from app.db.mongo import Doc, MongoDatabase
 
 
 async def register_refresh_session(
-    db: AsyncSession,
+    db: MongoDatabase,
     *,
     user_id: int,
     jti: str,
     family_id: str,
     remember_me: bool,
     expires_at: datetime,
-) -> RefreshTokenSession:
-    session = RefreshTokenSession(
-        user_id=user_id,
-        jti=jti,
-        family_id=family_id,
-        remember_me=remember_me,
-        expires_at=expires_at,
-        created_at=datetime.now(UTC),
+) -> Doc:
+    return await db.insert(
+        "refresh_token_sessions",
+        {
+            "user_id": user_id,
+            "jti": jti,
+            "family_id": family_id,
+            "remember_me": remember_me,
+            "revoked_at": None,
+            "expires_at": expires_at,
+            "created_at": datetime.now(UTC),
+        },
     )
-    db.add(session)
-    await db.flush()
-    return session
 
 
-async def get_session_by_jti(db: AsyncSession, jti: str) -> RefreshTokenSession | None:
-    stmt = select(RefreshTokenSession).where(RefreshTokenSession.jti == jti)
-    return (await db.execute(stmt)).scalar_one_or_none()
+async def get_session_by_jti(db: MongoDatabase, jti: str) -> Doc | None:
+    return await db.find_one("refresh_token_sessions", {"jti": jti})
 
 
-async def revoke_family(db: AsyncSession, family_id: str) -> None:
-    now = datetime.now(UTC)
-    await db.execute(
-        update(RefreshTokenSession)
-        .where(RefreshTokenSession.family_id == family_id, RefreshTokenSession.revoked_at.is_(None))
-        .values(revoked_at=now)
+async def revoke_family(db: MongoDatabase, family_id: str) -> None:
+    await db.update_many(
+        "refresh_token_sessions",
+        {"family_id": family_id, "revoked_at": None},
+        {"revoked_at": datetime.now(UTC)},
     )
-    await db.flush()
 
 
-async def revoke_jti(db: AsyncSession, jti: str) -> None:
+async def revoke_jti(db: MongoDatabase, jti: str) -> None:
     session = await get_session_by_jti(db, jti)
     if session and session.revoked_at is None:
+        await db.update_one(
+            "refresh_token_sessions",
+            {"jti": jti, "revoked_at": None},
+            {"revoked_at": datetime.now(UTC)},
+        )
         session.revoked_at = datetime.now(UTC)
-        await db.flush()
 
 
-async def revoke_all_for_user(db: AsyncSession, user_id: int) -> None:
-    now = datetime.now(UTC)
-    await db.execute(
-        update(RefreshTokenSession)
-        .where(RefreshTokenSession.user_id == user_id, RefreshTokenSession.revoked_at.is_(None))
-        .values(revoked_at=now)
+async def revoke_all_for_user(db: MongoDatabase, user_id: int) -> None:
+    await db.update_many(
+        "refresh_token_sessions",
+        {"user_id": user_id, "revoked_at": None},
+        {"revoked_at": datetime.now(UTC)},
     )
-    await db.flush()
 
 
 async def validate_and_rotate(
-    db: AsyncSession,
+    db: MongoDatabase,
     refresh_token: str,
 ) -> tuple[int, bool, str, datetime]:
     """Validate refresh token and mark the old JTI revoked.

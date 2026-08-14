@@ -1,15 +1,9 @@
-"""Async SQLAlchemy engine and session management."""
+"""MongoDB-backed database dependency.
 
-from collections.abc import AsyncGenerator
+Kept under the historical module name so routes, tests, and tooling that do
+``from app.db.session import get_session`` keep working after the migration.
+"""
 
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from app.db.mongo import get_db, get_session
 
-from app.db.engine import create_app_engine
-
-engine = create_app_engine()
-SessionLocal = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
-
-
-async def get_session() -> AsyncGenerator[AsyncSession, None]:
-    async with SessionLocal() as session:
-        yield session
+__all__ = ["get_db", "get_session"]

@@ -6,9 +6,6 @@ Passwords are always hashed with Argon2id. Never store or log plaintext.
 from datetime import timedelta
 from typing import Any
 
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from app.core.config import settings
 from app.core.exceptions import ConflictError, InvalidInputError, UnauthorizedError
 from app.core.security import (
@@ -16,7 +13,7 @@ from app.core.security import (
     create_token,
     decode_token,
 )
-from app.db.models.user import User
+from app.db.mongo import Doc, MongoDatabase
 from app.schemas.auth import RegisterRequest, UserSummary
 from app.services.audit import log_audit
 from app.services.auth.password import hash_password, verify_password
@@ -26,17 +23,15 @@ from app.services.email import get_email_service
 RESET_TOKEN_EXPIRE_MINUTES = 30
 
 
-async def get_user_by_email(db: AsyncSession, email: str) -> User | None:
-    stmt = select(User).where(User.email == email.lower())
-    return (await db.execute(stmt)).scalar_one_or_none()
+async def get_user_by_email(db: MongoDatabase, email: str) -> Doc | None:
+    return await db.find_one("users", {"email": email.lower()})
 
 
-async def get_user_by_id(db: AsyncSession, user_id: int) -> User | None:
-    stmt = select(User).where(User.id == user_id)
-    return (await db.execute(stmt)).scalar_one_or_none()
+async def get_user_by_id(db: MongoDatabase, user_id: int) -> Doc | None:
+    return await db.find_one("users", {"id": user_id})
 
 
-def user_summary(user: User) -> UserSummary:
+def user_summary(user: Doc) -> UserSummary:
     return UserSummary(
         id=user.id,
         email=user.email,
@@ -48,22 +43,25 @@ def user_summary(user: User) -> UserSummary:
     )
 
 
-async def register(db: AsyncSession, data: RegisterRequest) -> tuple[User, Any]:
+async def register(db: MongoDatabase, data: RegisterRequest) -> tuple[Doc, Any]:
     existing = await get_user_by_email(db, data.email)
     if existing:
         raise ConflictError("An account with this email already exists.")
 
     password_hash = hash_password(data.password)
-    user = User(
-        email=data.email.lower(),
-        password_hash=password_hash,
-        full_name=data.full_name.strip(),
-        currency=settings.DEFAULT_CURRENCY,
-        timezone=settings.DEFAULT_TIMEZONE,
-        preferred_language="en",
+    user = await db.insert(
+        "users",
+        {
+            "email": data.email.lower(),
+            "password_hash": password_hash,
+            "full_name": data.full_name.strip(),
+            "phone": None,
+            "preferred_language": "en",
+            "currency": settings.DEFAULT_CURRENCY,
+            "timezone": settings.DEFAULT_TIMEZONE,
+            "is_active": True,
+        },
     )
-    db.add(user)
-    await db.flush()
 
     await log_audit(
         db,
@@ -76,7 +74,7 @@ async def register(db: AsyncSession, data: RegisterRequest) -> tuple[User, Any]:
     return user, tokens
 
 
-async def authenticate(db: AsyncSession, email: str, password: str) -> User:
+async def authenticate(db: MongoDatabase, email: str, password: str) -> Doc:
     user = await get_user_by_email(db, email)
     if user is None or not verify_password(password, user.password_hash):
         raise UnauthorizedError("Invalid email or password.")
@@ -85,7 +83,7 @@ async def authenticate(db: AsyncSession, email: str, password: str) -> User:
     return user
 
 
-async def login(db: AsyncSession, email: str, password: str, remember_me: bool):
+async def login(db: MongoDatabase, email: str, password: str, remember_me: bool):
     user = await authenticate(db, email, password)
     tokens = await issue_and_persist_tokens(db, user.id, remember_me=remember_me)
     await log_audit(
@@ -96,11 +94,10 @@ async def login(db: AsyncSession, email: str, password: str, remember_me: bool):
         resource_id=user.id,
         metadata={"remember_me": remember_me},
     )
-    await db.flush()
     return user, tokens
 
 
-async def rotate_tokens(db: AsyncSession, user_id: int, remember_me: bool, family_id: str):
+async def rotate_tokens(db: MongoDatabase, user_id: int, remember_me: bool, family_id: str):
     return await issue_and_persist_tokens(
         db, user_id, remember_me=remember_me, family_id=family_id
     )
@@ -114,7 +111,7 @@ def create_reset_token(user_id: int) -> str:
     )
 
 
-async def forgot_password(db: AsyncSession, email: str) -> str | None:
+async def forgot_password(db: MongoDatabase, email: str) -> str | None:
     """Generate a reset token.
 
     Returns the raw token only when no mail transport is configured
@@ -137,7 +134,7 @@ async def forgot_password(db: AsyncSession, email: str) -> str | None:
     return token
 
 
-async def reset_password(db: AsyncSession, token: str, new_password: str) -> User:
+async def reset_password(db: MongoDatabase, token: str, new_password: str) -> Doc:
     try:
         payload = decode_token(token, "password_reset")
         user_id = int(payload["sub"])
@@ -148,7 +145,9 @@ async def reset_password(db: AsyncSession, token: str, new_password: str) -> Use
     if user is None:
         raise InvalidInputError("Reset token is invalid or expired.")
 
-    user.password_hash = hash_password(new_password)
+    new_hash = hash_password(new_password)
+    await db.update_one("users", {"id": user.id}, {"password_hash": new_hash})
+    user.password_hash = new_hash
     await log_audit(
         db,
         action="auth.reset_password",
@@ -156,5 +155,4 @@ async def reset_password(db: AsyncSession, token: str, new_password: str) -> Use
         user_id=user.id,
         resource_id=user.id,
     )
-    await db.flush()
     return user

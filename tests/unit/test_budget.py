@@ -5,35 +5,31 @@ from decimal import Decimal
 
 import pytest
 
-from app.db.models.transaction import Transaction, TransactionType
+from app.db.models.transaction import TransactionType
 
 
 @pytest.mark.asyncio
 async def test_budget_status_with_transactions(db_session, client, consented_headers):
     user_id = 1
-    db_session.add(
-        Transaction(
-            user_id=user_id,
-            date=date(2026, 8, 5),
-            description="Groceries",
-            amount=Decimal("2000"),
-            currency="INR",
-            transaction_type=TransactionType.expense,
-            category="groceries",
+    for description, amount, category in (
+        ("Groceries", Decimal("2000"), "groceries"),
+        ("Rent", Decimal("9000"), "rent"),
+    ):
+        await db_session.insert(
+            "transactions",
+            {
+                "user_id": user_id,
+                "date": "2026-08-01" if description == "Groceries" else "2026-08-10",
+                "description": description,
+                "amount": amount,
+                "currency": "INR",
+                "transaction_type": TransactionType.expense.value,
+                "category": category,
+                "is_deleted": False,
+                "created_at": None,
+                "updated_at": None,
+            },
         )
-    )
-    db_session.add(
-        Transaction(
-            user_id=user_id,
-            date=date(2026, 8, 10),
-            description="Rent",
-            amount=Decimal("9000"),
-            currency="INR",
-            transaction_type=TransactionType.expense,
-            category="rent",
-        )
-    )
-    await db_session.commit()
 
     response = await client.post(
         "/api/v1/budget",

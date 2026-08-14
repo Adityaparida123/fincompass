@@ -1,14 +1,11 @@
 """Debt obligation and debt burden endpoints."""
 
 from fastapi import APIRouter, Depends
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_current_user
 from app.core.exceptions import NotFoundError
 from app.db.models.consent import ConsentType
-from app.db.models.debt import DebtObligation
-from app.db.models.user import User
+from app.db.mongo import MongoDatabase
 from app.db.session import get_session
 from app.schemas.debt import (
     DebtBurdenInput,
@@ -26,26 +23,22 @@ router = APIRouter(prefix="/debt", tags=["debt"])
 
 @router.get("", response_model=list[DebtObligationRead])
 async def list_debts(
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_session),
+    user=Depends(get_current_user),
+    db: MongoDatabase = Depends(get_session),
 ) -> list[DebtObligationRead]:
     await require_consent(db, user.id, ConsentType.financial_data_analysis)
-    stmt = select(DebtObligation).where(DebtObligation.user_id == user.id).order_by(DebtObligation.name)
-    obligations = (await db.execute(stmt)).scalars().all()
+    obligations = await db.find("debt_obligations", {"user_id": user.id}, sort=[("name", 1)])
     return [DebtObligationRead.model_validate(o) for o in obligations]
 
 
 @router.post("", response_model=DebtObligationRead, status_code=201)
 async def create_debt(
     data: DebtObligationCreate,
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_session),
+    user=Depends(get_current_user),
+    db: MongoDatabase = Depends(get_session),
 ) -> DebtObligationRead:
     await require_consent(db, user.id, ConsentType.financial_data_analysis)
-    obligation = DebtObligation(user_id=user.id, **data.model_dump())
-    db.add(obligation)
-    await db.commit()
-    await db.refresh(obligation)
+    obligation = await db.insert("debt_obligations", {"user_id": user.id, **data.model_dump()})
     return DebtObligationRead.model_validate(obligation)
 
 
@@ -53,38 +46,42 @@ async def create_debt(
 async def update_debt(
     obligation_id: int,
     data: DebtObligationUpdate,
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_session),
+    user=Depends(get_current_user),
+    db: MongoDatabase = Depends(get_session),
 ) -> DebtObligationRead:
     await require_consent(db, user.id, ConsentType.financial_data_analysis)
-    stmt = select(DebtObligation).where(
-        DebtObligation.id == obligation_id, DebtObligation.user_id == user.id
+    obligation = await db.find_one(
+        "debt_obligations",
+        {"id": obligation_id, "user_id": user.id},
     )
-    obligation = (await db.execute(stmt)).scalar_one_or_none()
     if obligation is None:
         raise NotFoundError("Debt obligation not found.")
-    for field, value in data.model_dump(exclude_unset=True).items():
-        setattr(obligation, field, value)
-    await db.commit()
-    await db.refresh(obligation)
+    await db.update_one(
+        "debt_obligations",
+        {"id": obligation_id, "user_id": user.id},
+        data.model_dump(exclude_unset=True),
+    )
+    obligation = await db.find_one(
+        "debt_obligations",
+        {"id": obligation_id, "user_id": user.id},
+    )
     return DebtObligationRead.model_validate(obligation)
 
 
 @router.delete("/{obligation_id}", status_code=200)
 async def delete_debt(
     obligation_id: int,
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_session),
+    user=Depends(get_current_user),
+    db: MongoDatabase = Depends(get_session),
 ) -> dict:
     await require_consent(db, user.id, ConsentType.financial_data_analysis)
-    stmt = select(DebtObligation).where(
-        DebtObligation.id == obligation_id, DebtObligation.user_id == user.id
+    obligation = await db.find_one(
+        "debt_obligations",
+        {"id": obligation_id, "user_id": user.id},
     )
-    obligation = (await db.execute(stmt)).scalar_one_or_none()
     if obligation is None:
         raise NotFoundError("Debt obligation not found.")
     await move_to_recycle_bin(db, user.id, "debt_obligation", obligation.id, obligation)
-    await db.commit()
     return {"message": "Debt obligation moved to recycle bin."}
 
 

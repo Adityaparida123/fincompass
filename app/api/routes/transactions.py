@@ -1,45 +1,44 @@
 """Transaction routes with soft delete to recycle bin."""
 
 from datetime import date
+from decimal import Decimal
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import func, select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_current_user
-from app.core.exceptions import NotFoundError
 from app.db.models.consent import ConsentType
-from app.db.models.transaction import Transaction, TransactionSource, TransactionType
-from app.db.models.user import User
+from app.db.models.transaction import TransactionSource, TransactionType
+from app.db.mongo import MongoDatabase
 from app.db.session import get_session
 from app.schemas.common import Page
 from app.schemas.transaction import TransactionCreate, TransactionRead, TransactionUpdate
 from app.services.consent.service import require_consent
 from app.services.finance.transactions import (
+    amount_in_range,
     create_transaction,
     get_transaction,
+    transaction_filter,
     update_transaction,
 )
-from app.services.recycle_bin.service import add_item, item_snapshot
+from app.services.recycle_bin.service import move_to_recycle_bin
 from app.utils.pagination import paginate
 
 router = APIRouter(prefix="/transactions", tags=["transactions"])
 
 
-async def _require_financial_consent(db: AsyncSession, user_id: int) -> None:
+async def _require_financial_consent(db: MongoDatabase, user_id: int) -> None:
     await require_consent(db, user_id, ConsentType.financial_data_analysis)
 
 
 @router.post("", response_model=TransactionRead, status_code=201)
 async def create_tx(
     data: TransactionCreate,
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_session),
-) -> Transaction:
+    user=Depends(get_current_user),
+    db: MongoDatabase = Depends(get_session),
+):
     await _require_financial_consent(db, user.id)
     tx = await create_transaction(db, user.id, data)
-    await db.commit()
-    return tx
+    return TransactionRead.model_validate(tx)
 
 
 @router.get("", response_model=Page[TransactionRead])
@@ -49,53 +48,50 @@ async def list_txs(
     start: date | None = None,
     end: date | None = None,
     source: TransactionSource | None = None,
+    min_amount: float | None = Query(None, ge=0),
+    max_amount: float | None = Query(None, ge=0),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_session),
+    user=Depends(get_current_user),
+    db: MongoDatabase = Depends(get_session),
 ):
     await _require_financial_consent(db, user.id)
-    stmt = select(Transaction).where(Transaction.user_id == user.id, Transaction.is_deleted.is_(False))
-    count_stmt = select(func.count()).select_from(Transaction).where(
-        Transaction.user_id == user.id, Transaction.is_deleted.is_(False)
+    filt = transaction_filter(
+        user.id,
+        transaction_type=transaction_type,
+        category=category,
+        start=start,
+        end=end,
+        source=source,
     )
-    if transaction_type is not None:
-        stmt = stmt.where(Transaction.transaction_type == transaction_type)
-        count_stmt = count_stmt.where(Transaction.transaction_type == transaction_type)
-    if category:
-        stmt = stmt.where(Transaction.category == category)
-        count_stmt = count_stmt.where(Transaction.category == category)
-    if source is not None:
-        stmt = stmt.where(Transaction.source == source)
-        count_stmt = count_stmt.where(Transaction.source == source)
-    if start:
-        stmt = stmt.where(Transaction.date >= start)
-        count_stmt = count_stmt.where(Transaction.date >= start)
-    if end:
-        stmt = stmt.where(Transaction.date <= end)
-        count_stmt = count_stmt.where(Transaction.date <= end)
-
-    total = int((await db.execute(count_stmt)).scalar_one())
-    rows = (await db.execute(stmt.order_by(Transaction.date.desc(), Transaction.id.desc()).offset((page - 1) * page_size).limit(page_size))).scalars().all()
-    items = [TransactionRead.model_validate(r) for r in rows]
+    total = await db.count("transactions", filt)
+    rows = await db.find(
+        "transactions",
+        filt,
+        sort=[("date", -1), ("id", -1)],
+        skip=(page - 1) * page_size,
+        limit=page_size,
+    )
+    items = []
+    for row in rows:
+        if not amount_in_range(
+            row.amount,
+            min_amount=Decimal(min_amount) if min_amount is not None else None,
+            max_amount=Decimal(max_amount) if max_amount is not None else None,
+        ):
+            continue
+        items.append(TransactionRead.model_validate(row))
     return paginate(items, total, page, page_size)
 
 
 @router.get("/{transaction_id}", response_model=TransactionRead)
 async def get_tx(
     transaction_id: int,
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_session),
+    user=Depends(get_current_user),
+    db: MongoDatabase = Depends(get_session),
 ) -> TransactionRead:
     await _require_financial_consent(db, user.id)
-    stmt = select(Transaction).where(
-        Transaction.id == transaction_id,
-        Transaction.user_id == user.id,
-        Transaction.is_deleted.is_(False),
-    )
-    tx = (await db.execute(stmt)).scalar_one_or_none()
-    if tx is None:
-        raise NotFoundError("Transaction not found.")
+    tx = await get_transaction(db, user.id, transaction_id)
     return TransactionRead.model_validate(tx)
 
 
@@ -103,26 +99,21 @@ async def get_tx(
 async def patch_tx(
     transaction_id: int,
     data: TransactionUpdate,
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_session),
+    user=Depends(get_current_user),
+    db: MongoDatabase = Depends(get_session),
 ) -> TransactionRead:
     await _require_financial_consent(db, user.id)
     tx = await update_transaction(db, user.id, transaction_id, data)
-    await db.commit()
     return TransactionRead.model_validate(tx)
 
 
 @router.delete("/{transaction_id}", status_code=200)
 async def delete_tx(
     transaction_id: int,
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_session),
+    user=Depends(get_current_user),
+    db: MongoDatabase = Depends(get_session),
 ) -> dict:
     await _require_financial_consent(db, user.id)
     tx = await get_transaction(db, user.id, transaction_id)
-    snapshot = item_snapshot("transaction", tx)
-    tx.is_deleted = True
-    await db.flush()
-    await add_item(db, user.id, "transaction", tx.id, snapshot)
-    await db.commit()
-    return {"message": "Transaction moved to recycle bin.", "recycle_id": tx.id}
+    await move_to_recycle_bin(db, user.id, "transaction", tx.id, tx)
+    return {"message": "Transaction moved to recycle bin."}

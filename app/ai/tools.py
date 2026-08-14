@@ -9,8 +9,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy.ext.asyncio import AsyncSession
-
+from app.db.mongo import MongoDatabase
 from app.schemas.cashflow import CashFlowInput, SavingsCapacityInput
 from app.schemas.debt import DebtBurdenInput
 from app.schemas.loan import EMICalculateRequest, LoanSimulationRequest
@@ -28,7 +27,7 @@ from app.services.schemes.matcher import match_schemes
 
 @dataclass
 class ToolContext:
-    db: AsyncSession
+    db: MongoDatabase
     user_id: int
     session_id: int | None = None
 
@@ -354,12 +353,7 @@ async def tool_get_financial_summary(ctx: ToolContext, args: dict[str, Any]) -> 
 
 @_register("get_user_goals")
 async def tool_get_user_goals(ctx: ToolContext, args: dict[str, Any]) -> dict[str, Any]:
-    from sqlalchemy import select
-
-    from app.db.models.savings import SavingsGoal
-
-    stmt = select(SavingsGoal).where(SavingsGoal.user_id == ctx.user_id)
-    goals = (await ctx.db.execute(stmt)).scalars().all()
+    goals = await ctx.db.find("savings_goals", {"user_id": ctx.user_id})
     return {
         "goals": [
             {
@@ -367,7 +361,7 @@ async def tool_get_user_goals(ctx: ToolContext, args: dict[str, Any]) -> dict[st
                 "name": g.name,
                 "target_amount": str(g.target_amount),
                 "current_amount": str(g.current_amount),
-                "target_date": g.target_date.isoformat() if g.target_date else None,
+                "target_date": g.target_date,
                 "status": g.status,
             }
             for g in goals
@@ -379,20 +373,20 @@ async def tool_get_user_goals(ctx: ToolContext, args: dict[str, Any]) -> dict[st
 async def tool_create_budget(ctx: ToolContext, args: dict[str, Any]) -> dict[str, Any]:
     from datetime import date
 
-    from app.db.models.budget import Budget
     from app.db.models.consent import ConsentType
     from app.services.consent.service import require_consent
 
     await require_consent(ctx.db, ctx.user_id, ConsentType.financial_data_analysis)
     period = date.fromisoformat(str(args["period"]))
-    budget = Budget(
-        user_id=ctx.user_id,
-        period=period,
-        category=str(args["category"]),
-        limit_amount=Decimal(str(args["limit_amount"])),
+    budget = await ctx.db.insert(
+        "budgets",
+        {
+            "user_id": ctx.user_id,
+            "period": period,
+            "category": str(args["category"]),
+            "limit_amount": Decimal(str(args["limit_amount"])),
+        },
     )
-    ctx.db.add(budget)
-    await ctx.db.flush()
     return {
         "id": budget.id,
         "period": period.isoformat(),

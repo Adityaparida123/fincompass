@@ -3,8 +3,6 @@
 import json
 from typing import Any
 
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from app.ai.memory import add_message, create_session, get_messages, get_session
 from app.ai.prompts import build_messages
 from app.ai.providers.openai_compatible import OpenAICompatibleProvider
@@ -20,6 +18,7 @@ from app.core.config import settings
 from app.core.exceptions import ConsentDeniedError, LLMUnavailableError
 from app.core.logging import get_logger
 from app.db.models.consent import ConsentType
+from app.db.mongo import MongoDatabase
 from app.knowledge.base import format_docs_for_context, get_knowledge_retriever
 from app.schemas.chat import ChatResponse
 from app.services.audit import log_audit
@@ -34,7 +33,7 @@ def get_provider() -> OpenAICompatibleProvider:
 
 
 async def _financial_context(
-    db: AsyncSession,
+    db: MongoDatabase,
     user_id: int,
     intent: str,
     message: str = "",
@@ -49,7 +48,7 @@ async def _financial_context(
 
 
 async def chat(
-    db: AsyncSession,
+    db: MongoDatabase,
     user_id: int,
     message: str,
     *,
@@ -178,7 +177,7 @@ async def chat(
 
 
 async def _ensure_session(
-    db: AsyncSession,
+    db: MongoDatabase,
     user_id: int,
     message: str,
     session_id: int | None,
@@ -187,6 +186,11 @@ async def _ensure_session(
     if session_id is not None:
         session = await get_session(db, user_id, session_id)
         if language:
+            await db.update_one(
+                "chat_sessions",
+                {"id": session.id, "user_id": user_id},
+                {"language": language},
+            )
             session.language = language
         return session
     title = message[:60].strip() or "New conversation"
@@ -195,7 +199,7 @@ async def _ensure_session(
 
 
 async def _no_llm_fallback(
-    db: AsyncSession,
+    db: MongoDatabase,
     user_id: int,
     message: str,
     routing: dict[str, object],

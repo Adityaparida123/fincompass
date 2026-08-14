@@ -4,14 +4,11 @@ from datetime import date
 from decimal import Decimal
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_current_user
 from app.core.exceptions import NotFoundError
-from app.db.models.budget import Budget
 from app.db.models.consent import ConsentType
-from app.db.models.user import User
+from app.db.mongo import MongoDatabase
 from app.db.session import get_session
 from app.schemas.budget import (
     BudgetCreate,
@@ -35,22 +32,19 @@ router = APIRouter(prefix="/budget", tags=["budget"])
 @router.post("", response_model=BudgetRead, status_code=201)
 async def create_budget(
     data: BudgetCreate,
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_session),
+    user=Depends(get_current_user),
+    db: MongoDatabase = Depends(get_session),
 ) -> BudgetRead:
     await require_consent(db, user.id, ConsentType.financial_data_analysis)
-    budget = Budget(user_id=user.id, **data.model_dump())
-    db.add(budget)
-    await db.commit()
-    await db.refresh(budget)
+    budget = await db.insert("budgets", {"user_id": user.id, **data.model_dump()})
     return BudgetRead.model_validate(budget)
 
 
 @router.get("", response_model=list[BudgetRead])
 async def get_budgets(
     period: str | None = Query(None, pattern=r"^\d{4}-\d{2}$"),
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_session),
+    user=Depends(get_current_user),
+    db: MongoDatabase = Depends(get_session),
 ) -> list[BudgetRead]:
     await require_consent(db, user.id, ConsentType.financial_data_analysis)
     budgets = await list_budgets(db, user.id, period)
@@ -61,41 +55,43 @@ async def get_budgets(
 async def update_budget(
     budget_id: int,
     data: BudgetUpdate,
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_session),
+    user=Depends(get_current_user),
+    db: MongoDatabase = Depends(get_session),
 ) -> BudgetRead:
     await require_consent(db, user.id, ConsentType.financial_data_analysis)
-    stmt = select(Budget).where(Budget.id == budget_id, Budget.user_id == user.id)
-    budget = (await db.execute(stmt)).scalar_one_or_none()
+    budget = await db.find_one("budgets", {"id": budget_id, "user_id": user.id})
     if budget is None:
         raise NotFoundError("Budget not found.")
-    budget.limit_amount = data.limit_amount
-    await db.commit()
-    await db.refresh(budget)
-    return BudgetRead.model_validate(budget)
+    await db.update_one(
+        "budgets",
+        {"id": budget_id, "user_id": user.id},
+        {"limit_amount": data.limit_amount},
+    )
+    updated = await db.find_one("budgets", {"id": budget_id, "user_id": user.id})
+    if updated is None:
+        raise NotFoundError("Budget not found.")
+    return BudgetRead.model_validate(updated)
 
 
 @router.delete("/{budget_id}", status_code=200)
 async def delete_budget(
     budget_id: int,
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_session),
+    user=Depends(get_current_user),
+    db: MongoDatabase = Depends(get_session),
 ) -> dict:
     await require_consent(db, user.id, ConsentType.financial_data_analysis)
-    stmt = select(Budget).where(Budget.id == budget_id, Budget.user_id == user.id)
-    budget = (await db.execute(stmt)).scalar_one_or_none()
+    budget = await db.find_one("budgets", {"id": budget_id, "user_id": user.id})
     if budget is None:
         raise NotFoundError("Budget not found.")
     await move_to_recycle_bin(db, user.id, "budget", budget.id, budget)
-    await db.commit()
     return {"message": "Budget moved to recycle bin."}
 
 
 @router.get("/status", response_model=list[BudgetStatus])
 async def budget_status(
     period: str = Query(..., pattern=r"^\d{4}-\d{2}$"),
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_session),
+    user=Depends(get_current_user),
+    db: MongoDatabase = Depends(get_session),
 ) -> list[BudgetStatus]:
     await require_consent(db, user.id, ConsentType.financial_data_analysis)
     start = month_period_from_string(period)
@@ -125,8 +121,8 @@ async def budget_status(
 @router.get("/recommendations", response_model=BudgetRecommendations)
 async def budget_recommendations(
     period: str | None = Query(None, pattern=r"^\d{4}-\d{2}$"),
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_session),
+    user=Depends(get_current_user),
+    db: MongoDatabase = Depends(get_session),
 ) -> BudgetRecommendations:
     await require_consent(db, user.id, ConsentType.financial_data_analysis)
     target = month_period_from_string(period) if period else date.today().replace(day=1)

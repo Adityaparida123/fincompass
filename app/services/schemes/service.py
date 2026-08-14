@@ -1,29 +1,23 @@
 """Scheme service: seeding and lookup."""
 
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from app.core.exceptions import NotFoundError
-from app.db.models.scheme import GovernmentScheme
+from app.db.mongo import Doc, MongoDatabase
 from app.services.schemes.matcher import list_schemes
 
 
-async def get_scheme(db: AsyncSession, scheme_id: int) -> GovernmentScheme:
-    stmt = select(GovernmentScheme).where(GovernmentScheme.id == scheme_id)
-    scheme = (await db.execute(stmt)).scalar_one_or_none()
+async def get_scheme(db: MongoDatabase, scheme_id: int) -> Doc:
+    scheme = await db.find_one("government_schemes", {"id": scheme_id})
     if scheme is None:
         raise NotFoundError("Scheme not found.")
     return scheme
 
 
-async def ensure_seed_schemes(db: AsyncSession) -> int:
+async def ensure_seed_schemes(db: MongoDatabase) -> int:
     """Seed reference schemes from the bundled knowledge base if empty."""
     existing = await list_schemes(db, active_only=False)
     if existing:
         return 0
     from app.knowledge.seed_schemes import SEED_SCHEMES
 
-    for item in SEED_SCHEMES:
-        db.add(GovernmentScheme(**item))
-    await db.flush()
+    await db.insert_many("government_schemes", list(SEED_SCHEMES))
     return len(SEED_SCHEMES)

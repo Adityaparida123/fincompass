@@ -1,39 +1,47 @@
 """Recycle bin service for soft-deleted records."""
 
+from datetime import UTC, date, datetime
+from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from app.core.exceptions import NotFoundError
-from app.db.models.recycle_bin import RecycleBinItem
+from app.db.mongo import Doc, MongoDatabase
 from app.services.audit import log_audit
 
+# Map recycle-bin resource types to their Mongo collections.
+_COLLECTION_BY_RESOURCE: dict[str, str] = {
+    "transaction": "transactions",
+    "budget": "budgets",
+    "debt_obligation": "debt_obligations",
+    "savings_goal": "savings_goals",
+}
 
-async def list_items(db: AsyncSession, user_id: int) -> list[RecycleBinItem]:
-    stmt = (
-        select(RecycleBinItem)
-        .where(RecycleBinItem.user_id == user_id)
-        .order_by(RecycleBinItem.deleted_at.desc())
+
+async def list_items(db: MongoDatabase, user_id: int) -> list[Doc]:
+    return await db.find(
+        "recycle_bin",
+        {"user_id": user_id},
+        sort=[("deleted_at", -1)],
     )
-    return list((await db.execute(stmt)).scalars().all())
 
 
 async def add_item(
-    db: AsyncSession,
+    db: MongoDatabase,
     user_id: int,
     resource_type: str,
     resource_id: int,
     deleted_data: dict | None,
-) -> RecycleBinItem:
-    item = RecycleBinItem(
-        user_id=user_id,
-        resource_type=resource_type,
-        resource_id=str(resource_id),
-        deleted_data=deleted_data,
+) -> Doc:
+    item = await db.insert(
+        "recycle_bin",
+        {
+            "user_id": user_id,
+            "resource_type": resource_type,
+            "resource_id": str(resource_id),
+            "deleted_data": deleted_data,
+            "deleted_at": datetime.now(UTC),
+        },
     )
-    db.add(item)
-    await db.flush()
     await log_audit(
         db,
         action="recycle_bin.add",
@@ -44,20 +52,16 @@ async def add_item(
     return item
 
 
-async def get_item(db: AsyncSession, user_id: int, item_id: int) -> RecycleBinItem:
-    stmt = select(RecycleBinItem).where(
-        RecycleBinItem.id == item_id, RecycleBinItem.user_id == user_id
-    )
-    item = (await db.execute(stmt)).scalar_one_or_none()
+async def get_item(db: MongoDatabase, user_id: int, item_id: int) -> Doc:
+    item = await db.find_one("recycle_bin", {"id": item_id, "user_id": user_id})
     if item is None:
         raise NotFoundError("Recycle bin item not found.")
     return item
 
 
-async def remove_item(db: AsyncSession, user_id: int, item_id: int) -> RecycleBinItem:
+async def remove_item(db: MongoDatabase, user_id: int, item_id: int) -> Doc:
     item = await get_item(db, user_id, item_id)
-    await db.delete(item)
-    await db.flush()
+    await db.delete_one("recycle_bin", {"id": item.id, "user_id": user_id})
     await log_audit(
         db,
         action="recycle_bin.delete",
@@ -68,42 +72,37 @@ async def remove_item(db: AsyncSession, user_id: int, item_id: int) -> RecycleBi
     return item
 
 
-def item_snapshot(resource_type: str, obj) -> dict:
-    """Build a JSON-safe snapshot of a model for restore purposes."""
-    from decimal import Decimal
-    from enum import Enum
+def _snap(value: Any) -> Any:
+    if isinstance(value, Decimal):
+        return str(value)
+    if isinstance(value, (date, datetime)):
+        return value.isoformat()
+    if isinstance(value, dict):
+        return {k: _snap(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_snap(v) for v in value]
+    return value
 
-    from sqlalchemy import inspect as sa_inspect
 
-    insp = sa_inspect(obj)
-    state = {**(insp.committed_state or {}), **(insp.dict or {})}
-    data: dict = {}
-    for column in obj.__table__.columns:
-        key = column.key
-        value = state.get(key)
-        if hasattr(value, "isoformat"):
-            value = value.isoformat()
-        elif isinstance(value, Enum):
-            value = value.value
-        elif isinstance(value, Decimal):
-            value = str(value)
-        data[key] = value
-    return data
+def item_snapshot(resource_type: str, obj: Any) -> dict:
+    """Build a JSON-safe snapshot of a document for restore purposes."""
+    return {key: _snap(value) for key, value in obj.items()}
 
 
 async def move_to_recycle_bin(
-    db: AsyncSession,
+    db: MongoDatabase,
     user_id: int,
     resource_type: str,
     resource_id: int,
     obj: Any,
     *,
     hard_delete: bool = True,
-) -> RecycleBinItem:
+) -> Doc:
     """Snapshot a resource, optionally hard-delete it, and store in recycle bin."""
     snapshot = item_snapshot(resource_type, obj)
     if hard_delete:
-        await db.delete(obj)
-        await db.flush()
+        collection = _COLLECTION_BY_RESOURCE.get(resource_type)
+        if collection is not None:
+            await db.delete_one(collection, {"id": resource_id, "user_id": user_id})
     item = await add_item(db, user_id, resource_type, resource_id, snapshot)
     return item
