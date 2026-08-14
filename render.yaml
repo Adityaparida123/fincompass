@@ -38,6 +38,7 @@ services:
       - key: COOKIE_SAMESITE
         value: none
       - key: CORS_ORIGINS
+        value: https://fincompass-three.vercel.app
         sync: false
       - key: LLM_API_KEY
         sync: false
