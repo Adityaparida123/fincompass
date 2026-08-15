@@ -157,6 +157,7 @@ Edit `.env` with your values. **Never commit `.env`.**
 | `JWT_SECRET_KEY` | Strong random secret (change in production) |
 | `LLM_API_KEY`, `LLM_MODEL`, `LLM_BASE_URL` | LLM provider — Groq by default (`llama-3.3-70b-versatile`). Optional; chat works in fallback mode without a key |
 | `CORS_ORIGINS` | Frontend origin(s), e.g. `http://localhost:3000` |
+| `CORS_ORIGIN_REGEX` | Optional regex of additional allowed origins (e.g. Vercel preview deployments); echoed per-origin, safe with credentials |
 | `DEFAULT_CURRENCY` | Default `INR` |
 | `DEFAULT_TIMEZONE` | Default `Asia/Kolkata` |
 

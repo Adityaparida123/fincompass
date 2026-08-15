@@ -35,6 +35,8 @@ services:
         value: none
       - key: CORS_ORIGINS
         value: https://fincompass-three.vercel.app
+      - key: CORS_ORIGIN_REGEX
+        value: '^https://fincompass-[a-z0-9]+-adityaparidaomm-3447s-projects\.vercel\.app$'
       - key: LLM_API_KEY
         sync: false
       - key: LLM_MODEL

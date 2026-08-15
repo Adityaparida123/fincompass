@@ -67,7 +67,13 @@ class Settings(BaseSettings):
     LLM_READ_TIMEOUT_SECONDS: float = 90.0
     LLM_MAX_RETRIES: int = 2
 
-    CORS_ORIGINS: str = "http://localhost:3000,https://fincompass-three.vercel.app"
+    CORS_ORIGINS: str | None = "http://localhost:3000,https://fincompass-three.vercel.app"
+    # Regex for additional allowed origins (e.g. Vercel preview deployments).
+    # Used via CORSMiddleware allow_origin_regex, which echoes the specific
+    # origin (never "*") so it stays safe with allow_credentials=True.
+    CORS_ORIGIN_REGEX: str = (
+        r"^https://fincompass-[a-z0-9]+-adityaparidaomm-3447s-projects\.vercel\.app$"
+    )
 
     DEFAULT_CURRENCY: str = "INR"
     DEFAULT_TIMEZONE: str = "Asia/Kolkata"
@@ -107,8 +113,28 @@ class Settings(BaseSettings):
 
     @field_validator("CORS_ORIGINS")
     @classmethod
-    def parse_cors_origins(cls, v: str) -> list[str]:
-        return [origin.strip() for origin in v.split(",") if origin.strip()]
+    def parse_cors_origins(cls, v: str | list[str] | None) -> list[str]:
+        """Parse CORS_ORIGINS from a comma-separated string, a JSON array
+        string, or an already-materialized list. Handles stray whitespace and
+        ignores blank entries."""
+        if v is None:
+            return []
+        if isinstance(v, list):
+            return [str(origin).strip() for origin in v if str(origin).strip()]
+        text = v.strip()
+        if not text:
+            return []
+        if text.startswith("["):
+            import json
+
+            try:
+                parsed = json.loads(text)
+            except json.JSONDecodeError:
+                parsed = []
+            if isinstance(parsed, list):
+                return [str(origin).strip() for origin in parsed if str(origin).strip()]
+            return []
+        return [origin.strip() for origin in text.split(",") if origin.strip()]
 
     @field_validator("LLM_MODEL", "LLM_BASE_URL", mode="before")
     @classmethod
