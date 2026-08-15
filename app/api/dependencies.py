@@ -3,10 +3,13 @@
 from fastapi import Depends, Header, Request
 
 from app.core.exceptions import RateLimitError, UnauthorizedError
+from app.core.logging import get_logger
 from app.core.security import require_valid_access_token
 from app.db.mongo import MongoDatabase
 from app.db.session import get_session
 from app.services.auth.service import get_user_by_id
+
+logger = get_logger(__name__)
 
 
 async def get_current_user(
@@ -81,6 +84,10 @@ async def _rate_limit(request: Request, scope: str, limit: int, window: int) -> 
     except RateLimitError:
         raise
     except Exception:
-        # Redis unavailable: fail open in non-production, fail closed in production.
-        if settings.is_production:
-            raise RateLimitError("Rate limiting unavailable.")
+        # Redis unavailable: fail open so requests are allowed through, and
+        # log it so rate-limit gaps are visible in production. A 429 here
+        # would falsely blame healthy clients for an infrastructure issue.
+        logger.warning(
+            "Rate limiting unavailable (Redis unreachable): allowing request",
+            exc_info=True,
+        )
