@@ -293,12 +293,16 @@ class MongoMockBackend(MongoAdapter):
 
 def mongo_backend_from_database(db: Any) -> MongoAdapter:
     """Build the correct backend based on the driver type."""
-    import mongomock
     from pymongo.asynchronous.database import AsyncDatabase
 
     if isinstance(db, AsyncDatabase):
         return PyMongoBackend(db)
-    if isinstance(db, mongomock.Database):
+
+    try:
+        import mongomock  # dev-only dependency; never required in production
+    except ModuleNotFoundError:
+        mongomock = None
+    if mongomock is not None and isinstance(db, mongomock.Database):
         return MongoMockBackend(db)
     raise TypeError(f"Unsupported database handle: {type(db)!r}")
 
