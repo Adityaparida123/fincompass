@@ -2,9 +2,12 @@ import type { ApiError } from "@/types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
 
+const DEFAULT_TIMEOUT_MS = 30_000;
+
 type RequestOptions = RequestInit & {
   token?: string | null;
   skipAuth?: boolean;
+  timeout?: number;
 };
 
 class ApiClient {
@@ -41,6 +44,7 @@ class ApiClient {
           credentials: "include",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ refresh_token: this.refreshToken ?? "" }),
+          signal: AbortSignal.timeout(DEFAULT_TIMEOUT_MS),
         });
         if (!res.ok) {
           this.clearTokens();
@@ -62,7 +66,7 @@ class ApiClient {
   }
 
   async request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-    const { token, skipAuth, ...init } = options;
+    const { token, skipAuth, timeout = DEFAULT_TIMEOUT_MS, ...init } = options;
     const headers = new Headers(init.headers);
     if (!headers.has("Content-Type") && init.body) {
       headers.set("Content-Type", "application/json");
@@ -71,10 +75,13 @@ class ApiClient {
     const authToken = skipAuth ? null : (token ?? this.accessToken);
     if (authToken) headers.set("Authorization", `Bearer ${authToken}`);
 
+    const signal = init.signal ?? AbortSignal.timeout(timeout);
+
     let res = await fetch(`${API_BASE}${path}`, {
       ...init,
       headers,
       credentials: "include",
+      signal,
     });
 
     if (res.status === 401 && !skipAuth && this.refreshToken) {
@@ -85,6 +92,7 @@ class ApiClient {
           ...init,
           headers,
           credentials: "include",
+          signal,
         });
       }
     }

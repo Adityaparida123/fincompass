@@ -51,11 +51,15 @@ export function FinAIChat() {
       });
 
       if (!res.ok || !res.body) {
-        const fallback = await api.post<{ reply: string; session_id: number }>("/chat", {
-          message: text,
-          session_id: sessionId,
-          language: locale,
-        });
+        const fallback = await api.post<{ reply: string; session_id: number }>(
+          "/chat",
+          {
+            message: text,
+            session_id: sessionId,
+            language: locale,
+          },
+          { timeout: 90_000 },
+        );
         setSessionId(fallback.session_id);
         addMessage({ id: crypto.randomUUID(), role: "assistant", content: fallback.reply, timestamp: new Date() });
         return;
