@@ -67,7 +67,10 @@ class Settings(BaseSettings):
     LLM_READ_TIMEOUT_SECONDS: float = 90.0
     LLM_MAX_RETRIES: int = 2
 
-    CORS_ORIGINS: str | None = "http://localhost:3000,https://fincompass-three.vercel.app"
+    CORS_ORIGINS: str | None = (
+        "http://localhost:3000,http://localhost:5173,"
+        "http://127.0.0.1:5173,https://fincompass-three.vercel.app"
+    )
     # Regex for additional allowed origins (e.g. Vercel preview deployments).
     # Used via CORSMiddleware allow_origin_regex, which echoes the specific
     # origin (never "*") so it stays safe with allow_credentials=True.

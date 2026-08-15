@@ -43,7 +43,6 @@ _INDEX_SPECS: dict[str, list[tuple[list[tuple[str, int]], bool]]] = {
     "refresh_token_sessions": [
         ([("id", 1)], False),
         ([("user_id", 1)], False),
-        ([("refresh_token_hash", 1)], True),
         ([("expires_at", 1)], False),
     ],
     "ml_predictions": [
