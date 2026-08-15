@@ -67,7 +67,7 @@ class Settings(BaseSettings):
     LLM_READ_TIMEOUT_SECONDS: float = 90.0
     LLM_MAX_RETRIES: int = 2
 
-    CORS_ORIGINS: str = "http://localhost:3000"
+    CORS_ORIGINS: str = "http://localhost:3000,https://fincompass-three.vercel.app"
 
     DEFAULT_CURRENCY: str = "INR"
     DEFAULT_TIMEZONE: str = "Asia/Kolkata"

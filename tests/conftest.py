@@ -15,6 +15,9 @@ os.environ.setdefault("JWT_SECRET_KEY", "test-secret-key")
 os.environ.setdefault("LLM_API_KEY", "")
 os.environ.setdefault("LLM_MODEL", "")
 os.environ.setdefault("LLM_BASE_URL", "")
+os.environ.setdefault(
+    "CORS_ORIGINS", "http://localhost:3000,https://fincompass-three.vercel.app"
+)
 
 import mongomock
 import pytest
