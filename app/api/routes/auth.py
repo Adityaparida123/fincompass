@@ -2,7 +2,14 @@
 
 from fastapi import APIRouter, Cookie, Depends, Response
 
-from app.api.dependencies import get_current_user, rate_limit_auth
+from app.api.dependencies import (
+    get_current_user,
+    rate_limit_forgot_password,
+    rate_limit_login,
+    rate_limit_refresh,
+    rate_limit_register,
+    rate_limit_reset_password,
+)
 from app.core.exceptions import UnauthorizedError
 from app.core.logging import get_logger
 from app.core.security import TokenError, refresh_token_metadata
@@ -46,7 +53,7 @@ async def register(
     data: RegisterRequest,
     response: Response,
     db: MongoDatabase = Depends(get_session),
-    _: None = Depends(rate_limit_auth),
+    _: None = Depends(rate_limit_register),
 ) -> AuthResponse:
     user, tokens = await auth_service.register(db, data)
     await db.commit()
@@ -58,7 +65,7 @@ async def login(
     data: LoginRequest,
     response: Response,
     db: MongoDatabase = Depends(get_session),
-    _: None = Depends(rate_limit_auth),
+    _: None = Depends(rate_limit_login),
 ) -> AuthResponse:
     user, tokens = await auth_service.login(db, data.email, data.password, data.remember_me)
     await db.commit()
@@ -71,7 +78,7 @@ async def refresh(
     response: Response,
     db: MongoDatabase = Depends(get_session),
     refresh_cookie: str | None = Cookie(default=None, alias=REFRESH_COOKIE_NAME),
-    _: None = Depends(rate_limit_auth),
+    _: None = Depends(rate_limit_refresh),
 ) -> TokenPair:
     token = data.refresh_token or refresh_cookie
     if not token:
@@ -105,7 +112,7 @@ async def logout(
 async def forgot_password(
     data: ForgotPasswordRequest,
     db: MongoDatabase = Depends(get_session),
-    _: None = Depends(rate_limit_auth),
+    _: None = Depends(rate_limit_forgot_password),
 ) -> dict:
     await auth_service.forgot_password(db, data.email)
     await db.commit()
@@ -116,7 +123,7 @@ async def forgot_password(
 async def reset_password(
     data: ResetPasswordRequest,
     db: MongoDatabase = Depends(get_session),
-    _: None = Depends(rate_limit_auth),
+    _: None = Depends(rate_limit_reset_password),
 ) -> dict:
     user = await auth_service.reset_password(db, data.token, data.new_password)
     await revoke_all_for_user(db, user.id)

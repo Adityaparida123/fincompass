@@ -81,12 +81,31 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = "INFO"
 
     RATE_LIMIT_ENABLED: bool = True
-    RATE_LIMIT_AUTH_LIMIT: int = 20
-    RATE_LIMIT_AUTH_WINDOW: int = 60
     RATE_LIMIT_CHAT_LIMIT: int = 30
     RATE_LIMIT_CHAT_WINDOW: int = 60
     RATE_LIMIT_ML_LIMIT: int = 60
     RATE_LIMIT_ML_WINDOW: int = 60
+
+    # Auth endpoints get dedicated buckets (per client IP, plus a per-email
+    # bucket where the request carries an email) so registration, login and
+    # password-reset traffic cannot starve one another, and so a single
+    # endpoint cannot be used to brute-force or spam.
+    RATE_LIMIT_REGISTER_LIMIT: int = 5
+    RATE_LIMIT_REGISTER_WINDOW: int = 900  # 15 minutes
+    RATE_LIMIT_REGISTER_EMAIL_LIMIT: int = 3
+    RATE_LIMIT_REGISTER_EMAIL_WINDOW: int = 900  # 15 minutes
+    RATE_LIMIT_LOGIN_LIMIT: int = 10
+    RATE_LIMIT_LOGIN_WINDOW: int = 60
+    RATE_LIMIT_LOGIN_EMAIL_LIMIT: int = 5
+    RATE_LIMIT_LOGIN_EMAIL_WINDOW: int = 300  # 5 minutes
+    RATE_LIMIT_REFRESH_LIMIT: int = 30
+    RATE_LIMIT_REFRESH_WINDOW: int = 60
+    RATE_LIMIT_FORGOT_LIMIT: int = 5
+    RATE_LIMIT_FORGOT_WINDOW: int = 3600  # 1 hour
+    RATE_LIMIT_FORGOT_EMAIL_LIMIT: int = 3
+    RATE_LIMIT_FORGOT_EMAIL_WINDOW: int = 3600  # 1 hour
+    RATE_LIMIT_RESET_LIMIT: int = 5
+    RATE_LIMIT_RESET_WINDOW: int = 3600  # 1 hour
 
     CACHE_ENABLED: bool = True
     CACHE_TTL_SECONDS: int = 300

@@ -30,9 +30,16 @@ class AppError(Exception):
     code = "INTERNAL_ERROR"
     status_code = 500
 
-    def __init__(self, message: str, *, details: dict[str, Any] | None = None) -> None:
+    def __init__(
+        self,
+        message: str,
+        *,
+        details: dict[str, Any] | None = None,
+        retry_after: int | None = None,
+    ) -> None:
         self.message = message
         self.details = details or {}
+        self.retry_after = retry_after
         super().__init__(message)
 
 
@@ -105,9 +112,11 @@ def _log_handled(request: Request, status_code: int, code: str, message: str) ->
 
 async def app_exception_handler(request: Request, exc: AppError) -> JSONResponse:
     _log_handled(request, exc.status_code, exc.code, exc.message)
+    headers = {"Retry-After": str(exc.retry_after)} if exc.retry_after else None
     return JSONResponse(
         status_code=exc.status_code,
         content=error_body(exc.code, exc.message, request, details=exc.details),
+        headers=headers,
     )
 
 
