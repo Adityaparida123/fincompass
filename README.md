@@ -366,11 +366,23 @@ recalculates or invents figures.
 
 ## Deployment Notes
 
+> **Important:** Deploy the backend via Render **Blueprint** (Dashboard → New →
+> Blueprint → this repo), not by creating a web service manually. The blueprint
+> reads `render.yaml`, which auto-generates `JWT_SECRET_KEY`
+> (`generateValue: true`) and wires Redis automatically. If you create the
+> service manually and paste `.env.example` values into Render, the app will
+> refuse to start (`JWT_SECRET_KEY` empty/weak) and rate limiting will be off.
+
 1. Set `APP_ENV=production`, `DEBUG=false`, strong `JWT_SECRET_KEY`
 2. Set `COOKIE_SECURE=true` and `COOKIE_SAMESITE=none` (cross-site cookie between Vercel and Render)
 3. Provide `MONGODB_URI` (Atlas) and `REDIS_URL`; the API creates collections/indexes on startup
 4. Configure `CORS_ORIGINS` for your Next.js frontend domain
 5. Provide LLM credentials for full conversational FinAI
+
+If you must set `JWT_SECRET_KEY` manually in the Render Environment tab,
+generate a strong value with:
+`python -c "import secrets; print(secrets.token_urlsafe(48))"`
+(any random string of 32+ characters passes the startup validator).
 
 See `render.yaml`, the `Dockerfile`, `SECURITY.md`, and `.env.production.example` for the production reference configuration. On Vercel, set `NEXT_PUBLIC_API_URL` to the Render API base URL (e.g. `https://finai-api.onrender.com/api/v1`).
 
