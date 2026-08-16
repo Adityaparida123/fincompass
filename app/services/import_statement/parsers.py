@@ -7,6 +7,7 @@ reported back to the review screen.
 
 from __future__ import annotations
 
+import csv
 import re
 from dataclasses import dataclass
 from datetime import date
@@ -247,33 +248,107 @@ def _parse_grid(rows: list[list[str]]) -> list[RawRow]:
     return data
 
 
+# Adjacent-cell fragments of an unquoted Indian-format number (``54`` +
+# ``550.00`` from ``54,550.00``) that should be re-joined.
+_INT_FRAGMENT_RE = re.compile(r"^\d{1,3}$")
+_DEC_FRAGMENT_RE = re.compile(r"^\d{3}(?:\.\d{1,2})?$")
+
+
+def _read_text(path: str) -> str:
+    with open(path, "rb") as handle:
+        return handle.read().decode("utf-8", errors="replace")
+
+
+def _sniff_csv_delimiter(text: str) -> str:
+    """Detect the CSV separator (comma / semicolon / tab) from the file head."""
+    try:
+        dialect = csv.Sniffer().sniff(text[:8192], delimiters=",;\t")
+        return dialect.delimiter
+    except (OSError, csv.Error):
+        return ","
+
+
+def _parse_csv_rows(text: str, delimiter: str) -> list[list[str]]:
+    """Parse a CSV into a grid, re-joining unquoted thousand-separator numbers.
+
+    Real bank exports often omit quotes, so ``54,550.00`` arrives as two cells
+    (``54`` and ``550.00``). Joining adjacent numeric fragments is deterministic
+    and never touches narrations (which end with letters/amounts followed by a
+    real separator).
+    """
+    import io
+
+    rows: list[list[str]] = []
+    reader = csv.reader(io.StringIO(text), delimiter=delimiter)
+    for row in reader:
+        if not row:
+            continue
+        merged: list[str] = []
+        i = 0
+        cells = list(row)
+        while i < len(cells):
+            if (
+                i + 1 < len(cells)
+                and _INT_FRAGMENT_RE.match(cells[i])
+                and _DEC_FRAGMENT_RE.match(cells[i + 1])
+            ):
+                merged.append(f"{cells[i]},{cells[i + 1]}")
+                i += 2
+            else:
+                merged.append(cells[i])
+                i += 1
+        rows.append(merged)
+    return rows
+
+
 def parse_tabular_file(path: str, fmt: str) -> list[RawRow]:
     import pandas as pd
 
-    if fmt == "csv":
-        df = pd.read_csv(path, header=None, dtype=str, keep_default_na=False, engine="python")
-    else:
-        df = pd.read_excel(path, header=None, dtype=str)
+    try:
+        if fmt == "csv":
+            text = _read_text(path)
+            delimiter = _sniff_csv_delimiter(text)
+            grid = _parse_csv_rows(text, delimiter)
+        else:
+            df = pd.read_excel(path, header=None, dtype=str)
+            grid = [[str(v) if v is not None else "" for v in row] for row in df.values.tolist()]
+    except Exception as exc:  # noqa: BLE001
+        raise InvalidInputError(
+            "The file could not be read as a spreadsheet. It may be corrupted "
+            "or not a valid XLSX/XLS/CSV bank statement."
+        ) from exc
 
-    grid = [[str(v) if v is not None else "" for v in row] for row in df.values.tolist()]
     return _parse_grid(grid)
 
 
 def parse_pdf_file(path: str) -> list[RawRow]:
     import pdfplumber
 
+    try:
+        pdf = pdfplumber.open(path)
+    except Exception as exc:  # noqa: BLE001
+        raise InvalidInputError(
+            "The PDF could not be opened. It may be corrupted or password-protected."
+        ) from exc
+
     rows: list[RawRow] = []
     any_text = False
-    with pdfplumber.open(path) as pdf:
-        for page in pdf.pages:
-            text = page.extract_text() or ""
-            if text.strip():
-                any_text = True
-            tables = page.extract_tables() or []
-            for table in tables:
-                grid = [[str(c) if c is not None else "" for c in row] for row in table]
-                if any(any(cells) for cells in grid):
-                    rows.extend(_parse_grid(grid))
+    try:
+        with pdf:
+            for page in pdf.pages:
+                text = page.extract_text() or ""
+                if text.strip():
+                    any_text = True
+                tables = page.extract_tables() or []
+                for table in tables:
+                    grid = [[str(c) if c is not None else "" for c in row] for row in table]
+                    if any(any(cells) for cells in grid):
+                        rows.extend(_parse_grid(grid))
+    except Exception as exc:  # noqa: BLE001
+        raise InvalidInputError(
+            "The PDF could not be parsed. It may be corrupted or an unsupported layout."
+        ) from exc
+
     if not any_text:
         raise InvalidInputError(
             "This PDF appears to be scanned or image-based and could not be read "

@@ -27,6 +27,7 @@ class TransactionCreate(BaseModel):
     transaction_type: TransactionType
     category: str = Field(min_length=1, max_length=100)
     subcategory: str | None = Field(default=None, max_length=100)
+    merchant: str | None = Field(default=None, max_length=200)
     source: TransactionSource = TransactionSource.manual
     currency: str = Field(default="INR", min_length=3, max_length=10)
 
@@ -37,6 +38,7 @@ class TransactionUpdate(BaseModel):
     amount: Decimal | None = Field(default=None, gt=0, max_digits=16, decimal_places=2)
     category: str | None = Field(default=None, min_length=1, max_length=100)
     subcategory: str | None = Field(default=None, max_length=100)
+    merchant: str | None = Field(default=None, max_length=200)
     currency: str | None = Field(default=None, min_length=3, max_length=10)
 
 
@@ -49,6 +51,7 @@ class TransactionRead(BaseModel):
     transaction_type: TransactionType
     category: str
     subcategory: str | None
+    merchant: str | None = None
     source: TransactionSource
 
     model_config = {"from_attributes": True}

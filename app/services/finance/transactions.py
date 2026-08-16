@@ -24,6 +24,7 @@ async def create_transaction(
             "transaction_type": data.transaction_type.value,
             "category": data.category,
             "subcategory": data.subcategory,
+            "merchant": data.merchant,
             "source": data.source.value,
             "is_deleted": False,
         },

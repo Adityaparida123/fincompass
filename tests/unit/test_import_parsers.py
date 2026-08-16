@@ -180,3 +180,45 @@ def test_parse_pdf_scanned_raises(monkeypatch):
 def test_parse_empty_csv(tmp_path):
     path = _write_csv(tmp_path, [["Date", "Narration", "Amount"]])
     assert parse_tabular_file(path, "csv") == []
+
+
+def test_parse_csv_semicolon_delimiter_sniffed(tmp_path):
+    path = tmp_path / "statement.csv"
+    content = "Date;Narration;Amount\n01/08/2026;Swiggy;-350.00\n"
+    path.write_text(content, encoding="utf-8")
+    rows = parse_tabular_file(str(path), "csv")
+    assert len(rows) == 1
+    assert rows[0].description == "Swiggy"
+    assert rows[0].transaction_type == "expense"
+
+
+def test_parse_csv_tab_delimiter_sniffed(tmp_path):
+    path = tmp_path / "statement.csv"
+    content = "Date\tNarration\tAmount\n01/08/2026\tBigBasket\t1200.50\n"
+    path.write_text(content, encoding="utf-8")
+    rows = parse_tabular_file(str(path), "csv")
+    assert len(rows) == 1
+    assert rows[0].description == "BigBasket"
+
+
+def test_parse_corrupt_csv_raises(tmp_path):
+    path = tmp_path / "broken.csv"
+    path.write_bytes(b"\x00\x01\x02\x03\xff\xfe\xfd" * 20)
+    with pytest.raises(InvalidInputError):
+        parse_tabular_file(str(path), "csv")
+
+
+def test_parse_corrupt_xlsx_raises(tmp_path):
+    path = tmp_path / "broken.xlsx"
+    path.write_bytes(b"this is not an xlsx file at all")
+    with pytest.raises(InvalidInputError):
+        parse_tabular_file(str(path), "xlsx")
+
+
+def test_parse_corrupt_pdf_raises(tmp_path, monkeypatch):
+    def _boom(path):
+        raise ValueError("not a pdf")
+
+    monkeypatch.setattr("pdfplumber.open", _boom)
+    with pytest.raises(InvalidInputError):
+        parse_pdf_file("broken.pdf")

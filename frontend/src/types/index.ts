@@ -56,21 +56,30 @@ export interface StatementPreviewTransaction {
   amount: string;
   transaction_type: "income" | "expense";
   category: string;
+  subcategory: string | null;
+  merchant: string | null;
+  movement_type: string;
   confidence: number;
   confidence_label: string;
   needs_review: boolean;
   category_source: "ml" | "keyword";
+  duplicate_status: "new" | "possible_duplicate" | "duplicate";
   is_duplicate: boolean;
+  recurring: boolean;
+  warnings: string[];
   reference: string | null;
 }
 
 export interface StatementAnalyzeResponse {
   file_name: string;
   total_rows: number;
+  new_count: number;
   expenses_count: number;
   income_count: number;
   duplicate_count: number;
+  possible_duplicate_count: number;
   needs_review_count: number;
+  recurring_count: number;
   skipped_rows: number;
   transactions: StatementPreviewTransaction[];
   message: string | null;
@@ -87,6 +96,8 @@ export interface StatementConfirmItem {
   amount: string;
   transaction_type: "income" | "expense";
   category: string;
+  subcategory: string | null;
+  merchant: string | null;
 }
 
 export interface ExpenseSummary {

@@ -1,6 +1,9 @@
 """Integration tests for the bank statement import endpoints."""
 
+from decimal import Decimal
+
 from app.core.config import settings
+from tests.unit.statement_fixtures import INDIAN_STATEMENT_CSV
 
 CSV = (
     "Date,Narration,Withdrawal (Dr),Deposit (Cr)\n"
@@ -163,3 +166,99 @@ async def test_analyze_marks_existing_duplicate(client, consented_headers):
     assert payload["duplicate_count"] == 1
     assert payload["transactions"][0]["is_duplicate"] is True
     assert "duplicate" in payload["message"].lower()
+
+
+async def test_analyze_full_pipeline_fields(client, consented_headers):
+    response = await _upload(client, consented_headers, content=INDIAN_STATEMENT_CSV)
+    assert response.status_code == 200
+    payload = response.json()
+
+    assert payload["total_rows"] == 19
+    assert payload["expenses_count"] == 16
+    assert payload["income_count"] == 3
+    assert payload["duplicate_count"] == 0
+    assert payload["possible_duplicate_count"] == 1
+    assert payload["recurring_count"] == 2
+    assert payload["new_count"] == 18
+    assert payload["message"] and "possible duplicate" in payload["message"].lower()
+
+    by_number = {t["row_number"]: t for t in payload["transactions"]}
+
+    swiggy = by_number[1]
+    assert swiggy["merchant"] == "Swiggy"
+    assert swiggy["category"] == "food"
+    assert swiggy["subcategory"] == "restaurant"
+    assert swiggy["duplicate_status"] == "new"
+    assert swiggy["needs_review"] is False
+
+    possible = by_number[3]
+    assert possible["description"].startswith("UPI/DR/320/UBER")
+    assert possible["duplicate_status"] == "possible_duplicate"
+    assert possible["is_duplicate"] is False
+
+    atm = by_number[4]
+    assert atm["merchant"] == "ATM"
+    assert atm["movement_type"] == "cash_withdrawal"
+
+    rent = by_number[5]
+    assert rent["category"] == "housing"
+    assert rent["subcategory"] == "rent"
+    assert rent["movement_type"] == "expense"
+
+    netflix = by_number[11]
+    assert netflix["category"] == "subscriptions"
+    assert netflix["subcategory"] == "streaming"
+    assert netflix["recurring"] is True
+    assert by_number[18]["recurring"] is True
+
+    transfer = by_number[15]
+    assert transfer["movement_type"] == "transfer"
+
+    salary = by_number[19]
+    assert salary["transaction_type"] == "income"
+    assert salary["category"] == "income"
+    assert salary["movement_type"] == "income"
+    assert salary["merchant"] == "ABC PVT LTD"
+    assert salary["confidence_label"] in {"high", "good"}
+
+
+async def test_confirm_persists_merchant_and_subcategory(client, consented_headers, db_session):
+    response = await _upload(client, consented_headers, content=INDIAN_STATEMENT_CSV)
+    preview = response.json()["transactions"]
+    swiggy = next(t for t in preview if t["row_number"] == 1)
+    items = [
+        {
+            "date": swiggy["date"],
+            "description": swiggy["description"],
+            "amount": swiggy["amount"],
+            "transaction_type": swiggy["transaction_type"],
+            "category": swiggy["category"],
+            "subcategory": swiggy["subcategory"],
+            "merchant": swiggy["merchant"],
+        }
+    ]
+    confirm = await client.post(
+        "/api/v1/transactions/import-statement/confirm",
+        json={"transactions": items},
+        headers=consented_headers,
+    )
+    assert confirm.status_code == 200
+    assert confirm.json()["imported_count"] == 1
+
+    listed = await client.get("/api/v1/transactions", headers=consented_headers)
+    assert listed.json()["total"] == 1
+    assert listed.json()["items"][0]["merchant"] == "Swiggy"
+
+    stored = await db_session.find("transactions", {"is_deleted": False})
+    assert len(stored) == 1
+    assert stored[0].merchant == "Swiggy"
+    assert stored[0].subcategory == "restaurant"
+    assert stored[0].amount == Decimal("450.00")
+
+
+async def test_analyze_handles_corrupt_file(client, consented_headers):
+    response = await _upload(
+        client, consented_headers, content=b"\x00\x01\x02\xff\xfe\xfd" * 50, name="broken.csv"
+    )
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "INVALID_INPUT"

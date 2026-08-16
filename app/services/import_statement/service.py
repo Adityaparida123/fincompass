@@ -1,8 +1,15 @@
 """Bank statement import orchestration.
 
-``analyze_statement_file`` parses/uploads to a reviewable preview without
-writing anything. ``confirm_statement_import`` persists only the rows the user
-explicitly confirmed, re-checking duplicates at write time.
+``analyze_statement_file`` runs the full pipeline — validation, format
+detection, parsing, normalization, classification, merchant extraction,
+movement classification, categorization, duplicate detection, confidence
+scoring, validation, recurring detection — and returns a reviewable preview
+without writing anything. ``confirm_statement_import`` persists only the rows
+the user explicitly confirmed, re-checking duplicates at write time and
+inserting them in bulk.
+
+Nothing about the statement contents (descriptions, amounts, balances) is ever
+logged; only aggregate metrics (see ``metrics.py``).
 """
 
 from __future__ import annotations
@@ -27,9 +34,15 @@ from app.services.import_statement.categorize import categorize_row
 from app.services.import_statement.dedupe import (
     fingerprint,
     load_existing_fingerprints,
+    load_existing_index,
     mark_duplicates,
 )
+from app.services.import_statement.merchant import extract_merchant
+from app.services.import_statement.metrics import ImportTimings, log_import_metrics
+from app.services.import_statement.movement import classify_movement
 from app.services.import_statement.parsers import detect_format, parse_file
+from app.services.import_statement.recurring import detect_recurring
+from app.services.import_statement.validate import validate_row
 
 
 async def _save_temporarily(content: bytes, fmt: str) -> str:
@@ -55,6 +68,8 @@ async def analyze_statement_file(
     user_id: int,
     upload: UploadFile,
 ) -> StatementAnalyzeResponse:
+    timings = ImportTimings()
+
     content = await upload.read()
     if len(content) > settings.MAX_UPLOAD_SIZE:
         raise InvalidInputError(
@@ -83,10 +98,17 @@ async def analyze_statement_file(
         ]
     )
 
-    existing = await load_existing_fingerprints(db, user_id)
+    existing = await load_existing_index(db, user_id)
 
-    preview = []
+    preview: list[StatementPreviewTransaction] = []
     for idx, (row, cat) in enumerate(zip(raw_rows, categorized, strict=True)):
+        merchant = extract_merchant(row.description)
+        movement_type, movement_review = classify_movement(
+            row.description, row.transaction_type, cat.category
+        )
+        warnings = validate_row(
+            tx_date=row.date, amount=abs(row.amount), description=row.description
+        )
         preview.append(
             StatementPreviewTransaction(
                 row_number=idx + 1,
@@ -95,35 +117,69 @@ async def analyze_statement_file(
                 amount=abs(row.amount),
                 transaction_type=TransactionType(row.transaction_type),
                 category=cat.category,
+                subcategory=cat.subcategory,
+                merchant=merchant,
+                movement_type=movement_type,
                 confidence=cat.confidence,
                 confidence_label=cat.confidence_label,
-                needs_review=cat.needs_review,
+                needs_review=cat.needs_review or movement_review or bool(warnings),
                 category_source=cat.source,
+                duplicate_status="new",
                 is_duplicate=False,
+                recurring=False,
+                warnings=warnings,
                 reference=row.reference,
             )
         )
 
     preview, duplicate_count = mark_duplicates(preview, existing, user_id)
+
+    recurring_rows = detect_recurring(preview)
+    for item in preview:
+        if item.row_number in recurring_rows:
+            item.recurring = True
+
+    new_count = sum(1 for t in preview if t.duplicate_status == "new")
+    possible_duplicate_count = sum(
+        1 for t in preview if t.duplicate_status == "possible_duplicate"
+    )
     expenses = sum(1 for t in preview if t.transaction_type == TransactionType.expense)
     income = sum(1 for t in preview if t.transaction_type == TransactionType.income)
     needs_review = sum(1 for t in preview if t.needs_review)
+    recurring_count = sum(1 for t in preview if t.recurring)
     skipped = len(raw_rows) - len(preview)
 
-    message = None
+    messages: list[str] = []
     if duplicate_count:
-        message = f"{duplicate_count} possible duplicate transaction(s) detected."
+        messages.append(f"{duplicate_count} duplicate transaction(s) already exist and are unchecked.")
+    if possible_duplicate_count:
+        messages.append(f"{possible_duplicate_count} possible duplicate(s) need a quick look.")
+    if needs_review:
+        messages.append(f"{needs_review} transaction(s) are flagged for review.")
+
+    log_import_metrics(
+        file_type=fmt,
+        elapsed_ms=timings.elapsed_ms(),
+        rows_extracted=len(raw_rows),
+        valid_rows=len(preview),
+        duplicates=duplicate_count,
+        possible_duplicates=possible_duplicate_count,
+        needs_review=needs_review,
+    )
 
     return StatementAnalyzeResponse(
         file_name=upload.filename or "statement",
         total_rows=len(preview),
+        new_count=new_count,
         expenses_count=expenses,
         income_count=income,
         duplicate_count=duplicate_count,
+        possible_duplicate_count=possible_duplicate_count,
         needs_review_count=needs_review,
+        recurring_count=recurring_count,
         skipped_rows=skipped,
         transactions=preview,
-        message=message,
+        message=" ".join(messages) if messages else None,
     )
 
 
@@ -132,6 +188,7 @@ async def confirm_statement_import(
     user_id: int,
     items: list[StatementConfirmItem],
 ) -> StatementConfirmResponse:
+    timings = ImportTimings()
     existing = await load_existing_fingerprints(db, user_id)
 
     seen: set[str] = set()
@@ -160,19 +217,30 @@ async def confirm_statement_import(
                 "transaction_type": item.transaction_type.value,
                 "category": item.category,
                 "subcategory": item.subcategory,
+                "merchant": item.merchant,
                 "source": TransactionSource.import_.value,
                 "is_deleted": False,
             }
         )
 
-    inserted: list[Doc] = []
-    for doc in to_insert:
-        inserted.append(await db.insert("transactions", doc))
+    inserted: list[Doc] = await db.insert_many("transactions", to_insert)
 
     if inserted:
         from app.core.cache import invalidate_user_financial_cache
 
         await invalidate_user_financial_cache(user_id)
+
+    log_import_metrics(
+        file_type="confirm",
+        elapsed_ms=timings.elapsed_ms(),
+        rows_extracted=len(items),
+        valid_rows=len(to_insert),
+        duplicates=duplicates_skipped,
+        possible_duplicates=0,
+        needs_review=0,
+        imported=len(inserted),
+        stage="confirm",
+    )
 
     return StatementConfirmResponse(
         imported_count=len(inserted),

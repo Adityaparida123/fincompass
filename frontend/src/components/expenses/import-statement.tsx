@@ -122,6 +122,8 @@ export function ImportStatementDialog({
           amount: r.amount,
           transaction_type: r.transaction_type,
           category: r.category,
+          subcategory: r.subcategory,
+          merchant: r.merchant,
         })),
       );
       toast.success(t("success", { count: result.imported_count }));
@@ -137,6 +139,8 @@ export function ImportStatementDialog({
   const selectedCount = rows.filter((r) => r.selected).length;
   const duplicateCount = rows.filter((r) => r.is_duplicate).length;
   const needsReviewCount = rows.filter((r) => r.needs_review).length;
+  const possibleDuplicateCount = rows.filter((r) => r.duplicate_status === "possible_duplicate").length;
+  const recurringCount = rows.filter((r) => r.recurring).length;
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -213,6 +217,12 @@ export function ImportStatementDialog({
               {duplicateCount > 0 && (
                 <Badge variant="destructive">{t("duplicatesBadge", { count: duplicateCount })}</Badge>
               )}
+              {possibleDuplicateCount > 0 && (
+                <Badge variant="outline">{t("possibleDuplicatesBadge", { count: possibleDuplicateCount })}</Badge>
+              )}
+              {recurringCount > 0 && (
+                <Badge variant="outline">{t("recurringBadge", { count: recurringCount })}</Badge>
+              )}
               {needsReviewCount > 0 && (
                 <Badge variant="outline">{t("needsReviewBadge", { count: needsReviewCount })}</Badge>
               )}
@@ -225,10 +235,11 @@ export function ImportStatementDialog({
                     <th className="w-10 p-2 text-left font-medium">{t("colSelect")}</th>
                     <th className="p-2 text-left font-medium">{t("colDate")}</th>
                     <th className="p-2 text-left font-medium">{t("colDescription")}</th>
+                    <th className="w-36 p-2 text-left font-medium">{t("colMerchant")}</th>
                     <th className="w-28 p-2 text-left font-medium">{t("colAmount")}</th>
                     <th className="w-28 p-2 text-left font-medium">{t("colType")}</th>
                     <th className="w-40 p-2 text-left font-medium">{t("colCategory")}</th>
-                    <th className="w-28 p-2 text-left font-medium">{t("colConfidence")}</th>
+                    <th className="w-32 p-2 text-left font-medium">{t("colConfidence")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -249,6 +260,13 @@ export function ImportStatementDialog({
                           onChange={(e) => updateRow(row.row_number, { description: e.target.value })}
                           className="h-8 text-sm"
                         />
+                      </td>
+                      <td className="p-2">
+                        {row.merchant ? (
+                          <span className="block text-sm">{row.merchant}</span>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">—</span>
+                        )}
                       </td>
                       <td className="p-2">
                         <Input
@@ -288,6 +306,10 @@ export function ImportStatementDialog({
                       <td className="p-2">
                         <div className="flex flex-wrap gap-1">
                           {row.is_duplicate && <Badge variant="destructive">{t("duplicate")}</Badge>}
+                          {row.duplicate_status === "possible_duplicate" && (
+                            <Badge variant="outline">{t("possibleDuplicate")}</Badge>
+                          )}
+                          {row.recurring && <Badge variant="secondary">{t("recurring")}</Badge>}
                           {row.needs_review && <Badge variant="outline">{t("needsReview")}</Badge>}
                           {!row.needs_review && !row.is_duplicate && (
                             <Badge variant="success">{row.confidence_label}</Badge>

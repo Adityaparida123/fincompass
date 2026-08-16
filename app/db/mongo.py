@@ -329,6 +329,21 @@ class MongoDatabase:
             raise RuntimeError(f"Failed to allocate ID for collection '{name}'.")
         return int(doc["seq"])
 
+    async def next_ids(self, name: str, count: int) -> list[int]:
+        """Atomically allocate ``count`` sequential integer IDs in one round-trip."""
+        if count <= 0:
+            return []
+        doc = await self._coll("counters").find_one_and_update(
+            {"_id": name},
+            {"$inc": {"seq": count}},
+            upsert=True,
+            return_after=True,
+        )
+        if doc is None:
+            raise RuntimeError(f"Failed to allocate IDs for collection '{name}'.")
+        start = int(doc["seq"]) - count
+        return list(range(start + 1, start + count + 1))
+
     async def insert(self, name: str, doc: dict) -> Doc:
         """Insert a document, assigning integer ``_id``/``id`` and timestamps."""
         doc = dict(doc)
@@ -342,7 +357,22 @@ class MongoDatabase:
         return Doc(doc)
 
     async def insert_many(self, name: str, docs: list[dict]) -> list[Doc]:
-        return [await self.insert(name, doc) for doc in docs]
+        """Bulk insert with IDs allocated in a single counter round-trip."""
+        if not docs:
+            return []
+        ids = await self.next_ids(name, len(docs))
+        now = datetime.now(UTC)
+        prepared: list[dict] = []
+        for doc, _id in zip(docs, ids, strict=True):
+            item = dict(doc)
+            item["_id"] = _id
+            item["id"] = _id
+            item.setdefault("created_at", now)
+            item["updated_at"] = now
+            prepared.append(item)
+        for item in prepared:
+            await self._coll(name).insert_one(_encode_value(item))
+        return [Doc(item) for item in prepared]
 
     async def find_one(self, name: str, filt: dict | None = None) -> Doc | None:
         raw = await self._coll(name).find_one(_clean_value(filt))

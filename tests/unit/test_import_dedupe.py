@@ -5,6 +5,7 @@ from decimal import Decimal
 
 from app.db.mongo import MongoDatabase, MongoMockBackend
 from app.services.import_statement.dedupe import (
+    ExistingIndex,
     fingerprint,
     load_existing_fingerprints,
     mark_duplicates,
@@ -61,6 +62,7 @@ class _Preview:
         self.transaction_type = transaction_type
         self.reference = reference
         self.is_duplicate = False
+        self.duplicate_status = "new"
 
 
 def test_mark_duplicates_within_statement():
@@ -82,3 +84,51 @@ def test_mark_duplicates_against_existing():
     rows, count = mark_duplicates(rows, existing, 1)
     assert count == 1
     assert rows[0].is_duplicate is True
+    assert rows[0].duplicate_status == "duplicate"
+
+
+def test_possible_duplicate_same_day_same_amount_different_desc():
+    rows = [
+        _Preview(date(2026, 8, 1), Decimal("500.00"), "UPI DR SWIGGY", "expense"),
+        _Preview(date(2026, 8, 1), Decimal("500.00"), "UPI DR ZOMATO", "expense"),
+    ]
+    rows, count = mark_duplicates(rows, set(), 1)
+    assert count == 0
+    assert rows[0].duplicate_status == "new"
+    assert rows[1].duplicate_status == "possible_duplicate"
+    assert rows[1].is_duplicate is False
+
+
+def test_possible_duplicate_same_desc_same_amount_within_window():
+    rows = [
+        _Preview(date(2026, 8, 1), Decimal("649.00"), "NETFLIX", "expense"),
+        _Preview(date(2026, 8, 3), Decimal("649.00"), "NETFLIX", "expense"),
+    ]
+    rows, _ = mark_duplicates(rows, set(), 1)
+    assert rows[1].duplicate_status == "possible_duplicate"
+
+
+def test_not_possible_when_dates_far_apart():
+    rows = [
+        _Preview(date(2026, 1, 1), Decimal("649.00"), "NETFLIX", "expense"),
+        _Preview(date(2026, 8, 1), Decimal("649.00"), "NETFLIX", "expense"),
+    ]
+    rows, _ = mark_duplicates(rows, set(), 1)
+    assert rows[1].duplicate_status == "new"
+
+
+def test_possible_against_existing_index():
+    index = ExistingIndex()
+    index.exact.add(fingerprint(1, date(2026, 7, 1), Decimal("800.00"), "DMART", "expense"))
+    index.add(date(2026, 7, 1), Decimal("800.00"), "DMART")
+    rows = [_Preview(date(2026, 7, 3), Decimal("800.00"), "DMART", "expense")]
+    rows, _ = mark_duplicates(rows, index, 1)
+    assert rows[0].duplicate_status == "possible_duplicate"
+
+
+def test_possible_same_day_different_desc_against_existing_index():
+    index = ExistingIndex()
+    index.add(date(2026, 8, 1), Decimal("900.00"), "BIGBASKET")
+    rows = [_Preview(date(2026, 8, 1), Decimal("900.00"), "BLINKIT", "expense")]
+    rows, _ = mark_duplicates(rows, index, 1)
+    assert rows[0].duplicate_status == "possible_duplicate"
