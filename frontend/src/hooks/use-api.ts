@@ -95,7 +95,10 @@ export function useAnalyzeStatement() {
       return api.post<StatementAnalyzeResponse>(
         "/transactions/import-statement/analyze",
         formData,
-        { timeout: 120_000 },
+        {
+          timeout: 120_000,
+          errorMessages: { 404: "Bank statement analysis endpoint is unavailable." },
+        },
       );
     },
   });

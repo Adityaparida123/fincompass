@@ -8,9 +8,21 @@ type RequestOptions = RequestInit & {
   token?: string | null;
   skipAuth?: boolean;
   timeout?: number;
+  errorMessages?: Partial<Record<number, string>>;
 };
 
 const TOKEN_STORAGE_KEY = "fincompass-tokens";
+
+const DEFAULT_STATUS_MESSAGES: Partial<Record<number, string>> = {
+  401: "Your session has expired. Please sign in again.",
+  403: "You don't have permission to access this.",
+  404: "The requested resource was not found.",
+  413: "The uploaded file is too large.",
+  415: "Unsupported file type.",
+  422: "The request could not be processed. Please check your input.",
+  429: "Too many requests. Please try again shortly.",
+  500: "The server encountered an error. Please try again.",
+};
 
 class ApiClient {
   private accessToken: string | null = null;
@@ -111,7 +123,7 @@ class ApiClient {
 
   async request<T>(path: string, options: RequestOptions = {}): Promise<T> {
     this.restoreTokens();
-    const { token, skipAuth, timeout = DEFAULT_TIMEOUT_MS, ...init } = options;
+    const { token, skipAuth, timeout = DEFAULT_TIMEOUT_MS, errorMessages, ...init } = options;
     const headers = new Headers(init.headers);
     if (!headers.has("Content-Type") && init.body && !(init.body instanceof FormData)) {
       headers.set("Content-Type", "application/json");
@@ -147,11 +159,13 @@ class ApiClient {
     const data = await res.json().catch(() => null);
     if (!res.ok) {
       const err = data as ApiError;
-      throw new ApiRequestError(
-        err?.error?.message ?? "Something went wrong.",
-        res.status,
-        err?.error?.code ?? "UNKNOWN",
-      );
+      const fallback =
+        errorMessages?.[res.status] ??
+        (res.status === 401 && !skipAuth ? DEFAULT_STATUS_MESSAGES[401] : undefined) ??
+        err?.error?.message ??
+        DEFAULT_STATUS_MESSAGES[res.status] ??
+        "Something went wrong.";
+      throw new ApiRequestError(fallback, res.status, err?.error?.code ?? "UNKNOWN");
     }
     return data as T;
   }
