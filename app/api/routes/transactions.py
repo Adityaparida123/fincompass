@@ -3,13 +3,18 @@
 from datetime import date
 from decimal import Decimal
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, File, Query, UploadFile
 
-from app.api.dependencies import get_current_user
+from app.api.dependencies import get_current_user, rate_limit_statement
 from app.db.enums import ConsentType, TransactionSource, TransactionType
 from app.db.mongo import MongoDatabase
 from app.db.session import get_session
 from app.schemas.common import Page
+from app.schemas.import_statement import (
+    StatementAnalyzeResponse,
+    StatementConfirmRequest,
+    StatementConfirmResponse,
+)
 from app.schemas.transaction import TransactionCreate, TransactionRead, TransactionUpdate
 from app.services.consent.service import require_consent
 from app.services.finance.transactions import (
@@ -18,6 +23,10 @@ from app.services.finance.transactions import (
     get_transaction,
     transaction_filter,
     update_transaction,
+)
+from app.services.import_statement.service import (
+    analyze_statement_file,
+    confirm_statement_import,
 )
 from app.services.recycle_bin.service import move_to_recycle_bin
 from app.utils.pagination import paginate
@@ -81,6 +90,41 @@ async def list_txs(
             continue
         items.append(TransactionRead.model_validate(row))
     return paginate(items, total, page, page_size)
+
+
+@router.post(
+    "/import-statement/analyze",
+    response_model=StatementAnalyzeResponse,
+    status_code=200,
+)
+async def analyze_statement(
+    file: UploadFile = File(...),
+    user=Depends(get_current_user),
+    db: MongoDatabase = Depends(get_session),
+    _=Depends(rate_limit_statement),
+):
+    """Parse an uploaded bank statement and return a reviewable preview.
+
+    No data is persisted by this endpoint; the user reviews (and edits) the
+    rows and only the confirmed selection is imported via ``/confirm``.
+    """
+    await _require_financial_consent(db, user.id)
+    return await analyze_statement_file(db, user.id, file)
+
+
+@router.post(
+    "/import-statement/confirm",
+    response_model=StatementConfirmResponse,
+    status_code=200,
+)
+async def confirm_statement(
+    data: StatementConfirmRequest,
+    user=Depends(get_current_user),
+    db: MongoDatabase = Depends(get_session),
+):
+    """Persist the user-confirmed statement transactions (duplicates skipped)."""
+    await _require_financial_consent(db, user.id)
+    return await confirm_statement_import(db, user.id, data.transactions)
 
 
 @router.get("/{transaction_id}", response_model=TransactionRead)

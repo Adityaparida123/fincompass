@@ -134,6 +134,17 @@ async def rate_limit_ml(request: Request) -> None:
     )
 
 
+async def rate_limit_statement(request: Request) -> None:
+    from app.core.config import settings
+
+    await _rate_limit(
+        request,
+        "statement",
+        limit=settings.RATE_LIMIT_STATEMENT_LIMIT,
+        window=settings.RATE_LIMIT_STATEMENT_WINDOW,
+    )
+
+
 async def _request_email(request: Request) -> str | None:
     """Best-effort extraction of the request email for per-email rate buckets."""
     try:

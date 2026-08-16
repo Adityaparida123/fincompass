@@ -49,6 +49,46 @@ export interface Transaction {
   source: string;
 }
 
+export interface StatementPreviewTransaction {
+  row_number: number;
+  date: string;
+  description: string;
+  amount: string;
+  transaction_type: "income" | "expense";
+  category: string;
+  confidence: number;
+  confidence_label: string;
+  needs_review: boolean;
+  category_source: "ml" | "keyword";
+  is_duplicate: boolean;
+  reference: string | null;
+}
+
+export interface StatementAnalyzeResponse {
+  file_name: string;
+  total_rows: number;
+  expenses_count: number;
+  income_count: number;
+  duplicate_count: number;
+  needs_review_count: number;
+  skipped_rows: number;
+  transactions: StatementPreviewTransaction[];
+  message: string | null;
+}
+
+export interface StatementConfirmResponse {
+  imported_count: number;
+  duplicates_skipped: number;
+}
+
+export interface StatementConfirmItem {
+  date: string;
+  description: string;
+  amount: string;
+  transaction_type: "income" | "expense";
+  category: string;
+}
+
 export interface ExpenseSummary {
   period: string;
   total_expenses: string;

@@ -88,6 +88,11 @@ class Settings(BaseSettings):
     RATE_LIMIT_CHAT_WINDOW: int = 60
     RATE_LIMIT_ML_LIMIT: int = 60
     RATE_LIMIT_ML_WINDOW: int = 60
+    RATE_LIMIT_STATEMENT_LIMIT: int = 10
+    RATE_LIMIT_STATEMENT_WINDOW: int = 3600  # 1 hour
+
+    # Bank statement uploads: reject oversized files before parsing them.
+    MAX_UPLOAD_SIZE: int = 10 * 1024 * 1024  # 10 MB
 
     # Auth endpoints get dedicated buckets (per client IP, plus a per-email
     # bucket where the request carries an email) so registration, login and

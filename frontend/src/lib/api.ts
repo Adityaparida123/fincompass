@@ -68,7 +68,7 @@ class ApiClient {
   async request<T>(path: string, options: RequestOptions = {}): Promise<T> {
     const { token, skipAuth, timeout = DEFAULT_TIMEOUT_MS, ...init } = options;
     const headers = new Headers(init.headers);
-    if (!headers.has("Content-Type") && init.body) {
+    if (!headers.has("Content-Type") && init.body && !(init.body instanceof FormData)) {
       headers.set("Content-Type", "application/json");
     }
 
@@ -116,10 +116,11 @@ class ApiClient {
   }
 
   post<T>(path: string, body?: unknown, options?: RequestOptions) {
+    const isFormData = body instanceof FormData;
     return this.request<T>(path, {
       ...options,
       method: "POST",
-      body: body ? JSON.stringify(body) : undefined,
+      body: isFormData ? body : body ? JSON.stringify(body) : undefined,
     });
   }
 

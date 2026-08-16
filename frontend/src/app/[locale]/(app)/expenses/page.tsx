@@ -11,6 +11,7 @@ import {
   useExpensesWeekly, useExpensesMonthly, useExpenseCategories,
   useTransactions, useCreateTransaction, useDeleteTransaction,
 } from "@/hooks/use-api";
+import { ImportStatementDialog } from "@/components/expenses/import-statement";
 import { formatCurrency } from "@/lib/utils";
 import { ApiRequestError } from "@/lib/api";
 
@@ -22,6 +23,7 @@ export default function ExpensesPage() {
   const [categoryFilter, setCategoryFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [showForm, setShowForm] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [form, setForm] = useState({ date: format(now, "yyyy-MM-dd"), description: "", amount: "", category: "", transaction_type: "expense" });
   const [error, setError] = useState("");
 
@@ -66,8 +68,13 @@ export default function ExpensesPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold sm:text-3xl">{t("title")}</h1>
-        <Button onClick={() => setShowForm(!showForm)}>{t("addTransaction")}</Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setShowImport(true)}>{t("importStatement")}</Button>
+          <Button onClick={() => setShowForm(!showForm)}>{t("addTransaction")}</Button>
+        </div>
       </div>
+
+      <ImportStatementDialog open={showImport} onOpenChange={setShowImport} />
 
       {showForm && (
         <Card>

@@ -21,6 +21,9 @@ import type {
   RecycleBinItem,
   EMIResult,
   LoanSimulationResult,
+  StatementAnalyzeResponse,
+  StatementConfirmResponse,
+  StatementConfirmItem,
 } from "@/types";
 
 export function useExpensesWeekly(year: number, week: number) {
@@ -80,6 +83,35 @@ export function useDeleteTransaction() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["transactions"] });
       qc.invalidateQueries({ queryKey: ["expenses"] });
+    },
+  });
+}
+
+export function useAnalyzeStatement() {
+  return useMutation({
+    mutationFn: (file: File) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      return api.post<StatementAnalyzeResponse>(
+        "/transactions/import-statement/analyze",
+        formData,
+        { timeout: 120_000 },
+      );
+    },
+  });
+}
+
+export function useImportStatement() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (transactions: StatementConfirmItem[]) =>
+      api.post<StatementConfirmResponse>("/transactions/import-statement/confirm", {
+        transactions,
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["transactions"] });
+      qc.invalidateQueries({ queryKey: ["expenses"] });
+      qc.invalidateQueries({ queryKey: ["cashflow"] });
     },
   });
 }
