@@ -42,3 +42,22 @@ async def update_me(
     )
     updated = await get_user_by_id(db, user.id)
     return user_summary(updated)
+
+
+@router.delete("/me", status_code=200)
+async def delete_me(
+    user: Doc = Depends(get_current_user),
+    db: MongoDatabase = Depends(get_session),
+) -> dict:
+    """Permanently delete the current account and all associated data."""
+    from app.services.users.service import delete_account
+
+    await log_audit(
+        db,
+        action="user.delete_account",
+        resource_type="user",
+        user_id=user.id,
+        resource_id=user.id,
+    )
+    await delete_account(db, user)
+    return {"message": "Account deleted."}
