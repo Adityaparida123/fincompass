@@ -152,6 +152,8 @@
       "possibleDuplicatesBadge": "{count} possible duplicates",
       "recurringBadge": "{count} recurring",
       "needsReviewBadge": "{count} need review",
+      "expense": "Expense",
+      "income": "Income",
       "colSelect": "Import",
       "colDate": "Date",
       "colDescription": "Description",

@@ -152,6 +152,8 @@
       "possibleDuplicatesBadge": "{count} संभावित डुप्लिकेट",
       "recurringBadge": "{count} आवर्ती",
       "needsReviewBadge": "{count} समीक्षा आवश्यक",
+      "expense": "खर्च",
+      "income": "आय",
       "colSelect": "आयात",
       "colDate": "तारीख",
       "colDescription": "विवरण",
