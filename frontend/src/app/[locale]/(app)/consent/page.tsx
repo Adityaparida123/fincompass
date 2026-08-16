@@ -39,22 +39,23 @@ export default function ConsentPage() {
 
       {isLoading ? <Skeleton className="h-40 w-full" /> : isError ? (
         <PageError message={tc("error")} onRetry={() => refetch()} />
-      ) : data?.items?.length ? (
+      ) : (
         <div className="space-y-3">
-          {data.items.map((c) => {
-            const granted = c.status === "granted";
-            const labelKey = CONSENT_LABELS[c.consent_type] ?? c.consent_type;
+          {Object.keys(CONSENT_LABELS).map((consentType) => {
+            const item = data?.items?.find((c) => c.consent_type === consentType);
+            const granted = item?.status === "granted";
+            const labelKey = CONSENT_LABELS[consentType];
             return (
-              <Card key={c.consent_type}>
+              <Card key={consentType}>
                 <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between pb-2">
                   <div>
                     <CardTitle className="text-base">{t(labelKey as "financialAnalysis")}</CardTitle>
-                    <Badge variant={granted ? "success" : "secondary"} className="mt-1">{c.status}</Badge>
+                    <Badge variant={granted ? "success" : "secondary"} className="mt-1">{item ? item.status : t("notGranted")}</Badge>
                   </div>
                   <Button
                     size="sm"
                     variant={granted ? "outline" : "default"}
-                    onClick={() => handleToggle(c.consent_type, granted)}
+                    onClick={() => handleToggle(consentType, granted)}
                     disabled={grant.isPending || revoke.isPending}
                   >
                     {granted ? t("revoke") : t("grant")}
@@ -64,7 +65,7 @@ export default function ConsentPage() {
             );
           })}
         </div>
-      ) : <p className="text-sm text-muted-foreground">{tc("noData")}</p>}
+      )}
     </div>
   );
 }

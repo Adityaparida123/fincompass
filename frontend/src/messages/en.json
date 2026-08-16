@@ -114,6 +114,7 @@
     "chatContext": "FinAI financial context",
     "grant": "Grant",
     "revoke": "Revoke",
+    "notGranted": "Not granted",
     "revokeWarning": "Revoking this consent will disable related features."
   },
   "expenses": {
