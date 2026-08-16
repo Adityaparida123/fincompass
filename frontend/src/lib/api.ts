@@ -10,17 +10,59 @@ type RequestOptions = RequestInit & {
   timeout?: number;
 };
 
+const TOKEN_STORAGE_KEY = "fincompass-tokens";
+
 class ApiClient {
   private accessToken: string | null = null;
   private refreshToken: string | null = null;
   private refreshPromise: Promise<string | null> | null = null;
+  private tokensRestored = false;
+
+  private restoreTokens() {
+    if (this.tokensRestored || typeof window === "undefined") return;
+    this.tokensRestored = true;
+    try {
+      const raw = window.localStorage.getItem(TOKEN_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as {
+          accessToken?: string;
+          refreshToken?: string;
+        };
+        this.accessToken = parsed.accessToken ?? null;
+        this.refreshToken = parsed.refreshToken ?? null;
+      }
+    } catch {
+      // Ignore storage errors (private mode, corrupted payload).
+    }
+  }
+
+  private persistTokens() {
+    if (typeof window === "undefined") return;
+    try {
+      if (this.accessToken && this.refreshToken) {
+        window.localStorage.setItem(
+          TOKEN_STORAGE_KEY,
+          JSON.stringify({
+            accessToken: this.accessToken,
+            refreshToken: this.refreshToken,
+          }),
+        );
+      } else {
+        window.localStorage.removeItem(TOKEN_STORAGE_KEY);
+      }
+    } catch {
+      // Ignore storage errors (private mode, quota).
+    }
+  }
 
   setTokens(access: string | null, refresh: string | null) {
     this.accessToken = access;
     this.refreshToken = refresh;
+    this.persistTokens();
   }
 
   getAccessToken() {
+    this.restoreTokens();
     return this.accessToken;
   }
 
@@ -31,6 +73,7 @@ class ApiClient {
   clearTokens() {
     this.accessToken = null;
     this.refreshToken = null;
+    this.persistTokens();
   }
 
   private async refreshAccessToken(): Promise<string | null> {
@@ -53,6 +96,7 @@ class ApiClient {
         const data = await res.json();
         this.accessToken = data.access_token;
         this.refreshToken = data.refresh_token;
+        this.persistTokens();
         return this.accessToken;
       } catch {
         this.clearTokens();
@@ -66,6 +110,7 @@ class ApiClient {
   }
 
   async request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+    this.restoreTokens();
     const { token, skipAuth, timeout = DEFAULT_TIMEOUT_MS, ...init } = options;
     const headers = new Headers(init.headers);
     if (!headers.has("Content-Type") && init.body && !(init.body instanceof FormData)) {
@@ -84,7 +129,7 @@ class ApiClient {
       signal,
     });
 
-    if (res.status === 401 && !skipAuth && this.refreshToken) {
+    if (res.status === 401 && !skipAuth) {
       const newToken = await this.refreshAccessToken();
       if (newToken) {
         headers.set("Authorization", `Bearer ${newToken}`);
