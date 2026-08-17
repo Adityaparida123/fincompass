@@ -9,11 +9,13 @@ export function ResponsiveBarChart({
   data,
   xKey,
   bars,
+  valueFormatter,
   className,
 }: {
   data: Record<string, unknown>[];
   xKey: string;
   bars: { key: string; color?: string; name?: string }[];
+  valueFormatter?: (value: number, name: string) => string;
   className?: string;
 }) {
   return (
@@ -22,7 +24,9 @@ export function ResponsiveBarChart({
         <BarChart data={data} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
           <XAxis dataKey={xKey} tick={{ fontSize: 11 }} />
           <YAxis tick={{ fontSize: 11 }} />
-          <Tooltip />
+          <Tooltip
+            formatter={valueFormatter ? (value: unknown, name: unknown) => [valueFormatter(Number(value), String(name)), String(name)] : undefined}
+          />
           <Legend wrapperStyle={{ fontSize: 12 }} />
           {bars.map((b, i) => (
             <Bar key={b.key} dataKey={b.key} fill={b.color ?? COLORS[i % COLORS.length]} name={b.name ?? b.key} radius={[4, 4, 0, 0]} />

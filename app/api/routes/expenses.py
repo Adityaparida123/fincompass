@@ -21,6 +21,7 @@ from app.services.finance.expenses import (
     detect_recurring_patterns,
     expense_series,
     expense_totals,
+    income_series,
     income_totals,
 )
 from app.utils.dates import month_bounds
@@ -195,6 +196,7 @@ async def trends(
         prev = start.replace(day=1) - timedelta(days=1)
         start = prev.replace(day=1)
     series = await expense_series(db, user.id, start, end, granularity)
+    inc = await income_series(db, user.id, start, end, granularity)
     ordered_keys = sorted(series.keys())
     points: list[ExpenseTrendPoint] = []
     prev_total: Decimal | None = None
@@ -204,7 +206,13 @@ async def trends(
         if prev_total is not None and prev_total != 0:
             change = ((total - prev_total) / prev_total * Decimal("100")).quantize(Decimal("0.01"))
         points.append(
-            ExpenseTrendPoint(period=key, total=total, previous=prev_total, change_percent=change)
+            ExpenseTrendPoint(
+                period=key,
+                total=total,
+                income=inc.get(key, Decimal("0")),
+                previous=prev_total,
+                change_percent=change,
+            )
         )
         prev_total = total
 

@@ -110,7 +110,9 @@ export default function ExpensesPage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card><CardHeader><CardTitle>{t("weeklyChart")}</CardTitle></CardHeader>
-          <CardContent>{weekly.isLoading ? <ChartSkeleton /> : weeklyData.length ? (
+          <CardContent>{weekly.isLoading ? <ChartSkeleton /> : weekly.isError ? (
+            <PageError message="Unable to load weekly breakdown." onRetry={() => weekly.refetch()} />
+          ) : weeklyData.length ? (
             <ResponsiveBarChart data={weeklyData} xKey="day" bars={[{ key: "amount", name: t("expense"), color: "#6366f1" }]} />
           ) : <p className="text-sm text-muted-foreground">{tc("noData")}</p>}</CardContent>
         </Card>

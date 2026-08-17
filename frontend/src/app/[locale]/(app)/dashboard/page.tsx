@@ -33,7 +33,7 @@ export default function DashboardPage() {
   const trendData = trends.data?.points?.map((p) => ({
     period: p.period,
     expenses: parseFloat(p.total),
-    income: p.income ? parseFloat(p.income) : 0,
+    income: parseFloat(p.income ?? "0"),
   })) ?? [];
 
   const stats = [
@@ -72,7 +72,7 @@ export default function DashboardPage() {
             {trends.isLoading ? <ChartSkeleton /> : trends.isError ? (
               <PageError message="Unable to load chart data." onRetry={() => trends.refetch()} />
             ) : (
-              <ResponsiveBarChart data={trendData} xKey="period" bars={[
+              <ResponsiveBarChart data={trendData} xKey="period" valueFormatter={(v) => formatCurrency(v)} bars={[
                 { key: "income", name: "Income", color: "#0d9488" },
                 { key: "expenses", name: "Expenses", color: "#6366f1" },
               ]} />
