@@ -58,12 +58,14 @@ export function Badge({ className, variant = "default", ...props }: React.HTMLAt
   );
 }
 
-export function Progress({ value, className }: { value: number; className?: string }) {
+export function Progress({ value, className }: { value: number | string; className?: string }) {
+  const n = typeof value === "string" ? Number(value) : value;
+  const pct = Number.isFinite(n) ? Math.min(100, Math.max(0, n)) : 0;
   return (
     <div className={cn("relative h-2 w-full overflow-hidden rounded-full bg-secondary", className)}>
       <div
         className="h-full bg-primary transition-all duration-300"
-        style={{ width: `${Math.min(100, Math.max(0, value))}%` }}
+        style={{ width: `${pct}%` }}
       />
     </div>
   );

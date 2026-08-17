@@ -91,6 +91,24 @@ async def expense_series(
     return bucket_rows_by_period(parsed, granularity)
 
 
+async def income_series(
+    db: MongoDatabase,
+    user_id: int,
+    start: date,
+    end: date,
+    granularity: str,
+) -> dict[str, Decimal]:
+    filt = {
+        "user_id": user_id,
+        "transaction_type": "income",
+        "is_deleted": False,
+        "date": {"$gte": start, "$lt": end},
+    }
+    rows = await db.find("transactions", filt, sort=[("date", 1)])
+    parsed = [(date.fromisoformat(row.date), row.category, row.amount) for row in rows]
+    return bucket_rows_by_period(parsed, granularity)
+
+
 class RecurringPattern(BaseModel):
     category: str
     label: str

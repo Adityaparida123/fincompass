@@ -74,3 +74,7 @@ export const useAuthStore = create<AuthState>()(
     },
   ),
 );
+
+api.setAuthFailureHandler(() => {
+  useAuthStore.getState().clearAuth();
+});

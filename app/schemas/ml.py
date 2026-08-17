@@ -66,12 +66,35 @@ class AnomalyResponse(BaseModel):
     timestamp: str
 
 
+class ForecastRange(BaseModel):
+    predicted: float
+    lower: float
+    upper: float
+
+
+class CategoryForecast(BaseModel):
+    category: str
+    predicted: float
+    lower: float
+    upper: float
+    months_of_data: int
+
+
 class CashflowForecastResponse(BaseModel):
+    status: str = "success"
+    method: str = "ml_model"
     forecasts: list[dict]
+    expense_forecast: ForecastRange | None = None
+    income_forecast: ForecastRange | None = None
+    category_forecasts: list[CategoryForecast] = Field(default_factory=list)
+    forecast_quality: str = "limited"
     confidence: float
     explanation: list[MLExplanationFactor]
     model: MLModelMeta
     timestamp: str
+    available_months: int | None = None
+    required_months: int | None = None
+    message: str | None = None
 
 
 class SavingsCapacityResponse(BaseModel):

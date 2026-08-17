@@ -35,13 +35,13 @@ async def _month_bounds(today: date) -> list[tuple[date, date]]:
     bounds: list[tuple[date, date]] = []
     year, month = today.year, today.month
     for _ in range(HISTORY_MONTHS):
+        start = date(year, month, 1)
+        end = date(year, month + 1, 1) if month < 12 else date(year + 1, 1, 1)
+        bounds.append((start, end))
         if month == 1:
             year, month = year - 1, 12
         else:
             month -= 1
-        start = date(year, month, 1)
-        end = date(year, month + 1, 1) if month < 12 else date(year + 1, 1, 1)
-        bounds.append((start, end))
     return list(reversed(bounds))
 
 

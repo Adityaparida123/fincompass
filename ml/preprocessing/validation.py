@@ -64,7 +64,8 @@ def check_sufficient_data(
     if task in ("forecast", "savings", "patterns"):
         if "date" not in df.columns:
             return False, "Not enough data yet."
-        months = df["date"].dt.to_period("M").nunique() if hasattr(df["date"], "dt") else 0
+        dates = pd.to_datetime(df["date"], errors="coerce")
+        months = dates.dt.to_period("M").nunique() if not dates.isna().all() else 0
         min_months = {
             "forecast": MIN_MONTHS_FOR_FORECAST,
             "savings": MIN_MONTHS_FOR_SAVINGS,

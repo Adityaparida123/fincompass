@@ -136,7 +136,7 @@ export interface SavingsGoal {
   current_amount: string;
   target_date: string | null;
   status: "active" | "completed" | "paused" | "abandoned";
-  progress_percent: number;
+  progress_percent: string;
 }
 
 export interface BudgetItem {
@@ -153,7 +153,7 @@ export interface BudgetStatus {
   limit_amount: string;
   spent: string;
   remaining: string;
-  percent_used: number;
+  percent_used: string;
 }
 
 export interface DebtObligation {
@@ -263,4 +263,74 @@ export interface LoanSimulationResult {
   alternatives: string[];
   assumptions: string[];
   recommendation: string;
+}
+
+export interface MLModelMeta {
+  name: string;
+  version: string;
+  feature_version: string | null;
+}
+
+export interface MLExplanationFactor {
+  factor: string;
+  impact: string;
+  description: string;
+  shap_value: number | null;
+}
+
+export interface CashflowForecastItem {
+  forecast_month: string;
+  expected_cashflow: number;
+  lower_range: number;
+  upper_range: number;
+}
+
+export interface ForecastRange {
+  predicted: number;
+  lower: number;
+  upper: number;
+}
+
+export interface CategoryForecast {
+  category: string;
+  predicted: number;
+  lower: number;
+  upper: number;
+  months_of_data: number;
+}
+
+export interface CashflowForecastResponse {
+  status: "success" | "insufficient_data";
+  method: "ml_model" | "rolling_baseline" | "none";
+  forecasts: CashflowForecastItem[];
+  expense_forecast: ForecastRange | null;
+  income_forecast: ForecastRange | null;
+  category_forecasts: CategoryForecast[];
+  forecast_quality: "good" | "moderate" | "limited" | "none";
+  confidence: number;
+  explanation: MLExplanationFactor[];
+  model: MLModelMeta;
+  timestamp: string;
+  available_months: number | null;
+  required_months: number | null;
+  message: string | null;
+}
+
+export interface SpendingPatternResponse {
+  patterns: Array<{ pattern: string; description: string; confidence: number }>;
+  confidence: number;
+  model: MLModelMeta;
+  timestamp: string;
+}
+
+export interface SavingsCapacityResponse {
+  lower: number;
+  upper: number;
+  currency: string;
+  unit: string;
+  disclaimer: string;
+  confidence: number;
+  explanation: MLExplanationFactor[];
+  model: MLModelMeta;
+  timestamp: string;
 }

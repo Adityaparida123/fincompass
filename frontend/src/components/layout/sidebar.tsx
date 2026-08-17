@@ -51,15 +51,15 @@ export function Sidebar() {
           sidebarOpen ? "translate-x-0" : "-translate-x-full",
         )}
       >
-        <div className="flex h-16 items-center gap-2 border-b px-4">
-          <Compass className="h-6 w-6 text-primary" />
-          <span className="text-lg font-semibold">FinCompass</span>
-          <Button variant="ghost" size="icon" className="ml-auto lg:hidden" onClick={() => setSidebarOpen(false)}>
-            <X className="h-5 w-5" />
+        <div className="flex h-14 items-center gap-2 border-b px-4">
+          <Compass className="h-5 w-5 text-primary" />
+          <span className="text-base font-semibold tracking-tight">FinCompass</span>
+          <Button variant="ghost" size="icon" className="ml-auto h-8 w-8 lg:hidden" onClick={() => setSidebarOpen(false)}>
+            <X className="h-4 w-4" />
           </Button>
         </div>
-        <nav className="flex-1 overflow-y-auto p-3">
-          <ul className="space-y-1">
+        <nav className="flex-1 overflow-y-auto p-2">
+          <ul className="space-y-0.5">
             {navItems.map(({ key, href, icon: Icon }) => {
               const fullHref = `/${locale}${href}`;
               const active = pathname === fullHref || pathname.startsWith(fullHref + "/");
@@ -68,14 +68,14 @@ export function Sidebar() {
                   <Link
                     href={fullHref}
                     className={cn(
-                      "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                      "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                       active
                         ? "bg-primary/10 text-primary"
                         : "text-muted-foreground hover:bg-muted hover:text-foreground",
                     )}
                     onClick={() => setSidebarOpen(false)}
                   >
-                    <Icon className="h-4 w-4 shrink-0" />
+                    <Icon className="h-4 w-4 shrink-0" strokeWidth={active ? 2.2 : 1.8} />
                     <span className="truncate">{t(key)}</span>
                   </Link>
                 </li>
@@ -95,7 +95,7 @@ export function MobileNav() {
   const mobileItems = navItems.slice(0, 5);
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t bg-card lg:hidden">
+    <nav className="fixed inset-x-0 bottom-0 z-40 border-t bg-card/95 backdrop-blur lg:hidden">
       <ul className="grid grid-cols-5">
         {mobileItems.map(({ key, href, icon: Icon }) => {
           const fullHref = `/${locale}${href}`;
@@ -105,11 +105,11 @@ export function MobileNav() {
               <Link
                 href={fullHref}
                 className={cn(
-                  "flex flex-col items-center gap-1 py-2 text-[10px] font-medium",
+                  "flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-medium transition-colors",
                   active ? "text-primary" : "text-muted-foreground",
                 )}
               >
-                <Icon className="h-5 w-5" />
+                <Icon className="h-5 w-5" strokeWidth={active ? 2.2 : 1.8} />
                 <span className="truncate max-w-[4rem]">{t(key)}</span>
               </Link>
             </li>
@@ -123,8 +123,8 @@ export function MobileNav() {
 export function SidebarToggle() {
   const { setSidebarOpen } = useUIStore();
   return (
-    <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setSidebarOpen(true)}>
-      <Menu className="h-5 w-5" />
+    <Button variant="ghost" size="icon" className="h-8 w-8 lg:hidden" onClick={() => setSidebarOpen(true)}>
+      <Menu className="h-4 w-4" />
     </Button>
   );
 }

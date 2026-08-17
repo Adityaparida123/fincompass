@@ -30,6 +30,7 @@ class ExpenseSummary(BaseModel):
 class ExpenseTrendPoint(BaseModel):
     period: str
     total: Decimal
+    income: Decimal | None = None
     previous: Decimal | None = None
     change_percent: Decimal | None = None
 

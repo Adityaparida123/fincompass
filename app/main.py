@@ -60,11 +60,14 @@ async def lifespan(app: FastAPI):
         from app.db.indexes import ensure_indexes
 
         await ensure_indexes(db)
-        from app.services.schemes.service import ensure_seed_schemes
+        from app.services.schemes.service import ensure_seed_schemes, migrate_scheme_urls
 
         count = await ensure_seed_schemes(db)
         if count:
             logger.info("Seeded %d reference schemes.", count)
+        migrated = await migrate_scheme_urls(db)
+        if migrated:
+            logger.info("Migrated source_url for %d schemes.", migrated)
     except Exception as exc:  # noqa: BLE001
         # Production must fail fast: a running app without its database is a
         # broken deployment that health checks would otherwise mask as healthy.

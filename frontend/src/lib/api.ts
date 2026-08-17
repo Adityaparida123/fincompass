@@ -13,6 +13,12 @@ type RequestOptions = RequestInit & {
 
 const TOKEN_STORAGE_KEY = "fincompass-tokens";
 
+// Refresh the access token before it expires instead of waiting for a 401,
+// so expired sessions never leak raw 401 responses into the console.
+const REFRESH_MARGIN_SECONDS = 60;
+
+type AuthFailureHandler = () => void;
+
 const DEFAULT_STATUS_MESSAGES: Partial<Record<number, string>> = {
   401: "Your session has expired. Please sign in again.",
   403: "You don't have permission to access this.",
@@ -29,6 +35,37 @@ class ApiClient {
   private refreshToken: string | null = null;
   private refreshPromise: Promise<string | null> | null = null;
   private tokensRestored = false;
+  private onAuthFailure: AuthFailureHandler | null = null;
+
+  setAuthFailureHandler(handler: AuthFailureHandler) {
+    this.onAuthFailure = handler;
+  }
+
+  private notifyAuthFailure() {
+    this.clearTokens();
+    this.onAuthFailure?.();
+  }
+
+  private static decodeExp(token: string): number | null {
+    if (typeof atob === "undefined") return null;
+    try {
+      const payload = token.split(".")[1];
+      if (!payload) return null;
+      const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+      const padded = normalized + "=".repeat((4 - (normalized.length % 4)) % 4);
+      const data = JSON.parse(atob(padded)) as { exp?: number };
+      return typeof data.exp === "number" ? data.exp : null;
+    } catch {
+      return null;
+    }
+  }
+
+  private isTokenUsable(token: string | null): boolean {
+    if (!token) return false;
+    const exp = ApiClient.decodeExp(token);
+    if (exp == null) return false;
+    return exp * 1000 - Date.now() > REFRESH_MARGIN_SECONDS * 1000;
+  }
 
   private restoreTokens() {
     if (this.tokensRestored || typeof window === "undefined") return;
@@ -102,7 +139,7 @@ class ApiClient {
           signal: AbortSignal.timeout(DEFAULT_TIMEOUT_MS),
         });
         if (!res.ok) {
-          this.clearTokens();
+          this.notifyAuthFailure();
           return null;
         }
         const data = await res.json();
@@ -111,7 +148,7 @@ class ApiClient {
         this.persistTokens();
         return this.accessToken;
       } catch {
-        this.clearTokens();
+        this.notifyAuthFailure();
         return null;
       } finally {
         this.refreshPromise = null;
@@ -131,6 +168,14 @@ class ApiClient {
 
     const authToken = skipAuth ? null : (token ?? this.accessToken);
     if (authToken) headers.set("Authorization", `Bearer ${authToken}`);
+
+    if (!skipAuth && !token) {
+      const current = this.accessToken;
+      if (!this.isTokenUsable(current)) {
+        const fresh = await this.refreshAccessToken();
+        if (fresh) headers.set("Authorization", `Bearer ${fresh}`);
+      }
+    }
 
     const signal = init.signal ?? AbortSignal.timeout(timeout);
 

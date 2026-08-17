@@ -24,6 +24,9 @@ import type {
   StatementAnalyzeResponse,
   StatementConfirmResponse,
   StatementConfirmItem,
+  CashflowForecastResponse,
+  SpendingPatternResponse,
+  SavingsCapacityResponse,
 } from "@/types";
 
 export function useExpensesWeekly(year: number, week: number) {
@@ -153,7 +156,19 @@ export function useCreateBudget() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: Record<string, unknown>) => api.post<BudgetItem>("/budget", body),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["budget"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["budget"] });
+    },
+  });
+}
+
+export function useDeleteBudget() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => api.delete(`/budget/${id}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["budget"] });
+    },
   });
 }
 
@@ -277,20 +292,20 @@ export function useLoanSimulation() {
 export function useMLForecast() {
   return useQuery({
     queryKey: ["ml", "forecast"],
-    queryFn: () => api.get("/ml/cashflow-forecast"),
+    queryFn: () => api.get<CashflowForecastResponse>("/ml/cashflow-forecast"),
   });
 }
 
 export function useMLPatterns() {
   return useQuery({
     queryKey: ["ml", "patterns"],
-    queryFn: () => api.get("/ml/spending-patterns"),
+    queryFn: () => api.get<SpendingPatternResponse>("/ml/spending-patterns"),
   });
 }
 
 export function useMLSavingsCapacity() {
   return useQuery({
     queryKey: ["ml", "savings-capacity"],
-    queryFn: () => api.get("/ml/savings-capacity"),
+    queryFn: () => api.get<SavingsCapacityResponse>("/ml/savings-capacity"),
   });
 }

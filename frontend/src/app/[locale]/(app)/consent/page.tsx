@@ -1,17 +1,25 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Card, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton, Badge } from "@/components/ui/input";
+import { PageHeader } from "@/components/common/shared";
 import { useConsents, useGrantConsent, useRevokeConsent } from "@/hooks/use-api";
 import { PageError } from "@/components/charts/responsive-charts";
 import { ApiRequestError } from "@/lib/api";
+import { Shield, Lock, Unlock } from "lucide-react";
 
 const CONSENT_LABELS: Record<string, string> = {
   financial_data_analysis: "financialAnalysis",
   personalized_recommendations: "recommendations",
   chat_financial_context: "chatContext",
+};
+
+const CONSENT_DESCRIPTIONS: Record<string, string> = {
+  financial_data_analysis: "Enables expense tracking, cash flow analysis, budget monitoring, and ML-powered forecasts.",
+  personalized_recommendations: "Enables personalized financial recommendations based on your data.",
+  chat_financial_context: "Allows FinAI to access your financial data when answering questions.",
 };
 
 export default function ConsentPage() {
@@ -32,12 +40,11 @@ export default function ConsentPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold sm:text-3xl">{t("title")}</h1>
-        <p className="text-sm text-muted-foreground">{t("revokeWarning")}</p>
-      </div>
+      <PageHeader title={t("title")} subtitle={t("revokeWarning")} />
 
-      {isLoading ? <Skeleton className="h-40 w-full" /> : isError ? (
+      {isLoading ? (
+        <div className="space-y-3">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-20 w-full" />)}</div>
+      ) : isError ? (
         <PageError message={tc("error")} onRetry={() => refetch()} />
       ) : (
         <div className="space-y-3">
@@ -47,10 +54,18 @@ export default function ConsentPage() {
             const labelKey = CONSENT_LABELS[consentType];
             return (
               <Card key={consentType}>
-                <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between pb-2">
-                  <div>
-                    <CardTitle className="text-base">{t(labelKey as "financialAnalysis")}</CardTitle>
-                    <Badge variant={granted ? "success" : "secondary"} className="mt-1">{item ? item.status : t("notGranted")}</Badge>
+                <CardContent className="flex items-center gap-4 py-4">
+                  <div className={`rounded-lg p-2 ${granted ? "bg-income/10" : "bg-muted"}`}>
+                    {granted ? <Unlock className="h-4 w-4 text-income" /> : <Lock className="h-4 w-4 text-muted-foreground" />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium">{t(labelKey as "financialAnalysis")}</p>
+                      <Badge variant={granted ? "success" : "secondary"} className="text-[10px]">
+                        {item ? item.status : t("notGranted")}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">{CONSENT_DESCRIPTIONS[consentType]}</p>
                   </div>
                   <Button
                     size="sm"
@@ -60,7 +75,7 @@ export default function ConsentPage() {
                   >
                     {granted ? t("revoke") : t("grant")}
                   </Button>
-                </CardHeader>
+                </CardContent>
               </Card>
             );
           })}

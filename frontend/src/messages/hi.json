@@ -82,7 +82,14 @@
     "savingsProgress": "बचत प्रगति",
     "budgetStatus": "बजट स्थिति",
     "insights": "वित्तीय अंतर्दृष्टि",
-    "recentNotifications": "हाल की सूचनाएं"
+    "recentNotifications": "हाल की सूचनाएं",
+    "noBudgets": "अभी कोई बजट नहीं।",
+    "budgetError": "बजट स्थिति लोड नहीं हो सकी।",
+    "forecast": "ML पूर्वानुमान",
+    "forecastError": "पूर्वानुमान अस्थायी रूप से अनुपलब्ध।",
+    "forecastInsufficient": "ML पूर्वानुमान के लिए पर्याप्त ऐतिहासिक डेटा नहीं।",
+    "forecastAvailable": "उपलब्ध: {count} महीना(एं)",
+    "forecastRequired": "अनुशंसित: {count}+ महीने"
   },
   "readiness": {
     "title": "क्रेडिट तैयारी",
@@ -154,6 +161,8 @@
       "possibleDuplicatesBadge": "{count} संभावित डुप्लिकेट",
       "recurringBadge": "{count} आवर्ती",
       "needsReviewBadge": "{count} समीक्षा आवश्यक",
+      "expense": "खर्च",
+      "income": "आय",
       "colSelect": "आयात",
       "colDate": "तारीख",
       "colDescription": "विवरण",
@@ -178,7 +187,11 @@
     "expenses": "खर्च",
     "net": "शुद्ध कैश फ्लो",
     "trends": "रुझान",
-    "forecast": "ML पूर्वानुमान"
+    "forecast": "ML पूर्वानुमान",
+    "baselineMethod": "आधार रेखा अनुमान",
+    "insufficientData": "ML पूर्वानुमान के लिए पर्याप्त ऐतिहासिक डेटा नहीं।",
+    "availableMonths": "उपलब्ध: {count} महीना(एं)",
+    "requiredMonths": "अनुशंसित: {count}+ महीने"
   },
   "savings": {
     "title": "बचत लक्ष्य",
@@ -196,7 +209,11 @@
     "category": "श्रेणी",
     "limit": "सीमा",
     "overBudget": "बजट से अधिक",
-    "noBudgets": "इस अवधि के लिए कोई बजट नहीं।"
+    "noBudgets": "इस अवधि के लिए कोई बजट नहीं।",
+    "error": "बजट स्थिति लोड नहीं हो सकी।",
+    "delete": "बजट हटाएं",
+    "confirmDelete": "इस बजट को हटाएं?",
+    "deleted": "बजट हटा दिया गया।"
   },
   "debt": {
     "title": "ऋण",

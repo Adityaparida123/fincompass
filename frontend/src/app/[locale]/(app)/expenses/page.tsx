@@ -7,13 +7,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Skeleton, Badge } from "@/components/ui/input";
 import { ResponsiveBarChart, ResponsivePieChart, ChartSkeleton, PageError } from "@/components/charts/responsive-charts";
+import { StatCard, PageHeader, EmptyState } from "@/components/common/shared";
 import {
   useExpensesWeekly, useExpensesMonthly, useExpenseCategories,
   useTransactions, useCreateTransaction, useDeleteTransaction,
 } from "@/hooks/use-api";
 import { ImportStatementDialog } from "@/components/expenses/import-statement";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, toNumber } from "@/lib/utils";
 import { ApiRequestError } from "@/lib/api";
+import { Receipt, TrendingUp, FileText, Plus, Upload } from "lucide-react";
 
 export default function ExpensesPage() {
   const t = useTranslations("expenses");
@@ -39,10 +41,10 @@ export default function ExpensesPage() {
   const deleteTx = useDeleteTransaction();
 
   const weeklyData = Object.entries(weekly.data?.daily_breakdown ?? {}).map(([day, val]) => ({
-    day, amount: parseFloat(val),
+    day, amount: toNumber(val),
   }));
   const monthlyData = Object.entries(monthly.data?.categories ?? {}).map(([name, val]) => ({
-    name, value: parseFloat(val),
+    name, value: toNumber(val),
   }));
 
   const handleAdd = async (e: React.FormEvent) => {
@@ -66,13 +68,19 @@ export default function ExpensesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold sm:text-3xl">{t("title")}</h1>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setShowImport(true)}>{t("importStatement")}</Button>
-          <Button onClick={() => setShowForm(!showForm)}>{t("addTransaction")}</Button>
-        </div>
-      </div>
+      <PageHeader
+        title={t("title")}
+        action={
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => setShowImport(true)}>
+              <Upload className="mr-1.5 h-3.5 w-3.5" />{t("importStatement")}
+            </Button>
+            <Button size="sm" onClick={() => setShowForm(!showForm)}>
+              <Plus className="mr-1.5 h-3.5 w-3.5" />{t("addTransaction")}
+            </Button>
+          </div>
+        }
+      />
 
       <ImportStatementDialog open={showImport} onOpenChange={setShowImport} />
 
@@ -97,56 +105,101 @@ export default function ExpensesPage() {
       )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">{t("expense")}</CardTitle></CardHeader>
-          <CardContent>{monthly.isLoading ? <Skeleton className="h-8 w-24" /> : <p className="text-2xl font-bold">{formatCurrency(parseFloat(monthly.data?.total_expenses ?? "0"))}</p>}</CardContent>
-        </Card>
-        <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">{t("income")}</CardTitle></CardHeader>
-          <CardContent>{monthly.isLoading ? <Skeleton className="h-8 w-24" /> : <p className="text-2xl font-bold">{formatCurrency(parseFloat(monthly.data?.total_income ?? "0"))}</p>}</CardContent>
-        </Card>
-        <Card className="sm:col-span-2 lg:col-span-1"><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">{monthly.data?.period ?? period}</CardTitle></CardHeader>
-          <CardContent>{monthly.isLoading ? <Skeleton className="h-8 w-24" /> : <p className="text-2xl font-bold">{monthly.data?.transaction_count ?? 0} txns</p>}</CardContent>
-        </Card>
+        <StatCard label={t("expense")} value={formatCurrency(toNumber(monthly.data?.total_expenses))} icon={Receipt} loading={monthly.isLoading} />
+        <StatCard label={t("income")} value={formatCurrency(toNumber(monthly.data?.total_income))} icon={TrendingUp} loading={monthly.isLoading} />
+        <StatCard label={monthly.data?.period ?? period} value={`${monthly.data?.transaction_count ?? 0} txns`} icon={FileText} loading={monthly.isLoading} />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card><CardHeader><CardTitle>{t("weeklyChart")}</CardTitle></CardHeader>
-          <CardContent>{weekly.isLoading ? <ChartSkeleton /> : weeklyData.length ? (
-            <ResponsiveBarChart data={weeklyData} xKey="day" bars={[{ key: "amount", name: t("expense"), color: "#6366f1" }]} />
-          ) : <p className="text-sm text-muted-foreground">{tc("noData")}</p>}</CardContent>
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium">{t("weeklyChart")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {weekly.isLoading ? <ChartSkeleton /> : weekly.isError ? (
+              <PageError message="Unable to load weekly breakdown." onRetry={() => weekly.refetch()} />
+            ) : weeklyData.length ? (
+              <ResponsiveBarChart data={weeklyData} xKey="day" bars={[{ key: "amount", name: t("expense"), color: "#818cf8" }]} valueFormatter={(v) => formatCurrency(v)} />
+            ) : (
+              <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">
+                No weekly data yet. Add transactions for this week.
+              </div>
+            )}
+          </CardContent>
         </Card>
-        <Card><CardHeader><CardTitle>{t("monthlyChart")}</CardTitle></CardHeader>
-          <CardContent>{monthly.isLoading ? <ChartSkeleton /> : monthlyData.length ? (
-            <ResponsivePieChart data={monthlyData} />
-          ) : <p className="text-sm text-muted-foreground">{tc("noData")}</p>}</CardContent>
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium">{t("monthlyChart")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {monthly.isLoading ? <ChartSkeleton /> : monthlyData.length ? (
+              <ResponsivePieChart data={monthlyData} valueFormatter={(v) => formatCurrency(v)} />
+            ) : (
+              <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">
+                No category data yet.
+              </div>
+            )}
+          </CardContent>
         </Card>
       </div>
 
       <Card>
-        <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <CardTitle>{t("title")}</CardTitle>
+        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pb-3">
+          <CardTitle className="text-sm font-medium">{t("title")}</CardTitle>
           <div className="flex flex-wrap gap-2">
-            <select className="h-10 rounded-lg border border-input bg-background px-3 text-sm" value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
+            <select className="h-8 rounded-lg border border-input bg-background px-2 text-xs" value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
               <option value="">{t("allCategories")}</option>
               {categories.data?.map((c) => <option key={c.category} value={c.category}>{c.category}</option>)}
             </select>
-            <select className="h-10 rounded-lg border border-input bg-background px-3 text-sm" value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
+            <select className="h-8 rounded-lg border border-input bg-background px-2 text-xs" value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
               <option value="">{t("type")}</option><option value="expense">{t("expense")}</option><option value="income">{t("income")}</option>
             </select>
           </div>
         </CardHeader>
-        <CardContent className="space-y-2">
-          {transactions.isLoading ? <Skeleton className="h-32 w-full" /> : transactions.isError ? (
+        <CardContent className="space-y-1.5">
+          {transactions.isLoading ? (
+            <div className="space-y-2">{[1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="h-14 w-full" />)}</div>
+          ) : transactions.isError ? (
             <PageError message={tc("error")} onRetry={() => transactions.refetch()} />
           ) : transactions.data?.items?.length ? transactions.data.items.map((tx) => (
-            <div key={tx.id} className="flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between">
-              <div><p className="font-medium text-sm">{tx.description}</p>
-                <p className="text-xs text-muted-foreground">{tx.date} · {tx.category} · <Badge variant={tx.transaction_type === "income" ? "success" : "secondary"}>{tx.transaction_type}</Badge></p></div>
+            <div key={tx.id} className="flex items-center gap-3 rounded-lg border border-muted/50 px-4 py-3 transition-colors hover:bg-muted/20">
+              <div className={`h-8 w-1 rounded-full ${tx.transaction_type === "income" ? "bg-income" : "bg-expense"}`} />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium">{tx.description}</p>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <span>{tx.date}</span>
+                  <span>·</span>
+                  <span className="capitalize">{tx.category}</span>
+                </div>
+              </div>
               <div className="flex items-center gap-3">
-                <span className={`font-semibold ${tx.transaction_type === "income" ? "text-emerald-600" : ""}`}>{formatCurrency(parseFloat(tx.amount))}</span>
-                <Button size="sm" variant="outline" onClick={() => handleDelete(tx.id)} disabled={deleteTx.isPending}>{tc("delete")}</Button>
+                <span className={`text-sm font-semibold ${tx.transaction_type === "income" ? "text-income" : ""}`}>
+                  {tx.transaction_type === "income" ? "+" : "-"}{formatCurrency(toNumber(tx.amount))}
+                </span>
+                <Badge variant={tx.transaction_type === "income" ? "success" : "secondary"} className="text-[10px]">{tx.transaction_type}</Badge>
+                <Button size="sm" variant="ghost" className="h-7 px-2 text-xs text-destructive hover:text-destructive" onClick={() => handleDelete(tx.id)} disabled={deleteTx.isPending}>
+                  {tc("delete")}
+                </Button>
               </div>
             </div>
-          )) : <p className="text-sm text-muted-foreground">{t("noTransactions")}</p>}
+          )) : (
+            <EmptyState
+              title={t("noTransactions")}
+              description="Add your first transaction or import a bank statement to start tracking."
+              icon={FileText}
+              action={
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" onClick={() => setShowImport(true)}>Import statement</Button>
+                  <Button size="sm" onClick={() => setShowForm(true)}>Add transaction</Button>
+                </div>
+              }
+            />
+          )}
+          {transactions.data && transactions.data.total > 20 && (
+            <p className="text-center text-xs text-muted-foreground pt-2">
+              Showing {transactions.data.items.length} of {transactions.data.total} transactions
+            </p>
+          )}
         </CardContent>
       </Card>
     </div>
