@@ -3,47 +3,78 @@
 import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton, Badge } from "@/components/ui/input";
+import { PageHeader, EmptyState } from "@/components/common/shared";
 import { useSchemes } from "@/hooks/use-api";
 import { PageError } from "@/components/charts/responsive-charts";
+import { Landmark, ExternalLink, AlertTriangle } from "lucide-react";
 
 export default function SchemesPage() {
   const t = useTranslations("schemes");
   const tc = useTranslations("common");
   const { data, isLoading, isError, refetch } = useSchemes();
 
+  const activeSchemes = data?.filter((s) => s.active) ?? [];
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold sm:text-3xl">{t("title")}</h1>
-        <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
-          {t("eligibilityDisclaimer")}
-        </p>
+      <PageHeader title={t("title")} subtitle={`${activeSchemes.length} active schemes available`} />
+
+      <div className="rounded-lg border border-warning/30 bg-warning/5 px-4 py-3">
+        <div className="flex items-start gap-2">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            {t("eligibilityDisclaimer")}
+          </p>
+        </div>
       </div>
 
-      {isLoading ? <Skeleton className="h-40 w-full" /> : isError ? (
-        <PageError message={tc("error")} onRetry={() => refetch()} />
-      ) : data?.length ? (
+      {isLoading ? (
         <div className="grid gap-4 sm:grid-cols-2">
-          {data.filter((s) => s.active).map((s) => (
-            <Card key={s.id}>
+          {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-48 w-full" />)}
+        </div>
+      ) : isError ? (
+        <PageError message={tc("error")} onRetry={() => refetch()} />
+      ) : activeSchemes.length ? (
+        <div className="grid gap-4 sm:grid-cols-2">
+          {activeSchemes.map((s) => (
+            <Card key={s.id} className="transition-colors hover:bg-muted/20">
               <CardHeader className="pb-2">
                 <div className="flex items-start justify-between gap-2">
-                  <CardTitle className="text-base">{s.name}</CardTitle>
-                  <Badge variant="outline">{s.jurisdiction}</Badge>
+                  <CardTitle className="text-sm font-medium leading-snug">{s.name}</CardTitle>
+                  <Badge variant="outline" className="shrink-0 text-[10px]">{s.jurisdiction}</Badge>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-2 text-sm">
-                <p className="text-muted-foreground">{s.description}</p>
-                <div><p className="font-medium">{t("eligibility")}</p><p className="text-muted-foreground">{s.eligibility}</p></div>
-                <div><p className="font-medium">{t("benefits")}</p><p className="text-muted-foreground">{s.benefits}</p></div>
+              <CardContent className="space-y-2 text-xs">
+                <p className="text-muted-foreground leading-relaxed">{s.description}</p>
+                <div className="rounded-lg bg-muted/30 px-3 py-2">
+                  <p className="font-medium text-[11px] uppercase tracking-wider text-muted-foreground">{t("eligibility")}</p>
+                  <p className="mt-0.5 text-muted-foreground">{s.eligibility}</p>
+                </div>
+                <div className="rounded-lg bg-muted/30 px-3 py-2">
+                  <p className="font-medium text-[11px] uppercase tracking-wider text-muted-foreground">{t("benefits")}</p>
+                  <p className="mt-0.5 text-muted-foreground">{s.benefits}</p>
+                </div>
                 {s.source_url && (
-                  <a href={s.source_url} target="_blank" rel="noopener noreferrer" className="inline-block text-primary hover:underline">{t("learnMore")}</a>
+                  <a
+                    href={s.source_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-primary hover:underline"
+                  >
+                    <ExternalLink className="h-3 w-3" />{t("learnMore")}
+                  </a>
                 )}
               </CardContent>
             </Card>
           ))}
         </div>
-      ) : <p className="text-sm text-muted-foreground">{t("noSchemes")}</p>}
+      ) : (
+        <EmptyState
+          title={t("noSchemes")}
+          description="Government schemes will appear here based on your eligibility."
+          icon={Landmark}
+        />
+      )}
     </div>
   );
 }

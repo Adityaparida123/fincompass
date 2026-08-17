@@ -5,9 +5,11 @@ import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Skeleton } from "@/components/ui/input";
+import { PageHeader } from "@/components/common/shared";
 import { useAuthStore } from "@/stores/auth-store";
 import { api, ApiRequestError } from "@/lib/api";
 import type { UserSummary } from "@/types";
+import { Check } from "lucide-react";
 
 export default function ProfilePage() {
   const t = useTranslations("profile");
@@ -58,10 +60,10 @@ export default function ProfilePage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold sm:text-3xl">{t("title")}</h1>
+      <PageHeader title={t("title")} />
 
       <Card>
-        <CardHeader><CardTitle>{t("title")}</CardTitle></CardHeader>
+        <CardHeader className="pb-3"><CardTitle className="text-sm font-medium">{t("title")}</CardTitle></CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2 max-w-2xl">
             <div><Label>{t("fullName")}</Label><Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} required /></div>
@@ -84,7 +86,11 @@ export default function ProfilePage() {
             </div>
             <div className="flex items-center gap-3 sm:col-span-2">
               <Button type="submit" disabled={loading}>{tc("save")}</Button>
-              {saved && <span className="text-sm text-emerald-600">{t("saved")}</span>}
+              {saved && (
+                <span className="flex items-center gap-1 text-sm text-income">
+                  <Check className="h-4 w-4" />{t("saved")}
+                </span>
+              )}
             </div>
           </form>
           {error && <p className="mt-2 text-sm text-destructive">{error}</p>}

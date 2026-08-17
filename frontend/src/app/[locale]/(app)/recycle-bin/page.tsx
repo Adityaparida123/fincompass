@@ -6,9 +6,11 @@ import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/input";
+import { PageHeader, EmptyState } from "@/components/common/shared";
 import { useRecycleBin, useRestoreRecycleItem } from "@/hooks/use-api";
 import { PageError } from "@/components/charts/responsive-charts";
 import { ApiRequestError } from "@/lib/api";
+import { Trash2 } from "lucide-react";
 
 export default function RecycleBinPage() {
   const t = useTranslations("recycleBin");
@@ -31,18 +33,21 @@ export default function RecycleBinPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold sm:text-3xl">{t("title")}</h1>
+      <PageHeader title={t("title")} subtitle={`${data?.length ?? 0} items`} />
+
       {error && <p className="text-sm text-destructive">{error}</p>}
 
-      {isLoading ? <Skeleton className="h-40 w-full" /> : isError ? (
+      {isLoading ? (
+        <div className="space-y-3">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-24 w-full" />)}</div>
+      ) : isError ? (
         <PageError message={tc("error")} onRetry={() => refetch()} />
       ) : data?.length ? (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {data.map((item) => (
             <Card key={item.id}>
-              <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between pb-2">
-                <div>
-                  <CardTitle className="text-base capitalize">{item.resource_type}</CardTitle>
+              <CardContent className="flex items-center justify-between py-4">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium capitalize">{item.resource_type.replace(/_/g, " ")}</p>
                   <p className="text-xs text-muted-foreground">{t("deletedAt")}: {format(new Date(item.deleted_at), "PPp")}</p>
                 </div>
                 {confirmId === item.id ? (
@@ -53,14 +58,13 @@ export default function RecycleBinPage() {
                 ) : (
                   <Button size="sm" variant="outline" onClick={() => setConfirmId(item.id)}>{t("restore")}</Button>
                 )}
-              </CardHeader>
-              <CardContent>
-                <pre className="overflow-x-auto rounded bg-muted p-2 text-xs">{JSON.stringify(item.deleted_data, null, 2)}</pre>
               </CardContent>
             </Card>
           ))}
         </div>
-      ) : <p className="text-sm text-muted-foreground">{t("noItems")}</p>}
+      ) : (
+        <EmptyState title={t("noItems")} description="Deleted items will appear here and can be restored within a limited time." icon={Trash2} />
+      )}
     </div>
   );
 }

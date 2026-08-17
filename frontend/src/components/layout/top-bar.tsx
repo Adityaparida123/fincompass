@@ -29,28 +29,29 @@ export function TopBar() {
   };
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b bg-card/80 px-4 backdrop-blur supports-[backdrop-filter]:bg-card/60">
+    <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b bg-card/80 px-4 backdrop-blur supports-[backdrop-filter]:bg-card/60">
       <SidebarToggle />
       <div className="flex-1" />
       <ISTClock />
-      <Button variant="ghost" size="sm" onClick={toggleLocale} aria-label="Switch language">
-        <Globe className="h-4 w-4" />
-        <span className="text-xs">{locale === "en" ? "हिंदी" : "EN"}</span>
+      <Button variant="ghost" size="sm" className="h-8 px-2 text-xs" onClick={toggleLocale} aria-label="Switch language">
+        <Globe className="h-3.5 w-3.5" />
+        <span className="ml-1 hidden sm:inline">{locale === "en" ? "हिंदी" : "EN"}</span>
       </Button>
       <Button
         variant="ghost"
         size="icon"
+        className="h-8 w-8"
         onClick={() => setTheme(theme === "dark" ? "light" : theme === "light" ? "system" : "dark")}
         aria-label="Toggle theme"
       >
-        {theme === "dark" ? <Sun className="h-4 w-4" /> : theme === "light" ? <Moon className="h-4 w-4" /> : <Monitor className="h-4 w-4" />}
+        {theme === "dark" ? <Sun className="h-3.5 w-3.5" /> : theme === "light" ? <Moon className="h-3.5 w-3.5" /> : <Monitor className="h-3.5 w-3.5" />}
       </Button>
       <NotificationBell />
-      <div className="hidden sm:block text-sm text-muted-foreground truncate max-w-[8rem]">
+      <div className="hidden sm:block text-xs text-muted-foreground truncate max-w-[8rem]">
         {user?.full_name}
       </div>
-      <Button variant="ghost" size="icon" onClick={handleLogout} aria-label={t("logout")}>
-        <LogOut className="h-4 w-4" />
+      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleLogout} aria-label={t("logout")}>
+        <LogOut className="h-3.5 w-3.5" />
       </Button>
     </header>
   );

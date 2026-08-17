@@ -4,11 +4,13 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input, Label, Skeleton } from "@/components/ui/input";
+import { Input, Label, Skeleton, Badge } from "@/components/ui/input";
+import { PageHeader } from "@/components/common/shared";
 import { useCalculateEMI, useLoanSimulation } from "@/hooks/use-api";
 import { formatCurrency, toNumber } from "@/lib/utils";
 import { ApiRequestError } from "@/lib/api";
 import type { EMIResult, LoanSimulationResult } from "@/types";
+import { Calculator, Play, AlertTriangle, CheckCircle, XCircle, HandCoins } from "lucide-react";
 
 export default function BorrowingPage() {
   const t = useTranslations("borrowing");
@@ -57,65 +59,114 @@ export default function BorrowingPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold sm:text-3xl">{t("title")}</h1>
-        <p className="text-muted-foreground">{t("subtitle")}</p>
-      </div>
+      <PageHeader title={t("title")} subtitle={t("subtitle")} />
 
-      <Card><CardContent className="pt-6">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <div><Label>{t("principal")}</Label><Input type="number" min="0" value={form.principal} onChange={(e) => setForm({ ...form, principal: e.target.value })} /></div>
-          <div><Label>{t("interestRate")}</Label><Input type="number" min="0" step="0.01" value={form.interest_rate} onChange={(e) => setForm({ ...form, interest_rate: e.target.value })} /></div>
-          <div><Label>{t("tenure")}</Label><Input type="number" min="1" value={form.tenure_months} onChange={(e) => setForm({ ...form, tenure_months: e.target.value })} /></div>
-          <div><Label>{t("income")}</Label><Input type="number" min="0" value={form.income} onChange={(e) => setForm({ ...form, income: e.target.value })} /></div>
-          <div><Label>{t("expenses")}</Label><Input type="number" min="0" value={form.monthly_expenses} onChange={(e) => setForm({ ...form, monthly_expenses: e.target.value })} /></div>
-          <div><Label>{t("existingDebt")}</Label><Input type="number" min="0" value={form.existing_debt_payment} onChange={(e) => setForm({ ...form, existing_debt_payment: e.target.value })} /></div>
-        </div>
-        <div className="mt-4 flex flex-wrap gap-2">
-          <Button onClick={handleEmi} disabled={calcEmi.isPending}>{t("calculate")}</Button>
-          <Button variant="outline" onClick={handleSimulate} disabled={simulate.isPending}>{t("simulate")}</Button>
-        </div>
-        {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
-      </CardContent></Card>
+      <Card>
+        <CardContent className="pt-6">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div><Label>{t("principal")}</Label><Input type="number" min="0" value={form.principal} onChange={(e) => setForm({ ...form, principal: e.target.value })} placeholder="Loan amount" /></div>
+            <div><Label>{t("interestRate")}</Label><Input type="number" min="0" step="0.01" value={form.interest_rate} onChange={(e) => setForm({ ...form, interest_rate: e.target.value })} placeholder="Annual rate %" /></div>
+            <div><Label>{t("tenure")}</Label><Input type="number" min="1" value={form.tenure_months} onChange={(e) => setForm({ ...form, tenure_months: e.target.value })} /></div>
+            <div><Label>{t("income")}</Label><Input type="number" min="0" value={form.income} onChange={(e) => setForm({ ...form, income: e.target.value })} placeholder="Monthly income" /></div>
+            <div><Label>{t("expenses")}</Label><Input type="number" min="0" value={form.monthly_expenses} onChange={(e) => setForm({ ...form, monthly_expenses: e.target.value })} placeholder="Monthly expenses" /></div>
+            <div><Label>{t("existingDebt")}</Label><Input type="number" min="0" value={form.existing_debt_payment} onChange={(e) => setForm({ ...form, existing_debt_payment: e.target.value })} /></div>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Button onClick={handleEmi} disabled={calcEmi.isPending} size="sm">
+              <Calculator className="mr-1.5 h-3.5 w-3.5" />{t("calculate")}
+            </Button>
+            <Button variant="outline" onClick={handleSimulate} disabled={simulate.isPending} size="sm">
+              <Play className="mr-1.5 h-3.5 w-3.5" />{t("simulate")}
+            </Button>
+          </div>
+          {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
+        </CardContent>
+      </Card>
 
       {emiResult && (
-        <Card><CardHeader><CardTitle>{t("emi")}</CardTitle></CardHeader>
-          <CardContent className="grid gap-2 sm:grid-cols-3 text-sm">
-            <div><span className="text-muted-foreground">{t("emi")}</span><p className="text-xl font-bold">{formatCurrency(toNumber(emiResult.monthly_emi))}</p></div>
-            <div><span className="text-muted-foreground">Total interest</span><p className="font-medium">{formatCurrency(toNumber(emiResult.total_interest))}</p></div>
-            <div><span className="text-muted-foreground">Total payment</span><p className="font-medium">{formatCurrency(toNumber(emiResult.total_payment))}</p></div>
-          </CardContent></Card>
+        <Card>
+          <CardHeader className="pb-3"><CardTitle className="text-sm font-medium">{t("emi")}</CardTitle></CardHeader>
+          <CardContent>
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div className="rounded-lg bg-primary/5 px-4 py-3">
+                <p className="text-xs text-muted-foreground">{t("emi")}</p>
+                <p className="mt-1 text-2xl font-bold">{formatCurrency(toNumber(emiResult.monthly_emi))}</p>
+              </div>
+              <div className="rounded-lg bg-muted/30 px-4 py-3">
+                <p className="text-xs text-muted-foreground">Total interest</p>
+                <p className="mt-1 text-lg font-semibold">{formatCurrency(toNumber(emiResult.total_interest))}</p>
+              </div>
+              <div className="rounded-lg bg-muted/30 px-4 py-3">
+                <p className="text-xs text-muted-foreground">Total payment</p>
+                <p className="mt-1 text-lg font-semibold">{formatCurrency(toNumber(emiResult.total_payment))}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {simulate.isPending && <Skeleton className="h-40 w-full" />}
 
       {simResult && (
         <>
-          <Card><CardHeader><CardTitle>{t("recommendation")}</CardTitle></CardHeader>
-            <CardContent className="space-y-3 text-sm">
-              <p>{simResult.recommendation}</p>
-              <div className="grid gap-2 sm:grid-cols-2">
-                <div>Cash flow before: <strong>{formatCurrency(toNumber(simResult.cash_flow_before))}</strong></div>
-                <div>Cash flow after: <strong>{formatCurrency(toNumber(simResult.cash_flow_after))}</strong></div>
-                <div>Debt burden before: <strong>{toNumber(simResult.debt_burden_before).toFixed(1)}%</strong></div>
-                <div>Debt burden after: <strong>{toNumber(simResult.debt_burden_after).toFixed(1)}%</strong></div>
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                {toNumber(simResult.affordability_ratio) > 40 ? <XCircle className="h-4 w-4 text-destructive" /> : <CheckCircle className="h-4 w-4 text-income" />}
+                <CardTitle className="text-sm font-medium">{t("recommendation")}</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4 text-sm">
+              <p className="text-muted-foreground leading-relaxed">{simResult.recommendation}</p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="rounded-lg bg-muted/30 px-4 py-3">
+                  <p className="text-xs text-muted-foreground">Cash flow before</p>
+                  <p className="font-semibold">{formatCurrency(toNumber(simResult.cash_flow_before))}</p>
+                </div>
+                <div className="rounded-lg bg-muted/30 px-4 py-3">
+                  <p className="text-xs text-muted-foreground">Cash flow after</p>
+                  <p className={`font-semibold ${toNumber(simResult.cash_flow_after) < 0 ? "text-destructive" : ""}`}>{formatCurrency(toNumber(simResult.cash_flow_after))}</p>
+                </div>
+                <div className="rounded-lg bg-muted/30 px-4 py-3">
+                  <p className="text-xs text-muted-foreground">Debt burden before</p>
+                  <p className="font-semibold">{toNumber(simResult.debt_burden_before).toFixed(1)}%</p>
+                </div>
+                <div className="rounded-lg bg-muted/30 px-4 py-3">
+                  <p className="text-xs text-muted-foreground">Debt burden after</p>
+                  <p className={`font-semibold ${toNumber(simResult.debt_burden_after) > 40 ? "text-destructive" : ""}`}>{toNumber(simResult.debt_burden_after).toFixed(1)}%</p>
+                </div>
               </div>
               {simResult.warnings?.length > 0 && (
-                <div><p className="font-medium">{t("warnings")}</p>
-                  <ul className="list-disc pl-5 text-muted-foreground">{simResult.warnings.map((w, i) => <li key={i}>{w}</li>)}</ul></div>
+                <div className="rounded-lg border border-warning/30 bg-warning/5 px-4 py-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <AlertTriangle className="h-3.5 w-3.5 text-warning" />
+                    <p className="font-medium text-xs">{t("warnings")}</p>
+                  </div>
+                  <ul className="space-y-1 text-xs text-muted-foreground">
+                    {simResult.warnings.map((w, i) => <li key={i}>· {w}</li>)}
+                  </ul>
+                </div>
               )}
-            </CardContent></Card>
+            </CardContent>
+          </Card>
 
           {altItems.length > 0 && (
-            <Card><CardHeader><CardTitle>{t("alternatives")}</CardTitle></CardHeader>
-              <CardContent className="space-y-3">
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-2">
+                  <HandCoins className="h-4 w-4 text-primary" />
+                  <CardTitle className="text-sm font-medium">{t("alternatives")}</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-2">
                 {altItems.map((a, i) => (
-                  <div key={i} className="rounded-lg border p-3">
-                    <p className="font-medium text-sm">{a.title}</p>
-                    {a.description && <p className="text-xs text-muted-foreground mt-1">{a.description}</p>}
+                  <div key={i} className="rounded-lg border border-muted/50 p-3 transition-colors hover:bg-muted/20">
+                    <p className="text-sm font-medium">{a.title}</p>
+                    {a.description && <p className="mt-1 text-xs text-muted-foreground">{a.description}</p>}
                   </div>
                 ))}
-              </CardContent></Card>
+              </CardContent>
+            </Card>
           )}
         </>
       )}

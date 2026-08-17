@@ -5,9 +5,11 @@ import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton, Badge } from "@/components/ui/input";
+import { PageHeader, EmptyState } from "@/components/common/shared";
 import { useNotifications, useMarkNotificationRead } from "@/hooks/use-api";
 import { PageError } from "@/components/charts/responsive-charts";
 import { ApiRequestError } from "@/lib/api";
+import { Bell, Check } from "lucide-react";
 
 export default function NotificationsPage() {
   const t = useTranslations("notifications");
@@ -23,33 +25,50 @@ export default function NotificationsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold sm:text-3xl">{t("title")}</h1>
-        {data && <Badge variant="secondary">{data.unread} {t("unread")}</Badge>}
-      </div>
+      <PageHeader
+        title={t("title")}
+        subtitle={data ? `${data.items.length} notifications · ${data.unread} unread` : undefined}
+      />
 
-      {isLoading ? <Skeleton className="h-40 w-full" /> : isError ? (
+      {isLoading ? (
+        <div className="space-y-3">
+          {[1, 2, 3].map((i) => <Skeleton key={i} className="h-24 w-full" />)}
+        </div>
+      ) : isError ? (
         <PageError message={tc("error")} onRetry={() => refetch()} />
       ) : data?.items?.length ? (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {data.items.map((n) => (
-            <Card key={n.id} className={!n.is_read ? "border-primary/30" : ""}>
-              <CardHeader className="flex flex-col gap-2 pb-2 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <CardTitle className="text-base">{n.title}</CardTitle>
-                  <p className="text-xs text-muted-foreground">{format(new Date(n.created_at), "PPp")}</p>
+            <Card key={n.id} className={`transition-colors ${!n.is_read ? "border-primary/20 bg-primary/5" : ""}`}>
+              <CardContent className="flex items-start gap-3 py-4">
+                <div className={`rounded-lg p-1.5 ${!n.is_read ? "bg-primary/10" : "bg-muted"}`}>
+                  <Bell className={`h-4 w-4 ${!n.is_read ? "text-primary" : "text-muted-foreground"}`} />
                 </div>
-                {!n.is_read && (
-                  <Button size="sm" variant="outline" onClick={() => handleMarkRead(n.id)} disabled={markRead.isPending}>
-                    {t("markRead")}
-                  </Button>
-                )}
-              </CardHeader>
-              <CardContent><p className="text-sm text-muted-foreground">{n.message}</p></CardContent>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="text-sm font-medium">{n.title}</p>
+                      <p className="text-[11px] text-muted-foreground">{format(new Date(n.created_at), "PPp")}</p>
+                    </div>
+                    {!n.is_read && (
+                      <Button size="sm" variant="ghost" className="h-7 shrink-0 px-2 text-xs" onClick={() => handleMarkRead(n.id)} disabled={markRead.isPending}>
+                        <Check className="mr-1 h-3 w-3" />{t("markRead")}
+                      </Button>
+                    )}
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground leading-relaxed">{n.message}</p>
+                </div>
+              </CardContent>
             </Card>
           ))}
         </div>
-      ) : <p className="text-sm text-muted-foreground">{t("noNotifications")}</p>}
+      ) : (
+        <EmptyState
+          title={t("noNotifications")}
+          description="You're all caught up. Notifications about your finances will appear here."
+          icon={Bell}
+        />
+      )}
     </div>
   );
 }
