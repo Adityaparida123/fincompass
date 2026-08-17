@@ -82,7 +82,12 @@
     "insights": "Financial Insights",
     "recentNotifications": "Recent Notifications",
     "noBudgets": "No budgets set yet.",
-    "budgetError": "Unable to load budget status."
+    "budgetError": "Unable to load budget status.",
+    "forecast": "ML Forecast",
+    "forecastError": "Forecast temporarily unavailable.",
+    "forecastInsufficient": "Not enough historical data for an ML forecast.",
+    "forecastAvailable": "Available: {count} month(s)",
+    "forecastRequired": "Recommended: {count}+ months"
   },
   "readiness": {
     "title": "Credit Readiness",
@@ -180,7 +185,11 @@
     "expenses": "Expenses",
     "net": "Net cash flow",
     "trends": "Trends",
-    "forecast": "ML forecast"
+    "forecast": "ML forecast",
+    "baselineMethod": "Baseline estimate",
+    "insufficientData": "Not enough historical data for an ML forecast.",
+    "availableMonths": "Available: {count} month(s)",
+    "requiredMonths": "Recommended: {count}+ months"
   },
   "savings": {
     "title": "Savings Goals",

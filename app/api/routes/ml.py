@@ -109,11 +109,16 @@ async def cashflow_forecast(
     await require_consent(db, user.id, ConsentType.financial_data_analysis)
     result = await ml_service.get_cashflow_forecast(db, user.id)
     return CashflowForecastResponse(
+        status=result.get("status", "success"),
+        method=result.get("method", "ml_model"),
         forecasts=result.get("forecasts", []),
         confidence=result["prediction"]["confidence"],
         explanation=[MLExplanationFactor(**e) for e in result.get("explanation", [])],
         model=MLModelMeta(**result["model"]),
         timestamp=result["timestamp"],
+        available_months=result.get("available_months"),
+        required_months=result.get("required_months"),
+        message=result.get("message"),
     )
 
 

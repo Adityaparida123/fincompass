@@ -82,7 +82,12 @@
     "insights": "वित्तीय अंतर्दृष्टि",
     "recentNotifications": "हाल की सूचनाएं",
     "noBudgets": "अभी कोई बजट नहीं।",
-    "budgetError": "बजट स्थिति लोड नहीं हो सकी।"
+    "budgetError": "बजट स्थिति लोड नहीं हो सकी।",
+    "forecast": "ML पूर्वानुमान",
+    "forecastError": "पूर्वानुमान अस्थायी रूप से अनुपलब्ध।",
+    "forecastInsufficient": "ML पूर्वानुमान के लिए पर्याप्त ऐतिहासिक डेटा नहीं।",
+    "forecastAvailable": "उपलब्ध: {count} महीना(एं)",
+    "forecastRequired": "अनुशंसित: {count}+ महीने"
   },
   "readiness": {
     "title": "क्रेडिट तैयारी",
@@ -180,7 +185,11 @@
     "expenses": "खर्च",
     "net": "शुद्ध कैश फ्लो",
     "trends": "रुझान",
-    "forecast": "ML पूर्वानुमान"
+    "forecast": "ML पूर्वानुमान",
+    "baselineMethod": "आधार रेखा अनुमान",
+    "insufficientData": "ML पूर्वानुमान के लिए पर्याप्त ऐतिहासिक डेटा नहीं।",
+    "availableMonths": "उपलब्ध: {count} महीना(एं)",
+    "requiredMonths": "अनुशंसित: {count}+ महीने"
   },
   "savings": {
     "title": "बचत लक्ष्य",

@@ -264,3 +264,55 @@ export interface LoanSimulationResult {
   assumptions: string[];
   recommendation: string;
 }
+
+export interface MLModelMeta {
+  name: string;
+  version: string;
+  feature_version: string | null;
+}
+
+export interface MLExplanationFactor {
+  factor: string;
+  impact: string;
+  description: string;
+  shap_value: number | null;
+}
+
+export interface CashflowForecastItem {
+  forecast_month: string;
+  expected_cashflow: number;
+  lower_range: number;
+  upper_range: number;
+}
+
+export interface CashflowForecastResponse {
+  status: "success" | "insufficient_data";
+  method: "ml_model" | "rolling_baseline" | "none";
+  forecasts: CashflowForecastItem[];
+  confidence: number;
+  explanation: MLExplanationFactor[];
+  model: MLModelMeta;
+  timestamp: string;
+  available_months: number | null;
+  required_months: number | null;
+  message: string | null;
+}
+
+export interface SpendingPatternResponse {
+  patterns: Array<{ pattern: string; description: string; confidence: number }>;
+  confidence: number;
+  model: MLModelMeta;
+  timestamp: string;
+}
+
+export interface SavingsCapacityResponse {
+  lower: number;
+  upper: number;
+  currency: string;
+  unit: string;
+  disclaimer: string;
+  confidence: number;
+  explanation: MLExplanationFactor[];
+  model: MLModelMeta;
+  timestamp: string;
+}

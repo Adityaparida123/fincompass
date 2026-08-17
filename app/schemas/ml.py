@@ -67,11 +67,16 @@ class AnomalyResponse(BaseModel):
 
 
 class CashflowForecastResponse(BaseModel):
+    status: str = "success"
+    method: str = "ml_model"
     forecasts: list[dict]
     confidence: float
     explanation: list[MLExplanationFactor]
     model: MLModelMeta
     timestamp: str
+    available_months: int | None = None
+    required_months: int | None = None
+    message: str | None = None
 
 
 class SavingsCapacityResponse(BaseModel):

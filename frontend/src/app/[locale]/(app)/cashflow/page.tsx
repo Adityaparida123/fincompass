@@ -28,12 +28,15 @@ export default function CashflowPage() {
     net: toNumber(p.income) - toNumber(p.total),
   })) ?? [];
 
-  const forecastData = (forecast.data as { forecasts?: Array<{ forecast_month: string; expected_cashflow: number; lower_range?: number; upper_range?: number }> })?.forecasts?.map((f) => ({
+  const forecastData = forecast.data?.forecasts?.map((f) => ({
     period: f.forecast_month,
     expected: f.expected_cashflow,
     lower: f.lower_range ?? f.expected_cashflow,
     upper: f.upper_range ?? f.expected_cashflow,
   })) ?? [];
+
+  const isInsufficientData = forecast.data?.status === "insufficient_data";
+  const forecastMethod = forecast.data?.method;
 
   return (
     <div className="space-y-6">
@@ -72,11 +75,27 @@ export default function CashflowPage() {
       <Card>
         <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle>{t("forecast")}</CardTitle>
-          <Badge variant="outline">{tc("forecastDisclaimer")}</Badge>
+          <div className="flex items-center gap-2">
+            {forecastMethod === "rolling_baseline" && (
+              <Badge variant="secondary">{t("baselineMethod")}</Badge>
+            )}
+            <Badge variant="outline">{tc("forecastDisclaimer")}</Badge>
+          </div>
         </CardHeader>
         <CardContent>
-          {forecast.isLoading ? <ChartSkeleton /> : forecast.isError ? (
+          {forecast.isLoading ? (
+            <ChartSkeleton />
+          ) : forecast.isError ? (
             <PageError message={tc("error")} onRetry={() => forecast.refetch()} />
+          ) : isInsufficientData ? (
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">{t("insufficientData")}</p>
+              <p className="text-xs text-muted-foreground">
+                {t("availableMonths", { count: forecast.data?.available_months ?? 0 })}
+                {" · "}
+                {t("requiredMonths", { count: forecast.data?.required_months ?? 3 })}
+              </p>
+            </div>
           ) : forecastData.length ? (
             <>
               <ResponsiveLineChart data={forecastData} xKey="period" lines={[
@@ -84,11 +103,13 @@ export default function CashflowPage() {
                 { key: "lower", name: "Lower", color: "#94a3b8" },
                 { key: "upper", name: "Upper", color: "#94a3b8" },
               ]} />
-              {(forecast.data as { explanation?: Array<{ factor: string; description: string }> })?.explanation?.map((e, i) => (
+              {forecast.data?.explanation?.map((e, i) => (
                 <p key={i} className="mt-2 text-sm text-muted-foreground">{e.description}</p>
               ))}
             </>
-          ) : <p className="text-sm text-muted-foreground">{tc("noData")}</p>}
+          ) : (
+            <p className="text-sm text-muted-foreground">{tc("noData")}</p>
+          )}
         </CardContent>
       </Card>
     </div>
