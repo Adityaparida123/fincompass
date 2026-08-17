@@ -6,8 +6,33 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Skeleton, Progress, Badge } from "@/components/ui/input";
 import { useSavingsGoals, useCreateSavingsGoal, useMLSavingsCapacity } from "@/hooks/use-api";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, toNumber, clampPercent } from "@/lib/utils";
 import { ApiRequestError } from "@/lib/api";
+import type { SavingsGoal } from "@/types";
+
+function SavingsGoalCard({ goal }: { goal: SavingsGoal }) {
+  const currentAmount = toNumber(goal.current_amount);
+  const targetAmount = toNumber(goal.target_amount);
+  const progress = clampPercent(goal.progress_percent);
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base">{goal.name}</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        <div className="flex justify-between text-sm">
+          <span>{formatCurrency(currentAmount)}</span>
+          <span className="text-muted-foreground">{formatCurrency(targetAmount)}</span>
+        </div>
+        <Progress value={progress} />
+        <p className="text-xs text-muted-foreground">
+          {progress.toFixed(0)}% · {goal.status}{goal.target_date ? ` · ${goal.target_date}` : ""}
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function SavingsPage() {
   const t = useTranslations("savings");
@@ -37,7 +62,7 @@ export default function SavingsPage() {
     }
   };
 
-  const cap = mlCapacity.data as { lower?: number; upper?: number; disclaimer?: string; explanation?: Array<{ description: string }> } | undefined;
+  const cap = mlCapacity.data as { lower?: number | string; upper?: number | string; disclaimer?: string; explanation?: Array<{ description: string }> } | undefined;
 
   return (
     <div className="space-y-6">
@@ -67,7 +92,7 @@ export default function SavingsPage() {
         <CardContent>
           {mlCapacity.isLoading ? <Skeleton className="h-12 w-48" /> : cap ? (
             <>
-              <p className="text-2xl font-bold">{formatCurrency(cap.lower ?? 0)} – {formatCurrency(cap.upper ?? 0)}</p>
+              <p className="text-2xl font-bold">{formatCurrency(toNumber(cap.lower))} – {formatCurrency(toNumber(cap.upper))}</p>
               {cap.disclaimer && <p className="mt-2 text-sm text-muted-foreground">{cap.disclaimer}</p>}
               {cap.explanation?.map((e, i) => <p key={i} className="mt-1 text-sm text-muted-foreground">{e.description}</p>)}
             </>
@@ -76,19 +101,15 @@ export default function SavingsPage() {
       </Card>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        {goals.isLoading ? <Skeleton className="h-32 w-full" /> : goals.data?.length ? goals.data.map((g) => (
-          <Card key={g.id}>
-            <CardHeader className="pb-2"><CardTitle className="text-base">{g.name}</CardTitle></CardHeader>
-            <CardContent className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>{formatCurrency(parseFloat(g.current_amount))}</span>
-                <span className="text-muted-foreground">{formatCurrency(parseFloat(g.target_amount))}</span>
-              </div>
-              <Progress value={g.progress_percent} />
-              <p className="text-xs text-muted-foreground">{g.progress_percent.toFixed(0)}% · {g.status}{g.target_date ? ` · ${g.target_date}` : ""}</p>
-            </CardContent>
-          </Card>
-        )) : <p className="text-sm text-muted-foreground sm:col-span-2">{t("noGoals")}</p>}
+        {goals.isLoading ? (
+          <Skeleton className="h-32 w-full sm:col-span-2" />
+        ) : goals.isError ? (
+          <p className="text-sm text-destructive sm:col-span-2">{tc("error")}</p>
+        ) : goals.data?.length ? (
+          goals.data.map((g) => <SavingsGoalCard key={g.id} goal={g} />)
+        ) : (
+          <p className="text-sm text-muted-foreground sm:col-span-2">{t("noGoals")}</p>
+        )}
       </div>
     </div>
   );

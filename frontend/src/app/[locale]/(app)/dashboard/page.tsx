@@ -10,7 +10,7 @@ import {
   useExpensesMonthly, useExpenseTrends, useReadiness,
   useRecommendations, useNotifications, useBudgetStatus, useSavingsGoals, useMLPatterns,
 } from "@/hooks/use-api";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, toNumber, clampPercent } from "@/lib/utils";
 
 export default function DashboardPage() {
   const t = useTranslations("dashboard");
@@ -25,15 +25,15 @@ export default function DashboardPage() {
   const savings = useSavingsGoals();
   const patterns = useMLPatterns();
 
-  const netCashFlow = monthly.data ? parseFloat(monthly.data.net_cash_flow) : 0;
-  const totalExpenses = monthly.data ? parseFloat(monthly.data.total_expenses) : 0;
-  const totalSavings = savings.data?.reduce((s, g) => s + parseFloat(g.current_amount), 0) ?? 0;
+  const netCashFlow = monthly.data ? toNumber(monthly.data.net_cash_flow) : 0;
+  const totalExpenses = monthly.data ? toNumber(monthly.data.total_expenses) : 0;
+  const totalSavings = savings.data?.reduce((s, g) => s + toNumber(g.current_amount), 0) ?? 0;
   const score = readiness.data?.score ?? 0;
 
   const trendData = trends.data?.points?.map((p) => ({
     period: p.period,
-    expenses: parseFloat(p.total),
-    income: parseFloat(p.income ?? "0"),
+    expenses: toNumber(p.total),
+    income: toNumber(p.income),
   })) ?? [];
 
   const stats = [
@@ -84,20 +84,22 @@ export default function DashboardPage() {
           <CardHeader><CardTitle>{t("budgetStatus")}</CardTitle></CardHeader>
           <CardContent className="space-y-3">
             {budget.isLoading ? <Skeleton className="h-32 w-full" /> : budget.data?.length ? (
-              budget.data.slice(0, 5).map((b) => (
+              budget.data.slice(0, 5).map((b) => {
+                const pctUsed = clampPercent(b.percent_used);
+                return (
                 <div key={b.id}>
                   <div className="flex justify-between text-sm">
                     <span className="capitalize">{b.category}</span>
-                    <span>{formatCurrency(parseFloat(b.spent))} / {formatCurrency(parseFloat(b.limit_amount))}</span>
+                    <span>{formatCurrency(toNumber(b.spent))} / {formatCurrency(toNumber(b.limit_amount))}</span>
                   </div>
                   <div className="mt-1 h-2 rounded-full bg-muted">
                     <div
-                      className={`h-full rounded-full ${b.percent_used > 100 ? "bg-destructive" : "bg-primary"}`}
-                      style={{ width: `${Math.min(100, b.percent_used)}%` }}
+                      className={`h-full rounded-full ${pctUsed > 100 ? "bg-destructive" : "bg-primary"}`}
+                      style={{ width: `${Math.min(100, pctUsed)}%` }}
                     />
                   </div>
                 </div>
-              ))
+              )})
             ) : <p className="text-sm text-muted-foreground">No budgets set yet.</p>}
           </CardContent>
         </Card>

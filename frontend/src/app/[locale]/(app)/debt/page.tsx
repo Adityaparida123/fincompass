@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Skeleton } from "@/components/ui/input";
 import { useDebts, useCreateDebt } from "@/hooks/use-api";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, toNumber } from "@/lib/utils";
 import { ApiRequestError } from "@/lib/api";
 
 export default function DebtPage() {
@@ -19,8 +19,8 @@ export default function DebtPage() {
   const debts = useDebts();
   const createDebt = useCreateDebt();
 
-  const totalMonthly = debts.data?.reduce((s, d) => s + parseFloat(d.monthly_payment), 0) ?? 0;
-  const totalBalance = debts.data?.reduce((s, d) => s + parseFloat(d.remaining_balance), 0) ?? 0;
+  const totalMonthly = debts.data?.reduce((s, d) => s + toNumber(d.monthly_payment), 0) ?? 0;
+  const totalBalance = debts.data?.reduce((s, d) => s + toNumber(d.remaining_balance), 0) ?? 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,9 +77,9 @@ export default function DebtPage() {
           <Card key={d.id}>
             <CardHeader className="pb-2"><CardTitle className="text-base">{d.name}</CardTitle></CardHeader>
             <CardContent className="space-y-1 text-sm">
-              <div className="flex justify-between"><span className="text-muted-foreground">{t("monthlyPayment")}</span><span className="font-medium">{formatCurrency(parseFloat(d.monthly_payment))}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">{t("remainingBalance")}</span><span>{formatCurrency(parseFloat(d.remaining_balance))}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">{t("interestRate")}</span><span>{parseFloat(d.interest_rate).toFixed(2)}%</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">{t("monthlyPayment")}</span><span className="font-medium">{formatCurrency(toNumber(d.monthly_payment))}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">{t("remainingBalance")}</span><span>{formatCurrency(toNumber(d.remaining_balance))}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">{t("interestRate")}</span><span>{toNumber(d.interest_rate).toFixed(2)}%</span></div>
               {d.due_date && <p className="text-xs text-muted-foreground">Due: {d.due_date}</p>}
             </CardContent>
           </Card>

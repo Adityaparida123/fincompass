@@ -12,7 +12,7 @@ import {
   useTransactions, useCreateTransaction, useDeleteTransaction,
 } from "@/hooks/use-api";
 import { ImportStatementDialog } from "@/components/expenses/import-statement";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, toNumber } from "@/lib/utils";
 import { ApiRequestError } from "@/lib/api";
 
 export default function ExpensesPage() {
@@ -39,10 +39,10 @@ export default function ExpensesPage() {
   const deleteTx = useDeleteTransaction();
 
   const weeklyData = Object.entries(weekly.data?.daily_breakdown ?? {}).map(([day, val]) => ({
-    day, amount: parseFloat(val),
+    day, amount: toNumber(val),
   }));
   const monthlyData = Object.entries(monthly.data?.categories ?? {}).map(([name, val]) => ({
-    name, value: parseFloat(val),
+    name, value: toNumber(val),
   }));
 
   const handleAdd = async (e: React.FormEvent) => {
@@ -98,10 +98,10 @@ export default function ExpensesPage() {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">{t("expense")}</CardTitle></CardHeader>
-          <CardContent>{monthly.isLoading ? <Skeleton className="h-8 w-24" /> : <p className="text-2xl font-bold">{formatCurrency(parseFloat(monthly.data?.total_expenses ?? "0"))}</p>}</CardContent>
+          <CardContent>{monthly.isLoading ? <Skeleton className="h-8 w-24" /> : <p className="text-2xl font-bold">{formatCurrency(toNumber(monthly.data?.total_expenses))}</p>}</CardContent>
         </Card>
         <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">{t("income")}</CardTitle></CardHeader>
-          <CardContent>{monthly.isLoading ? <Skeleton className="h-8 w-24" /> : <p className="text-2xl font-bold">{formatCurrency(parseFloat(monthly.data?.total_income ?? "0"))}</p>}</CardContent>
+          <CardContent>{monthly.isLoading ? <Skeleton className="h-8 w-24" /> : <p className="text-2xl font-bold">{formatCurrency(toNumber(monthly.data?.total_income))}</p>}</CardContent>
         </Card>
         <Card className="sm:col-span-2 lg:col-span-1"><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">{monthly.data?.period ?? period}</CardTitle></CardHeader>
           <CardContent>{monthly.isLoading ? <Skeleton className="h-8 w-24" /> : <p className="text-2xl font-bold">{monthly.data?.transaction_count ?? 0} txns</p>}</CardContent>
@@ -144,7 +144,7 @@ export default function ExpensesPage() {
               <div><p className="font-medium text-sm">{tx.description}</p>
                 <p className="text-xs text-muted-foreground">{tx.date} · {tx.category} · <Badge variant={tx.transaction_type === "income" ? "success" : "secondary"}>{tx.transaction_type}</Badge></p></div>
               <div className="flex items-center gap-3">
-                <span className={`font-semibold ${tx.transaction_type === "income" ? "text-emerald-600" : ""}`}>{formatCurrency(parseFloat(tx.amount))}</span>
+                <span className={`font-semibold ${tx.transaction_type === "income" ? "text-emerald-600" : ""}`}>{formatCurrency(toNumber(tx.amount))}</span>
                 <Button size="sm" variant="outline" onClick={() => handleDelete(tx.id)} disabled={deleteTx.isPending}>{tc("delete")}</Button>
               </div>
             </div>

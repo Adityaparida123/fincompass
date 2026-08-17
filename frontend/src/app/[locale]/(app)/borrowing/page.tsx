@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Skeleton } from "@/components/ui/input";
 import { useCalculateEMI, useLoanSimulation } from "@/hooks/use-api";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, toNumber } from "@/lib/utils";
 import { ApiRequestError } from "@/lib/api";
 import type { EMIResult, LoanSimulationResult } from "@/types";
 
@@ -81,9 +81,9 @@ export default function BorrowingPage() {
       {emiResult && (
         <Card><CardHeader><CardTitle>{t("emi")}</CardTitle></CardHeader>
           <CardContent className="grid gap-2 sm:grid-cols-3 text-sm">
-            <div><span className="text-muted-foreground">{t("emi")}</span><p className="text-xl font-bold">{formatCurrency(parseFloat(emiResult.monthly_emi))}</p></div>
-            <div><span className="text-muted-foreground">Total interest</span><p className="font-medium">{formatCurrency(parseFloat(emiResult.total_interest))}</p></div>
-            <div><span className="text-muted-foreground">Total payment</span><p className="font-medium">{formatCurrency(parseFloat(emiResult.total_payment))}</p></div>
+            <div><span className="text-muted-foreground">{t("emi")}</span><p className="text-xl font-bold">{formatCurrency(toNumber(emiResult.monthly_emi))}</p></div>
+            <div><span className="text-muted-foreground">Total interest</span><p className="font-medium">{formatCurrency(toNumber(emiResult.total_interest))}</p></div>
+            <div><span className="text-muted-foreground">Total payment</span><p className="font-medium">{formatCurrency(toNumber(emiResult.total_payment))}</p></div>
           </CardContent></Card>
       )}
 
@@ -95,10 +95,10 @@ export default function BorrowingPage() {
             <CardContent className="space-y-3 text-sm">
               <p>{simResult.recommendation}</p>
               <div className="grid gap-2 sm:grid-cols-2">
-                <div>Cash flow before: <strong>{formatCurrency(parseFloat(simResult.cash_flow_before))}</strong></div>
-                <div>Cash flow after: <strong>{formatCurrency(parseFloat(simResult.cash_flow_after))}</strong></div>
-                <div>Debt burden before: <strong>{parseFloat(simResult.debt_burden_before).toFixed(1)}%</strong></div>
-                <div>Debt burden after: <strong>{parseFloat(simResult.debt_burden_after).toFixed(1)}%</strong></div>
+                <div>Cash flow before: <strong>{formatCurrency(toNumber(simResult.cash_flow_before))}</strong></div>
+                <div>Cash flow after: <strong>{formatCurrency(toNumber(simResult.cash_flow_after))}</strong></div>
+                <div>Debt burden before: <strong>{toNumber(simResult.debt_burden_before).toFixed(1)}%</strong></div>
+                <div>Debt burden after: <strong>{toNumber(simResult.debt_burden_after).toFixed(1)}%</strong></div>
               </div>
               {simResult.warnings?.length > 0 && (
                 <div><p className="font-medium">{t("warnings")}</p>

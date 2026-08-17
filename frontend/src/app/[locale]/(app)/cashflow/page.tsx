@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton, Badge } from "@/components/ui/input";
 import { ResponsiveLineChart, ChartSkeleton, PageError } from "@/components/charts/responsive-charts";
 import { useExpensesMonthly, useExpenseTrends, useMLForecast } from "@/hooks/use-api";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, toNumber } from "@/lib/utils";
 
 export default function CashflowPage() {
   const t = useTranslations("cashflow");
@@ -17,15 +17,15 @@ export default function CashflowPage() {
   const trends = useExpenseTrends(6);
   const forecast = useMLForecast();
 
-  const income = parseFloat(monthly.data?.total_income ?? "0");
-  const expenses = parseFloat(monthly.data?.total_expenses ?? "0");
-  const net = parseFloat(monthly.data?.net_cash_flow ?? "0");
+  const income = toNumber(monthly.data?.total_income);
+  const expenses = toNumber(monthly.data?.total_expenses);
+  const net = toNumber(monthly.data?.net_cash_flow);
 
   const trendData = trends.data?.points?.map((p) => ({
     period: p.period,
-    income: p.income ? parseFloat(p.income) : 0,
-    expenses: parseFloat(p.total),
-    net: (p.income ? parseFloat(p.income) : 0) - parseFloat(p.total),
+    income: toNumber(p.income),
+    expenses: toNumber(p.total),
+    net: toNumber(p.income) - toNumber(p.total),
   })) ?? [];
 
   const forecastData = (forecast.data as { forecasts?: Array<{ forecast_month: string; expected_cashflow: number; lower_range?: number; upper_range?: number }> })?.forecasts?.map((f) => ({

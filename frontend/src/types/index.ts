@@ -136,7 +136,7 @@ export interface SavingsGoal {
   current_amount: string;
   target_date: string | null;
   status: "active" | "completed" | "paused" | "abandoned";
-  progress_percent: number;
+  progress_percent: string;
 }
 
 export interface BudgetItem {
@@ -153,7 +153,7 @@ export interface BudgetStatus {
   limit_amount: string;
   spent: string;
   remaining: string;
-  percent_used: number;
+  percent_used: string;
 }
 
 export interface DebtObligation {
