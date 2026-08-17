@@ -10,7 +10,7 @@ import {
   useExpensesMonthly, useExpenseTrends, useReadiness,
   useRecommendations, useNotifications, useBudgetStatus, useSavingsGoals, useMLPatterns,
 } from "@/hooks/use-api";
-import { formatCurrency, toNumber, clampPercent } from "@/lib/utils";
+import { formatCurrency, toNumber } from "@/lib/utils";
 
 export default function DashboardPage() {
   const t = useTranslations("dashboard");
@@ -83,9 +83,12 @@ export default function DashboardPage() {
         <Card>
           <CardHeader><CardTitle>{t("budgetStatus")}</CardTitle></CardHeader>
           <CardContent className="space-y-3">
-            {budget.isLoading ? <Skeleton className="h-32 w-full" /> : budget.data?.length ? (
+            {budget.isLoading ? <Skeleton className="h-32 w-full" /> : budget.isError ? (
+              <p className="text-sm text-destructive">{t("budgetError")}</p>
+            ) : budget.data?.length ? (
               budget.data.slice(0, 5).map((b) => {
-                const pctUsed = clampPercent(b.percent_used);
+                const pctUsed = toNumber(b.percent_used);
+                const over = pctUsed > 100;
                 return (
                 <div key={b.id}>
                   <div className="flex justify-between text-sm">
@@ -94,13 +97,13 @@ export default function DashboardPage() {
                   </div>
                   <div className="mt-1 h-2 rounded-full bg-muted">
                     <div
-                      className={`h-full rounded-full ${pctUsed > 100 ? "bg-destructive" : "bg-primary"}`}
+                      className={`h-full rounded-full ${over ? "bg-destructive" : "bg-primary"}`}
                       style={{ width: `${Math.min(100, pctUsed)}%` }}
                     />
                   </div>
                 </div>
               )})
-            ) : <p className="text-sm text-muted-foreground">No budgets set yet.</p>}
+            ) : <p className="text-sm text-muted-foreground">{t("noBudgets")}</p>}
           </CardContent>
         </Card>
       </div>

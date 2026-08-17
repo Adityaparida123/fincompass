@@ -6,7 +6,7 @@ from decimal import Decimal
 from fastapi import APIRouter, Depends, Query
 
 from app.api.dependencies import get_current_user
-from app.core.exceptions import NotFoundError
+from app.core.exceptions import ConflictError, NotFoundError
 from app.db.enums import ConsentType
 from app.db.mongo import MongoDatabase
 from app.db.session import get_session
@@ -24,7 +24,7 @@ from app.services.finance.budget import (
     list_budgets,
 )
 from app.services.recycle_bin.service import move_to_recycle_bin
-from app.utils.dates import month_period_from_string
+from app.utils.dates import month_bounds, month_period_from_string
 
 router = APIRouter(prefix="/budget", tags=["budget"])
 
@@ -36,7 +36,19 @@ async def create_budget(
     db: MongoDatabase = Depends(get_session),
 ) -> BudgetRead:
     await require_consent(db, user.id, ConsentType.financial_data_analysis)
-    budget = await db.insert("budgets", {"user_id": user.id, **data.model_dump()})
+    period_date = month_period_from_string(data.period.isoformat()[:7])
+    existing = await db.find_one(
+        "budgets",
+        {"user_id": user.id, "period": period_date, "category": data.category},
+    )
+    if existing is not None:
+        raise ConflictError(
+            f"A budget for '{data.category}' already exists for this period."
+        )
+    budget = await db.insert(
+        "budgets",
+        {"user_id": user.id, "period": period_date, **data.model_dump(exclude={"period"})},
+    )
     return BudgetRead.model_validate(budget)
 
 
@@ -95,10 +107,7 @@ async def budget_status(
 ) -> list[BudgetStatus]:
     await require_consent(db, user.id, ConsentType.financial_data_analysis)
     start = month_period_from_string(period)
-    if start.month == 12:
-        end = start.replace(year=start.year + 1, month=1, day=1)
-    else:
-        end = start.replace(month=start.month + 1, day=1)
+    start, end = month_bounds(start.year, start.month)
     budgets = await list_budgets(db, user.id, period)
     statuses: list[BudgetStatus] = []
     for b in budgets:

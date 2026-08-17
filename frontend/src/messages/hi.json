@@ -80,7 +80,9 @@
     "savingsProgress": "बचत प्रगति",
     "budgetStatus": "बजट स्थिति",
     "insights": "वित्तीय अंतर्दृष्टि",
-    "recentNotifications": "हाल की सूचनाएं"
+    "recentNotifications": "हाल की सूचनाएं",
+    "noBudgets": "अभी कोई बजट नहीं।",
+    "budgetError": "बजट स्थिति लोड नहीं हो सकी।"
   },
   "readiness": {
     "title": "क्रेडिट तैयारी",
@@ -196,7 +198,11 @@
     "category": "श्रेणी",
     "limit": "सीमा",
     "overBudget": "बजट से अधिक",
-    "noBudgets": "इस अवधि के लिए कोई बजट नहीं।"
+    "noBudgets": "इस अवधि के लिए कोई बजट नहीं।",
+    "error": "बजट स्थिति लोड नहीं हो सकी।",
+    "delete": "बजट हटाएं",
+    "confirmDelete": "इस बजट को हटाएं?",
+    "deleted": "बजट हटा दिया गया।"
   },
   "debt": {
     "title": "ऋण",

@@ -5,7 +5,7 @@ from decimal import Decimal
 
 from app.db.enums import TransactionType
 from app.db.mongo import Doc, MongoDatabase
-from app.utils.dates import month_period_from_string
+from app.utils.dates import month_bounds, month_period_from_string
 
 
 async def list_budgets(db: MongoDatabase, user_id: int, period: str | None) -> list[Doc]:
@@ -40,18 +40,12 @@ async def average_monthly_spend(
     total = Decimal("0")
     counted = 0
     for offset in range(1, months + 1):
-        # approximate last N calendar months using month bounds
         year = today.year
         month = today.month - offset
         while month <= 0:
             month += 12
             year -= 1
-        if month == 12:
-            start = date(year, 12, 1)
-            end = date(year + 1, 1, 1)
-        else:
-            start = date(year, month, 1)
-            end = date(year, month + 1, 1)
+        start, end = month_bounds(year, month)
         spend = await category_spend(db, user_id, category, start, end)
         total += spend
         counted += 1
@@ -69,11 +63,7 @@ async def build_recommendations(
     of (average spend * 1.15) or (average spend), floored to a sensible value.
     This is data-driven and does not assume a one-size-fits-all rule.
     """
-    start = period.replace(day=1)
-    if period.month == 12:
-        end = period.replace(year=period.year + 1, month=1, day=1)
-    else:
-        end = period.replace(month=period.month + 1, day=1)
+    start, end = month_bounds(period.year, period.month)
 
     filt = {
         "user_id": user_id,

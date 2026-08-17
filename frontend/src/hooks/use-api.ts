@@ -153,7 +153,19 @@ export function useCreateBudget() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: Record<string, unknown>) => api.post<BudgetItem>("/budget", body),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["budget"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["budget"] });
+    },
+  });
+}
+
+export function useDeleteBudget() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => api.delete(`/budget/${id}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["budget"] });
+    },
   });
 }
 

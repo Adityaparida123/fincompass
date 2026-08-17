@@ -80,7 +80,9 @@
     "savingsProgress": "Savings Progress",
     "budgetStatus": "Budget Status",
     "insights": "Financial Insights",
-    "recentNotifications": "Recent Notifications"
+    "recentNotifications": "Recent Notifications",
+    "noBudgets": "No budgets set yet.",
+    "budgetError": "Unable to load budget status."
   },
   "readiness": {
     "title": "Credit Readiness",
@@ -196,7 +198,11 @@
     "category": "Category",
     "limit": "Limit",
     "overBudget": "Over budget",
-    "noBudgets": "No budgets for this period."
+    "noBudgets": "No budgets for this period.",
+    "error": "Unable to load budget status.",
+    "delete": "Delete budget",
+    "confirmDelete": "Delete this budget?",
+    "deleted": "Budget deleted."
   },
   "debt": {
     "title": "Debt",

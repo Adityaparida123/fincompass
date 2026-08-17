@@ -6,8 +6,8 @@ import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Skeleton, Badge } from "@/components/ui/input";
-import { useBudgetStatus, useCreateBudget } from "@/hooks/use-api";
-import { formatCurrency, toNumber, clampPercent } from "@/lib/utils";
+import { useBudgetStatus, useCreateBudget, useDeleteBudget } from "@/hooks/use-api";
+import { formatCurrency, toNumber } from "@/lib/utils";
 import { ApiRequestError } from "@/lib/api";
 
 export default function BudgetPage() {
@@ -20,6 +20,7 @@ export default function BudgetPage() {
 
   const budget = useBudgetStatus(period);
   const createBudget = useCreateBudget();
+  const deleteBudget = useDeleteBudget();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,8 +55,10 @@ export default function BudgetPage() {
       <Card>
         <CardHeader><CardTitle>{period}</CardTitle></CardHeader>
         <CardContent className="space-y-4">
-          {budget.isLoading ? <Skeleton className="h-40 w-full" /> : budget.data?.length ? budget.data.map((b) => {
-            const pctUsed = clampPercent(b.percent_used);
+          {budget.isLoading ? <Skeleton className="h-40 w-full" /> : budget.isError ? (
+            <p className="text-sm text-destructive">{t("error")}</p>
+          ) : budget.data?.length ? budget.data.map((b) => {
+            const pctUsed = toNumber(b.percent_used);
             const over = pctUsed > 100;
             return (
               <div key={b.id}>
@@ -64,12 +67,24 @@ export default function BudgetPage() {
                   <div className="flex items-center gap-2">
                     <span>{formatCurrency(toNumber(b.spent))} / {formatCurrency(toNumber(b.limit_amount))}</span>
                     {over && <Badge variant="destructive">{t("overBudget")}</Badge>}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2 text-xs text-destructive hover:text-destructive"
+                      onClick={() => {
+                        if (window.confirm(t("confirmDelete"))) {
+                          deleteBudget.mutate(b.id);
+                        }
+                      }}
+                    >
+                      {tc("delete")}
+                    </Button>
                   </div>
                 </div>
                 <div className="mt-1 h-2 rounded-full bg-muted">
                   <div className={`h-full rounded-full transition-all ${over ? "bg-destructive" : "bg-primary"}`} style={{ width: `${Math.min(100, pctUsed)}%` }} />
                 </div>
-                <p className="mt-1 text-xs text-muted-foreground">{pctUsed.toFixed(0)}% used · {formatCurrency(toNumber(b.remaining))} remaining</p>
+                <p className="mt-1 text-xs text-muted-foreground">{pctUsed.toFixed(1)}% used · {formatCurrency(toNumber(b.remaining))} remaining</p>
               </div>
             );
           }) : <p className="text-sm text-muted-foreground">{t("noBudgets")}</p>}
