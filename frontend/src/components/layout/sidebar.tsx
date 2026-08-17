@@ -6,7 +6,7 @@ import { useTranslations, useLocale } from "next-intl";
 import {
   LayoutDashboard, Receipt, TrendingUp, PiggyBank, Wallet,
   CreditCard, HandCoins, Gauge, Lightbulb, Landmark, Bell,
-  Trash2, Shield, User, Menu, X, Compass,
+  Trash2, Shield, User, Menu, X, Compass,CircleHelp
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
@@ -26,6 +26,7 @@ const navItems = [
   { key: "notifications", href: "/notifications", icon: Bell },
   { key: "recycleBin", href: "/recycle-bin", icon: Trash2 },
   { key: "consent", href: "/consent", icon: Shield },
+  { key: "howToUse", href: "/howToUse", icon: CircleHelp },
   { key: "profile", href: "/profile", icon: User },
 ] as const;
 
