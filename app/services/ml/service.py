@@ -42,8 +42,12 @@ async def _fetch_transactions(
     user_id: int,
     months: int = 12,
 ) -> pd.DataFrame:
-    """Retrieve minimum required transaction data for ML inference."""
-    start = date.today() - timedelta(days=months * 30)
+    """Retrieve minimum required transaction data for ML inference.
+
+    Dates are stored as ISO-8601 strings in MongoDB. The ``$gte`` filter
+    compares lexicographically so an ISO date string works directly.
+    """
+    start = (date.today() - timedelta(days=months * 30)).isoformat()
     rows = await db.find(
         "transactions",
         {"user_id": user_id, "is_deleted": False, "date": {"$gte": start}},
@@ -55,7 +59,7 @@ async def _fetch_transactions(
     return pd.DataFrame([
         {
             "user_id": str(user_id),
-            "date": row.date,
+            "date": str(row.date),
             "amount": float(row.amount),
             "type": row.transaction_type,
             "category": row.category,
@@ -170,7 +174,14 @@ async def get_cashflow_forecast(db: MongoDatabase, user_id: int) -> dict:
     except FileNotFoundError:
         return _degraded_result(
             "cashflow_forecaster",
-            extra={"forecasts": [], "explanation": []},
+            extra={
+                "forecasts": [],
+                "explanation": [],
+                "expense_forecast": None,
+                "income_forecast": None,
+                "category_forecasts": [],
+                "forecast_quality": "none",
+            },
         )
 
 

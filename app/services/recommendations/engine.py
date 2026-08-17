@@ -26,7 +26,7 @@ def _money(v) -> str:
     return f"{v:,.2f}"
 
 
-def generate_recommendations(data: ReadinessInput) -> RecommendationsResult:
+def generate_recommendations(data: ReadinessInput, forecast_data: dict | None = None) -> RecommendationsResult:
     recommendations: list[RecommendationOut] = []
     priority = 1
 
@@ -170,6 +170,55 @@ def generate_recommendations(data: ReadinessInput) -> RecommendationsResult:
                 "flow and compare alternatives first.",
             )
         )
+
+    # Forecast-based recommendations
+    if forecast_data and forecast_data.get("status") == "success":
+        expense_fc = forecast_data.get("expense_forecast")
+        income_fc = forecast_data.get("income_forecast")
+        cat_fcsts = forecast_data.get("category_forecasts", [])
+
+        if expense_fc and income_fc:
+            projected_surplus = income_fc["predicted"] - expense_fc["predicted"]
+            if projected_surplus < 0:
+                recommendations.append(
+                    RecommendationOut(
+                        type="forecast_alert",
+                        priority=priority,
+                        title="Projected expenses exceed income",
+                        reason=(
+                            f"Your projected expenses ({expense_fc['predicted']:,.0f}) "
+                            f"exceed projected income ({income_fc['predicted']:,.0f}) "
+                            f"by {abs(projected_surplus):,.0f}. "
+                            "Review discretionary spending to avoid a deficit."
+                        ),
+                    )
+                )
+                priority += 1
+
+        # Per-category alerts (top 3 over-budget categories)
+        if cat_fcsts:
+            for cf in cat_fcsts[:3]:
+                if cf["category"] == "income":
+                    continue
+                # Only suggest monitoring for discretionary categories
+                if cf["predicted"] > 0 and cf["category"] in (
+                    "food", "shopping", "entertainment", "subscriptions"
+                ):
+                    if cf["months_of_data"] >= 2 and cf["upper"] > cf["predicted"] * 1.1:
+                        recommendations.append(
+                            RecommendationOut(
+                                type="category_forecast",
+                                priority=priority,
+                                title=f"Monitor {cf['category']} spending",
+                                reason=(
+                                    f"Projected {cf['category']} spending is "
+                                    f"{cf['predicted']:,.0f}/month. "
+                                    "Consider reviewing this category for potential savings."
+                                ),
+                            )
+                        )
+                        priority += 1
+                        break  # Only one category recommendation to avoid noise
 
     return RecommendationsResult(
         recommendations=recommendations,

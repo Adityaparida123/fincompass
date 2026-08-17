@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Skeleton, Progress, Badge } from "@/components/ui/input";
-import { useSavingsGoals, useCreateSavingsGoal, useMLSavingsCapacity } from "@/hooks/use-api";
+import { useSavingsGoals, useCreateSavingsGoal, useMLSavingsCapacity, useMLForecast } from "@/hooks/use-api";
 import { formatCurrency, toNumber, clampPercent } from "@/lib/utils";
 import { ApiRequestError } from "@/lib/api";
 import type { SavingsGoal } from "@/types";
@@ -44,6 +44,7 @@ export default function SavingsPage() {
   const goals = useSavingsGoals();
   const createGoal = useCreateSavingsGoal();
   const mlCapacity = useMLSavingsCapacity();
+  const forecast = useMLForecast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,6 +64,12 @@ export default function SavingsPage() {
   };
 
   const cap = mlCapacity.data as { lower?: number | string; upper?: number | string; disclaimer?: string; explanation?: Array<{ description: string }> } | undefined;
+
+  const expenseForecast = forecast.data?.expense_forecast;
+  const incomeForecast = forecast.data?.income_forecast;
+  const projectedSurplus = incomeForecast && expenseForecast
+    ? incomeForecast.predicted - expenseForecast.predicted
+    : null;
 
   return (
     <div className="space-y-6">
@@ -99,6 +106,20 @@ export default function SavingsPage() {
           ) : <p className="text-sm text-muted-foreground">{tc("noData")}</p>}
         </CardContent>
       </Card>
+
+      {projectedSurplus !== null && projectedSurplus > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("forecastSurplus")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold text-emerald-600">{formatCurrency(projectedSurplus)}</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {t("forecastSurplusDesc", { amount: formatCurrency(projectedSurplus) })}
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2">
         {goals.isLoading ? (

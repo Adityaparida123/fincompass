@@ -285,10 +285,28 @@ export interface CashflowForecastItem {
   upper_range: number;
 }
 
+export interface ForecastRange {
+  predicted: number;
+  lower: number;
+  upper: number;
+}
+
+export interface CategoryForecast {
+  category: string;
+  predicted: number;
+  lower: number;
+  upper: number;
+  months_of_data: number;
+}
+
 export interface CashflowForecastResponse {
   status: "success" | "insufficient_data";
   method: "ml_model" | "rolling_baseline" | "none";
   forecasts: CashflowForecastItem[];
+  expense_forecast: ForecastRange | null;
+  income_forecast: ForecastRange | null;
+  category_forecasts: CategoryForecast[];
+  forecast_quality: "good" | "moderate" | "limited" | "none";
   confidence: number;
   explanation: MLExplanationFactor[];
   model: MLModelMeta;

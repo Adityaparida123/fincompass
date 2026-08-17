@@ -12,6 +12,7 @@ import {
   useMLPatterns, useMLForecast,
 } from "@/hooks/use-api";
 import { formatCurrency, toNumber } from "@/lib/utils";
+import Link from "next/link";
 
 export default function DashboardPage() {
   const t = useTranslations("dashboard");
@@ -138,12 +139,49 @@ export default function DashboardPage() {
               <p className="text-sm text-destructive">{t("forecastError")}</p>
             ) : isInsufficientData ? (
               <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">{t("forecastInsufficient")}</p>
-                <p className="text-xs text-muted-foreground">
-                  {t("forecastAvailable", { count: forecast.data?.available_months ?? 0 })}
-                  {" · "}
-                  {t("forecastRequired", { count: forecast.data?.required_months ?? 3 })}
-                </p>
+                {(forecast.data?.available_months ?? 0) === 0 ? (
+                  <>
+                    <p className="text-sm font-medium">{t("forecastNoTransactions")}</p>
+                    <p className="text-xs text-muted-foreground">{t("forecastNoTransactionsDesc")}</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm font-medium">{t("forecastInsufficient")}</p>
+                    <p className="text-xs text-muted-foreground">{t("forecastInsufficientDesc")}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {t("forecastAvailable", { count: forecast.data?.available_months ?? 0 })}
+                      {" · "}
+                      {t("forecastRequired", { count: forecast.data?.required_months ?? 3 })}
+                    </p>
+                  </>
+                )}
+              </div>
+            ) : forecast.data?.expense_forecast || forecast.data?.income_forecast ? (
+              <div className="space-y-3">
+                {forecast.data.expense_forecast && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">{t("expectedExpenses")}</span>
+                    <span className="font-medium">{formatCurrency(forecast.data.expense_forecast.predicted)}</span>
+                  </div>
+                )}
+                {forecast.data.income_forecast && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">{t("expectedIncome")}</span>
+                    <span className="font-medium">{formatCurrency(forecast.data.income_forecast.predicted)}</span>
+                  </div>
+                )}
+                {forecast.data.expense_forecast && forecast.data.income_forecast && (
+                  <div className="flex justify-between text-sm border-t pt-2">
+                    <span className="text-muted-foreground">{t("expectedSurplus")}</span>
+                    <span className={`font-medium ${(forecast.data.income_forecast.predicted - forecast.data.expense_forecast.predicted) < 0 ? "text-destructive" : ""}`}>
+                      {formatCurrency(forecast.data.income_forecast.predicted - forecast.data.expense_forecast.predicted)}
+                    </span>
+                  </div>
+                )}
+                {forecast.data.explanation?.slice(0, 2).map((e, i) => (
+                  <p key={i} className="text-xs text-muted-foreground">{e.description}</p>
+                ))}
+                <Link href="/cashflow" className="text-xs text-primary hover:underline">{t("viewForecast")}</Link>
               </div>
             ) : forecastData.length ? (
               <div className="space-y-2">

@@ -85,9 +85,16 @@
     "budgetError": "Unable to load budget status.",
     "forecast": "ML Forecast",
     "forecastError": "Forecast temporarily unavailable.",
-    "forecastInsufficient": "Not enough historical data for an ML forecast.",
+    "forecastInsufficient": "Limited transaction history.",
+    "forecastInsufficientDesc": "Add more transactions to improve forecast accuracy.",
+    "forecastNoTransactions": "No transactions yet.",
+    "forecastNoTransactionsDesc": "Import a bank statement or add transactions to generate your first forecast.",
     "forecastAvailable": "Available: {count} month(s)",
-    "forecastRequired": "Recommended: {count}+ months"
+    "forecastRequired": "Recommended: {count}+ months",
+    "expectedExpenses": "Expected expenses",
+    "expectedIncome": "Expected income",
+    "expectedSurplus": "Expected surplus",
+    "viewForecast": "View forecast"
   },
   "readiness": {
     "title": "Credit Readiness",
@@ -185,11 +192,25 @@
     "expenses": "Expenses",
     "net": "Net cash flow",
     "trends": "Trends",
-    "forecast": "ML forecast",
+    "forecast": "ML Forecast",
+    "forecastNextMonth": "Next Month",
+    "expectedExpenses": "Expected expenses",
+    "expectedIncome": "Expected income",
+    "expectedCashFlow": "Expected cash flow",
+    "expectedRange": "Expected range",
+    "forecastQuality": "Forecast quality",
+    "qualityGood": "Good",
+    "qualityModerate": "Moderate",
+    "qualityLimited": "Limited",
     "baselineMethod": "Baseline estimate",
-    "insufficientData": "Not enough historical data for an ML forecast.",
+    "insufficientData": "Limited transaction history",
+    "insufficientDataDesc": "Add more transactions to improve forecast accuracy.",
+    "noTransactions": "No transactions available for forecasting.",
+    "noTransactionsDesc": "Import a bank statement or add transactions to generate your first forecast.",
     "availableMonths": "Available: {count} month(s)",
-    "requiredMonths": "Recommended: {count}+ months"
+    "requiredMonths": "Recommended: {count}+ months",
+    "categoryForecasts": "Category forecasts",
+    "monthsOfData": "{count} month(s) of data"
   },
   "savings": {
     "title": "Savings Goals",
@@ -199,7 +220,9 @@
     "currentAmount": "Current amount",
     "targetDate": "Target date",
     "mlCapacity": "Estimated savings capacity",
-    "noGoals": "No savings goals yet."
+    "noGoals": "No savings goals yet.",
+    "forecastSurplus": "Projected cash flow",
+    "forecastSurplusDesc": "Based on your projected cash flow, you may be able to allocate approximately {amount} toward your savings goal."
   },
   "budget": {
     "title": "Budget",
@@ -211,7 +234,11 @@
     "error": "Unable to load budget status.",
     "delete": "Delete budget",
     "confirmDelete": "Delete this budget?",
-    "deleted": "Budget deleted."
+    "deleted": "Budget deleted.",
+    "forecastComparison": "Forecast vs Budget",
+    "forecastAboveBudget": "Forecast is {amount} above your {category} budget.",
+    "forecastBelowBudget": "Forecast is {amount} below your {category} budget.",
+    "noForecastData": "Add more transactions to see budget forecasts."
   },
   "debt": {
     "title": "Debt",

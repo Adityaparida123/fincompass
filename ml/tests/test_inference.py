@@ -8,7 +8,6 @@ from ml.inference.classifier import TransactionClassifier, save_correction
 from ml.inference.forecast import CashflowForecaster
 from ml.pipelines.inference_pipeline import InferencePipeline
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
@@ -41,7 +40,7 @@ def sample_transactions():
 
 @pytest.fixture
 def single_month_transactions():
-    """Only 1 month of data — insufficient for ML forecast."""
+    """Only 1 month of data — insufficient for ML forecast, but should produce baseline."""
     return pd.DataFrame([
         {"user_id": "u1", "date": "2026-08-01", "amount": 50000, "type": "income", "category": "income", "description": "salary"},
         {"user_id": "u1", "date": "2026-08-05", "amount": 4500, "type": "expense", "category": "food", "description": "groceries"},
@@ -78,7 +77,7 @@ def trained_models():
 # ---------------------------------------------------------------------------
 
 def test_forecast_with_sufficient_data(sample_transactions, trained_models):
-    """6 months of data should produce an ML forecast."""
+    """6 months of data should produce an ML forecast with 3-layer output."""
     fc = CashflowForecaster()
     result = fc.forecast(sample_transactions)
     assert result["status"] == "success"
@@ -87,6 +86,33 @@ def test_forecast_with_sufficient_data(sample_transactions, trained_models):
     assert result["forecasts"][0]["expected_cashflow"] != 0
     assert result["prediction"]["confidence"] > 0
     assert len(result["explanation"]) >= 2
+    # 3-layer forecast fields
+    assert result["expense_forecast"] is not None
+    assert result["income_forecast"] is not None
+    assert result["expense_forecast"]["predicted"] > 0
+    assert result["income_forecast"]["predicted"] > 0
+    assert result["forecast_quality"] in ("good", "moderate", "limited")
+    assert isinstance(result["category_forecasts"], list)
+    assert len(result["category_forecasts"]) > 0
+
+
+# ---------------------------------------------------------------------------
+# Forecast: single month (baseline fallback — NOT insufficient)
+# ---------------------------------------------------------------------------
+
+def test_forecast_single_month_produces_baseline(single_month_transactions, trained_models):
+    """1 month of data should now produce a baseline forecast, not insufficient_data."""
+    fc = CashflowForecaster()
+    result = fc.forecast(single_month_transactions)
+    assert result["status"] == "success"
+    assert result["method"] == "rolling_baseline"
+    assert len(result["forecasts"]) == 1
+    assert result["prediction"]["confidence"] > 0
+    assert result["expense_forecast"] is not None
+    assert result["income_forecast"] is not None
+    assert result["forecast_quality"] == "limited"
+    # Should have category forecasts
+    assert len(result["category_forecasts"]) >= 1
 
 
 # ---------------------------------------------------------------------------
@@ -105,23 +131,14 @@ def test_forecast_baseline_with_two_months(two_month_transactions, trained_model
     method_explanation = [e for e in result["explanation"] if e["factor"] == "method"]
     assert len(method_explanation) == 1
     assert "baseline" in method_explanation[0]["description"].lower()
+    # 3-layer fields
+    assert result["expense_forecast"] is not None
+    assert result["income_forecast"] is not None
 
 
 # ---------------------------------------------------------------------------
-# Forecast: insufficient data
+# Forecast: insufficient data (empty)
 # ---------------------------------------------------------------------------
-
-def test_forecast_insufficient_data_single_month(single_month_transactions, trained_models):
-    """1 month of data should return insufficient_data."""
-    fc = CashflowForecaster()
-    result = fc.forecast(single_month_transactions)
-    assert result["status"] == "insufficient_data"
-    assert result["method"] == "none"
-    assert result["forecasts"] == []
-    assert result["available_months"] == 1
-    assert result["required_months"] == 3
-    assert "Not enough" in result["message"]
-
 
 def test_forecast_insufficient_data_empty(empty_transactions, trained_models):
     """Empty data should return insufficient_data."""
@@ -130,6 +147,9 @@ def test_forecast_insufficient_data_empty(empty_transactions, trained_models):
     assert result["status"] == "insufficient_data"
     assert result["forecasts"] == []
     assert result["available_months"] == 0
+    assert result["expense_forecast"] is None
+    assert result["income_forecast"] is None
+    assert result["category_forecasts"] == []
 
 
 # ---------------------------------------------------------------------------
@@ -146,6 +166,10 @@ def test_forecast_income_only(trained_models):
     result = fc.forecast(df)
     assert result["status"] == "success"
     assert len(result["forecasts"]) == 1
+    assert result["income_forecast"] is not None
+    assert result["income_forecast"]["predicted"] > 0
+    # Expenses should be 0 or very small
+    assert result["expense_forecast"] is not None
 
 
 # ---------------------------------------------------------------------------
@@ -162,6 +186,22 @@ def test_forecast_expense_only(trained_models):
     result = fc.forecast(df)
     assert result["status"] == "success"
     assert len(result["forecasts"]) == 1
+    assert result["expense_forecast"] is not None
+    assert result["expense_forecast"]["predicted"] > 0
+
+
+# ---------------------------------------------------------------------------
+# Forecast: net cash flow is deterministic
+# ---------------------------------------------------------------------------
+
+def test_net_cashflow_deterministic(sample_transactions, trained_models):
+    """Net cash flow must equal income - expenses (deterministic)."""
+    fc = CashflowForecaster()
+    result = fc.forecast(sample_transactions)
+    inc = result["income_forecast"]["predicted"]
+    exp = result["expense_forecast"]["predicted"]
+    net = result["forecasts"][0]["expected_cashflow"]
+    assert abs(net - (inc - exp)) < 0.01, "Net cash flow must equal income - expenses"
 
 
 # ---------------------------------------------------------------------------
@@ -181,17 +221,55 @@ def test_forecast_response_schema(sample_transactions, trained_models):
     assert "timestamp" in result
     assert "name" in result["model"]
     assert "version" in result["model"]
+    assert "expense_forecast" in result
+    assert "income_forecast" in result
+    assert "category_forecasts" in result
+    assert "forecast_quality" in result
 
 
-def test_insufficient_data_response_schema(single_month_transactions, trained_models):
+def test_insufficient_data_response_schema(empty_transactions, trained_models):
     """Insufficient data response should contain all required fields."""
     fc = CashflowForecaster()
-    result = fc.forecast(single_month_transactions)
+    result = fc.forecast(empty_transactions)
     assert "status" in result
     assert "available_months" in result
     assert "required_months" in result
     assert "message" in result
     assert result["status"] == "insufficient_data"
+    assert result["expense_forecast"] is None
+    assert result["income_forecast"] is None
+    assert result["category_forecasts"] == []
+
+
+# ---------------------------------------------------------------------------
+# Category forecasts
+# ---------------------------------------------------------------------------
+
+def test_category_forecasts_present(sample_transactions, trained_models):
+    """6 months of data should produce category-level forecasts."""
+    fc = CashflowForecaster()
+    result = fc.forecast(sample_transactions)
+    cats = result["category_forecasts"]
+    assert len(cats) >= 3
+    for cat in cats:
+        assert "category" in cat
+        assert "predicted" in cat
+        assert "lower" in cat
+        assert "upper" in cat
+        assert "months_of_data" in cat
+        assert cat["predicted"] >= 0
+        assert cat["lower"] <= cat["predicted"] <= cat["upper"]
+
+
+def test_category_forecasts_single_month(single_month_transactions, trained_models):
+    """Single month should still produce category forecasts."""
+    fc = CashflowForecaster()
+    result = fc.forecast(single_month_transactions)
+    cats = result["category_forecasts"]
+    assert len(cats) >= 1
+    for cat in cats:
+        assert cat["months_of_data"] == 1
+        assert cat["lower"] <= cat["predicted"] <= cat["upper"]
 
 
 # ---------------------------------------------------------------------------
@@ -244,17 +322,26 @@ def test_recalculate_after_correction(sample_transactions, trained_models):
     assert "patterns" in result
 
 
-def test_forecast_pipeline_insufficient_data(single_month_transactions, trained_models):
+def test_forecast_pipeline_insufficient_data(empty_transactions, trained_models):
     """Pipeline should handle insufficient data gracefully."""
     pipeline = InferencePipeline()
-    result = pipeline.forecast_cashflow("test_user", single_month_transactions)
+    result = pipeline.forecast_cashflow("test_user", empty_transactions)
     assert result["status"] == "insufficient_data"
     assert result["forecasts"] == []
 
 
-def test_forecast_pipeline_baseline(single_month_transactions, trained_models):
-    """Pipeline should cache insufficient data results."""
+def test_forecast_pipeline_single_month(single_month_transactions, trained_models):
+    """Pipeline should cache and return baseline for single month."""
     pipeline = InferencePipeline()
     result1 = pipeline.forecast_cashflow("test_user", single_month_transactions)
     result2 = pipeline.forecast_cashflow("test_user", single_month_transactions)
     assert result1 is result2  # cached
+    assert result1["status"] == "success"
+    assert result1["method"] == "rolling_baseline"
+
+
+def test_forecast_quality_labels(sample_transactions, trained_models):
+    """Quality labels should be valid values."""
+    fc = CashflowForecaster()
+    result = fc.forecast(sample_transactions)
+    assert result["forecast_quality"] in ("good", "moderate", "limited", "none")
