@@ -75,6 +75,9 @@ export function useCreateTransaction() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["transactions"] });
       qc.invalidateQueries({ queryKey: ["expenses"] });
+      qc.invalidateQueries({ queryKey: ["cashflow"] });
+      qc.invalidateQueries({ queryKey: ["readiness"] });
+      qc.invalidateQueries({ queryKey: ["ml"] });
     },
   });
 }
@@ -86,6 +89,9 @@ export function useDeleteTransaction() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["transactions"] });
       qc.invalidateQueries({ queryKey: ["expenses"] });
+      qc.invalidateQueries({ queryKey: ["cashflow"] });
+      qc.invalidateQueries({ queryKey: ["readiness"] });
+      qc.invalidateQueries({ queryKey: ["ml"] });
     },
   });
 }
@@ -118,6 +124,8 @@ export function useImportStatement() {
       qc.invalidateQueries({ queryKey: ["transactions"] });
       qc.invalidateQueries({ queryKey: ["expenses"] });
       qc.invalidateQueries({ queryKey: ["cashflow"] });
+      qc.invalidateQueries({ queryKey: ["readiness"] });
+      qc.invalidateQueries({ queryKey: ["ml"] });
     },
   });
 }
@@ -133,7 +141,10 @@ export function useCreateSavingsGoal() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: Record<string, unknown>) => api.post<SavingsGoal>("/savings/goals", body),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["savings"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["savings"] });
+      qc.invalidateQueries({ queryKey: ["readiness"] });
+    },
   });
 }
 
@@ -183,7 +194,10 @@ export function useCreateDebt() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: Record<string, unknown>) => api.post<DebtObligation>("/debt", body),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["debt"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["debt"] });
+      qc.invalidateQueries({ queryKey: ["readiness"] });
+    },
   });
 }
 

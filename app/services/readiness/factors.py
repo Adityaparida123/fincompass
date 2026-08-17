@@ -22,7 +22,7 @@ async def _monthly_totals(
         "user_id": user_id,
         "transaction_type": tx_type.value,
         "is_deleted": False,
-        "date": {"$gte": start, "$lt": end},
+        "date": {"$gte": start.isoformat(), "$lt": end.isoformat()},
     }
     totals: dict[str, Decimal] = {}
     for row in await db.find("transactions", filt):
@@ -59,16 +59,19 @@ async def build_readiness_input(db: MongoDatabase, user_id: int) -> ReadinessInp
         "user_id": user_id,
         "transaction_type": TransactionType.expense.value,
         "is_deleted": False,
-        "date": {"$gte": window_start, "$lt": window_end},
+        "date": {"$gte": window_start.isoformat(), "$lt": window_end.isoformat()},
     }
     for row in await db.find("transactions", filt):
         if is_essential(row.category):
             key = row.date[:7]
             essential_by_month[key] = essential_by_month.get(key, Decimal("0")) + row.amount
 
-    income_months = [income_by_month.get(key, Decimal("0")) for key, _ in bounds]
-    expense_months = [expense_by_month.get(key, Decimal("0")) for key, _ in bounds]
-    essential_months = [essential_by_month.get(key, Decimal("0")) for key, _ in bounds]
+    def _month_key(start: date) -> str:
+        return start.isoformat()[:7]
+
+    income_months = [income_by_month.get(_month_key(start), Decimal("0")) for start, _ in bounds]
+    expense_months = [expense_by_month.get(_month_key(start), Decimal("0")) for start, _ in bounds]
+    essential_months = [essential_by_month.get(_month_key(start), Decimal("0")) for start, _ in bounds]
 
     monthly_debt = await db.sum_field("debt_obligations", {"user_id": user_id}, "monthly_payment")
     savings = await db.sum_field("savings_goals", {"user_id": user_id}, "current_amount")

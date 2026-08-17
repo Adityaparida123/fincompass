@@ -10,10 +10,6 @@ from app.services.readiness.factors import build_readiness_input
 
 
 async def get_current_readiness(db: MongoDatabase, user_id: int) -> ReadinessResult:
-    score = await latest_score(db, user_id)
-    if score is not None:
-        factors = await load_factors(db, score.id)
-        return _build_result(score.score, factors)
     return await compute_and_store(db, user_id)
 
 

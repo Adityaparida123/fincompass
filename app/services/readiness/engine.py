@@ -248,11 +248,18 @@ def compute_readiness(data: ReadinessInput) -> ReadinessResult:
 
     summary = _summary(score)
 
+    has_income = data.income > 0
+    has_expenses = data.total_expenses > 0
+    has_savings = data.savings > 0
+    has_debt = data.debt_payments > 0
+    insufficient = not (has_income or has_expenses or has_savings or has_debt)
+
     return ReadinessResult(
         score=score,
         version=VERSION,
         factors=[_to_out(f) for f in factors],
         summary=summary,
+        insufficient_data=insufficient,
     )
 
 

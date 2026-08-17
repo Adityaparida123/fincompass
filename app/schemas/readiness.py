@@ -16,6 +16,7 @@ class ReadinessResult(BaseModel):
     version: str
     factors: list[ReadinessFactorOut]
     summary: str
+    insufficient_data: bool = False
 
 
 class ScoreCorrectionResult(BaseModel):

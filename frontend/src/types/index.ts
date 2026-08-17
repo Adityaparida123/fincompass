@@ -179,6 +179,7 @@ export interface ReadinessResult {
   version: string;
   factors: ReadinessFactor[];
   summary: string;
+  insufficient_data?: boolean;
 }
 
 export interface ScoreCorrectionResult {
