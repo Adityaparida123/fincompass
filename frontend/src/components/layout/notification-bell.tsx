@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useLocale } from "next-intl";
 import { Bell } from "lucide-react";
-import { useNotifications, useMarkNotificationRead } from "@/hooks/use-api";
+import { useNotifications, useMarkNotificationRead, useMarkAllNotificationsRead } from "@/hooks/use-api";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -12,6 +12,7 @@ export function NotificationBell() {
   const locale = useLocale();
   const { data } = useNotifications();
   const markRead = useMarkNotificationRead();
+  const markAllRead = useMarkAllNotificationsRead();
   const unread = data?.unread ?? 0;
   const items = data?.items?.slice(0, 5) ?? [];
   const [open, setOpen] = useState(false);
@@ -47,13 +48,23 @@ export function NotificationBell() {
         <div className="absolute right-0 top-full z-50 mt-2 w-80 rounded-xl border bg-card p-2 shadow-lg">
           <div className="flex items-center justify-between px-3 py-1">
             <p className="text-xs font-medium text-muted-foreground">Notifications</p>
-            <Link
-              href={`/${locale}/notifications`}
-              className="text-xs text-primary hover:underline"
-              onClick={() => setOpen(false)}
-            >
-              View all
-            </Link>
+            <div className="flex items-center gap-2">
+              {unread > 0 && (
+                <button
+                  className="text-xs text-muted-foreground hover:text-foreground"
+                  onClick={() => { markAllRead.mutate(); setOpen(false); }}
+                >
+                  Mark all read
+                </button>
+              )}
+              <Link
+                href={`/${locale}/notifications`}
+                className="text-xs text-primary hover:underline"
+                onClick={() => setOpen(false)}
+              >
+                View all
+              </Link>
+            </div>
           </div>
           {items.length === 0 ? (
             <p className="p-3 text-sm text-muted-foreground">No notifications</p>

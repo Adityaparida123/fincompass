@@ -43,6 +43,7 @@ from app.services.import_statement.movement import classify_movement
 from app.services.import_statement.parsers import detect_format, parse_file
 from app.services.import_statement.recurring import detect_recurring
 from app.services.import_statement.validate import validate_row
+from app.services.notifications import notify
 
 
 async def _save_temporarily(content: bytes, fmt: str) -> str:
@@ -241,6 +242,17 @@ async def confirm_statement_import(
         imported=len(inserted),
         stage="confirm",
     )
+
+    if inserted:
+        parts = [f"{len(inserted)} transaction(s) imported successfully"]
+        if duplicates_skipped:
+            parts.append(f"{duplicates_skipped} duplicate(s) skipped")
+        await notify(
+            db, user_id,
+            title="Statement imported",
+            message=f"{'. '.join(parts)}.",
+            ntype="import_completed",
+        )
 
     return StatementConfirmResponse(
         imported_count=len(inserted),

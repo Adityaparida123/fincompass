@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 from app.db.mongo import Doc, MongoDatabase
 from app.schemas.readiness import ReadinessFactorOut, ReadinessResult, ScoreCorrectionResult
 from app.services.audit import log_audit
+from app.services.notifications import notify
 from app.services.readiness.engine import VERSION, ReadinessInput, compute_readiness
 from app.services.readiness.factors import build_readiness_input
 
@@ -70,6 +71,21 @@ async def compute_and_store(
         resource_id=score_row.id,
         metadata={"score": result.score, "previous": previous_value},
     )
+    if previous_value is not None and abs(result.score - previous_value) >= 5:
+        if result.score > previous_value:
+            await notify(
+                db, user_id,
+                title="Credit readiness improved!",
+                message=f"Your readiness score increased from {previous_value} to {result.score}/100. {_summary_text(result.score)}",
+                ntype="readiness_improved",
+            )
+        else:
+            await notify(
+                db, user_id,
+                title="Credit readiness score dropped",
+                message=f"Your readiness score decreased from {previous_value} to {result.score}/100. {_summary_text(result.score)}",
+                ntype="readiness_declined",
+            )
     return result
 
 
@@ -150,6 +166,13 @@ async def correct_score(
             "reason": reason,
         },
     )
+    if abs(result.score - previous_result.score) >= 5:
+        await notify(
+            db, user_id,
+            title="Credit readiness updated",
+            message=f"Your readiness score changed from {previous_result.score} to {result.score}/100 after correction.",
+            ntype="readiness_corrected",
+        )
 
     return ScoreCorrectionResult(
         previous_score=previous_result.score,

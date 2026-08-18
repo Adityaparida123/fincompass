@@ -6,19 +6,26 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton, Badge } from "@/components/ui/input";
 import { PageHeader, EmptyState } from "@/components/common/shared";
-import { useNotifications, useMarkNotificationRead } from "@/hooks/use-api";
+import { useNotifications, useMarkNotificationRead, useMarkAllNotificationsRead } from "@/hooks/use-api";
 import { PageError } from "@/components/charts/responsive-charts";
 import { ApiRequestError } from "@/lib/api";
-import { Bell, Check } from "lucide-react";
+import { Bell, Check, CheckCheck } from "lucide-react";
 
 export default function NotificationsPage() {
   const t = useTranslations("notifications");
   const tc = useTranslations("common");
   const { data, isLoading, isError, refetch } = useNotifications();
   const markRead = useMarkNotificationRead();
+  const markAllRead = useMarkAllNotificationsRead();
 
   const handleMarkRead = async (id: number) => {
     try { await markRead.mutateAsync(id); } catch (err) {
+      console.error(err instanceof ApiRequestError ? err.message : tc("error"));
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    try { await markAllRead.mutateAsync(); } catch (err) {
       console.error(err instanceof ApiRequestError ? err.message : tc("error"));
     }
   };
@@ -28,6 +35,19 @@ export default function NotificationsPage() {
       <PageHeader
         title={t("title")}
         subtitle={data ? `${data.items.length} notifications · ${data.unread} unread` : undefined}
+        action={
+          data && data.unread > 0 ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleMarkAllRead}
+              disabled={markAllRead.isPending}
+            >
+              <CheckCheck className="mr-1.5 h-3.5 w-3.5" />
+              {t("markAllRead")}
+            </Button>
+          ) : undefined
+        }
       />
 
       {isLoading ? (

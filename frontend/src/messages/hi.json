@@ -257,6 +257,7 @@
   "notifications": {
     "title": "सूचनाएं",
     "markRead": "पढ़ा चिह्नित करें",
+    "markAllRead": "सभी पढ़ा चिह्नित करें",
     "unread": "अपठित",
     "noNotifications": "कोई सूचना नहीं।"
   },

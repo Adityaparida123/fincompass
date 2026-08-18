@@ -12,6 +12,7 @@ from app.core.exceptions import NotFoundError
 from app.db.enums import SavingsGoalStatus
 from app.db.mongo import Doc, MongoDatabase
 from app.services.ml.persistence import save_category_correction, save_ml_prediction
+from app.services.notifications import notify
 from ml.config import MODEL_VERSIONS
 from ml.pipelines.inference_pipeline import get_pipeline
 
@@ -143,7 +144,15 @@ async def detect_anomaly(
         pipeline = get_pipeline()
         tx_df = await _fetch_transactions(db, user_id)
         result = pipeline.detect_anomaly(str(user_id), tx_df, float(amount) if amount else None)
-        return await _persist_result(db, user_id, "anomaly", result)
+        persisted = await _persist_result(db, user_id, "anomaly", result)
+        if persisted.get("anomaly") and persisted.get("severity") in ("medium", "high"):
+            await notify(
+                db, user_id,
+                title="Unusual transaction pattern detected",
+                message=f"Our analysis detected an unusual pattern (severity: {persisted.get('severity', 'unknown')}). {persisted.get('reason', 'Please review your recent transactions.')}",
+                ntype="anomaly_detected",
+            )
+        return persisted
     except FileNotFoundError:
         return _degraded_result(
             "anomaly_detector",

@@ -271,6 +271,14 @@ export function useMarkNotificationRead() {
   });
 }
 
+export function useMarkAllNotificationsRead() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.patch("/notifications/read-all"),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] }),
+  });
+}
+
 export function useRecycleBin() {
   return useQuery({
     queryKey: ["recycle-bin"],

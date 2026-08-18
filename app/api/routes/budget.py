@@ -23,6 +23,7 @@ from app.services.finance.budget import (
     category_spend,
     list_budgets,
 )
+from app.services.notifications import notify
 from app.services.recycle_bin.service import move_to_recycle_bin
 from app.utils.dates import month_bounds, month_period_from_string
 
@@ -113,6 +114,20 @@ async def budget_status(
     for b in budgets:
         spent = await category_spend(db, user.id, b.category, start, end)
         percent = (spent / b.limit_amount * 100).quantize(Decimal("0.01")) if b.limit_amount else 0
+        if b.limit_amount and percent >= 100:
+            await notify(
+                db, user.id,
+                title=f"Budget exceeded: {b.category}",
+                message=f"You've spent {spent:,.2f} against a {b.limit_amount:,.2f} limit for {period}. Over by {spent - b.limit_amount:,.2f}.",
+                ntype="budget_exceeded",
+            )
+        elif b.limit_amount and percent >= 80:
+            await notify(
+                db, user.id,
+                title=f"Budget nearing limit: {b.category}",
+                message=f"You've used {percent}% of your {b.category} budget for {period}. Remaining: {b.limit_amount - spent:,.2f}.",
+                ntype="budget_warning",
+            )
         statuses.append(
             BudgetStatus(
                 id=b.id,

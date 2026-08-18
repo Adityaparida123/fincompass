@@ -285,6 +285,7 @@
   "notifications": {
     "title": "Notifications",
     "markRead": "Mark read",
+    "markAllRead": "Mark all read",
     "unread": "Unread",
     "noNotifications": "No notifications."
   },
