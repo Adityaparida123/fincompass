@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton, Badge } from "@/components/ui/input";
@@ -18,6 +18,7 @@ import { TrendingUp, Wallet, Receipt, Gauge, PiggyBank, ArrowRight, Lightbulb, B
 export default function DashboardPage() {
   const t = useTranslations("dashboard");
   const tc = useTranslations("common");
+  const locale = useLocale();
   const period = format(new Date(), "yyyy-MM");
 
   const monthly = useExpensesMonthly(period);
@@ -96,7 +97,7 @@ export default function DashboardPage() {
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm font-medium">{t("budgetStatus")}</CardTitle>
-              <Link href="/budget" className="flex items-center gap-1 text-xs text-primary hover:underline">
+              <Link href={`/${locale}/budget`} className="flex items-center gap-1 text-xs text-primary hover:underline">
                 View all <ArrowRight className="h-3 w-3" />
               </Link>
             </div>
@@ -136,7 +137,7 @@ export default function DashboardPage() {
               <div className="flex flex-col items-center justify-center py-8 text-center">
                 <Target className="mb-2 h-8 w-8 text-muted-foreground/50" />
                 <p className="text-sm text-muted-foreground">{t("noBudgets")}</p>
-                <Link href="/budget" className="mt-2 text-xs text-primary hover:underline">Create a budget</Link>
+                <Link href={`/${locale}/budget`} className="mt-2 text-xs text-primary hover:underline">Create a budget</Link>
               </div>
             )}
           </CardContent>
@@ -204,7 +205,7 @@ export default function DashboardPage() {
                 {forecast.data.explanation?.slice(0, 1).map((e, i) => (
                   <p key={i} className="text-[11px] text-muted-foreground">{e.description}</p>
                 ))}
-                <Link href="/cashflow" className="flex items-center gap-1 text-xs font-medium text-primary hover:underline">
+                <Link href={`/${locale}/cashflow`} className="flex items-center gap-1 text-xs font-medium text-primary hover:underline">
                   View forecast <ArrowRight className="h-3 w-3" />
                 </Link>
               </div>
@@ -258,7 +259,7 @@ export default function DashboardPage() {
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm font-medium">Recommendations</CardTitle>
-              <Link href="/recommendations" className="flex items-center gap-1 text-xs text-primary hover:underline">
+              <Link href={`/${locale}/recommendations`} className="flex items-center gap-1 text-xs text-primary hover:underline">
                 View all <ArrowRight className="h-3 w-3" />
               </Link>
             </div>
