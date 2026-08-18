@@ -1,6 +1,9 @@
 """Integration tests for the FinAI chat endpoints."""
 
+import json
+
 from app.core.config import settings
+from app.core.exceptions import LLMUnavailableError
 
 
 class FakeLLM:
@@ -249,3 +252,109 @@ async def test_chat_stream_with_llm(client, auth_headers, monkeypatch):
     assert "data: [DONE]" in joined
     assert "sk-test-local" not in joined
     assert fake.messages
+
+
+class FakeToolLLM:
+    """LLM that returns tool calls on first generate, then streams content."""
+
+    def __init__(self, tool_name="calculate_savings_capacity", tool_result=None, final_reply="Your savings estimate is ready."):
+        self.tool_name = tool_name
+        self.tool_result = tool_result or {"estimated_monthly_savings": "5000"}
+        self.final_reply = final_reply
+        self.generate_calls = []
+        self.generate_stream_calls = []
+
+    async def generate(self, messages, *, tools=None, temperature=0.3):
+        self.generate_calls.append({"messages": list(messages), "tools": tools})
+        return {
+            "content": "",
+            "tool_calls": [
+                {
+                    "id": "call_001",
+                    "type": "function",
+                    "function": {
+                        "name": self.tool_name,
+                        "arguments": json.dumps({"income": "50000", "expenses": "30000", "debt_payments": "5000"}),
+                    },
+                }
+            ],
+            "raw": None,
+        }
+
+    async def generate_stream(self, messages, *, temperature=0.3):
+        self.generate_stream_calls.append(list(messages))
+        yield self.final_reply
+
+
+async def test_chat_stream_executes_tool_calls(client, consented_headers, monkeypatch):
+    """Stream endpoint must execute LLM tool calls and stream the final reply."""
+    fake = FakeToolLLM(final_reply="Based on your data, you can save ₹5000 this month.")
+    monkeypatch.setattr(settings, "LLM_API_KEY", "sk-test-local")
+    monkeypatch.setattr("app.ai.agent.get_provider", lambda: fake)
+    monkeypatch.setattr("app.api.routes.chat.get_provider", lambda: fake)
+
+    async with client.stream(
+        "POST",
+        "/api/v1/chat/stream",
+        json={"message": "How much can I save this month?"},
+        headers=consented_headers,
+    ) as response:
+        assert response.status_code == 200
+        chunks = [chunk async for chunk in response.aiter_text()]
+
+    joined = "".join(chunks)
+    assert "save ₹5000" in joined
+    assert "data: [DONE]" in joined
+    # First call should have included tools
+    assert fake.generate_calls[0]["tools"] is not None
+    # Second call (after tool execution) should stream the final reply
+    assert len(fake.generate_stream_calls) == 1
+
+
+async def test_chat_stream_no_empty_reply_persisted(client, auth_headers, monkeypatch):
+    """Empty replies from the LLM should not be saved to the database."""
+    fake = FakeLLM(reply="")
+    monkeypatch.setattr(settings, "LLM_API_KEY", "sk-test-local")
+    monkeypatch.setattr("app.ai.agent.get_provider", lambda: fake)
+    monkeypatch.setattr("app.api.routes.chat.get_provider", lambda: fake)
+
+    async with client.stream(
+        "POST",
+        "/api/v1/chat/stream",
+        json={"message": "What is inflation?"},
+        headers=auth_headers,
+    ) as response:
+        assert response.status_code == 200
+        chunks = [chunk async for chunk in response.aiter_text()]
+
+    joined = "".join(chunks)
+    assert "data: [DONE]" in joined
+    # The endpoint should not crash and should return [DONE]
+
+
+async def test_chat_stream_error_not_persisted(client, auth_headers, monkeypatch):
+    """Error placeholder messages should not be saved to the database."""
+    class FailingLLM:
+        async def generate(self, messages, *, tools=None, temperature=0.3):
+            raise LLMUnavailableError("Connection failed")
+
+        async def generate_stream(self, messages, *, temperature=0.3):
+            raise LLMUnavailableError("Connection failed")
+
+    monkeypatch.setattr(settings, "LLM_API_KEY", "sk-test-local")
+    monkeypatch.setattr("app.ai.agent.get_provider", lambda: FailingLLM())
+    monkeypatch.setattr("app.api.routes.chat.get_provider", lambda: FailingLLM())
+
+    async with client.stream(
+        "POST",
+        "/api/v1/chat/stream",
+        json={"message": "What is inflation?"},
+        headers=auth_headers,
+    ) as response:
+        assert response.status_code == 200
+        chunks = [chunk async for chunk in response.aiter_text()]
+
+    joined = "".join(chunks)
+    # Should receive a user-friendly error, not crash
+    assert "temporarily unable" in joined or "error" in joined.lower()
+    assert "data: [DONE]" in joined

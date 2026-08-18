@@ -22,7 +22,7 @@ async def _monthly_totals(
         "user_id": user_id,
         "transaction_type": tx_type.value,
         "is_deleted": False,
-        "date": {"$gte": start.isoformat(), "$lt": end.isoformat()},
+        "date": {"$gte": start, "$lt": end},
     }
     totals: dict[str, Decimal] = {}
     for row in await db.find("transactions", filt):
@@ -59,7 +59,7 @@ async def build_readiness_input(db: MongoDatabase, user_id: int) -> ReadinessInp
         "user_id": user_id,
         "transaction_type": TransactionType.expense.value,
         "is_deleted": False,
-        "date": {"$gte": window_start.isoformat(), "$lt": window_end.isoformat()},
+        "date": {"$gte": window_start, "$lt": window_end},
     }
     for row in await db.find("transactions", filt):
         if is_essential(row.category):

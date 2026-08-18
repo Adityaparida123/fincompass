@@ -13,10 +13,21 @@ from app.ai.memory import (
     get_messages,
     get_session,
     list_sessions,
+    to_llm_history,
 )
 from app.ai.prompts import build_messages
+from app.ai.router import route_intent
+from app.ai.safety import (
+    borrowing_caution_suffix,
+    requires_borrowing_caution,
+    sanitize_financial_claims,
+    validate_response,
+)
+from app.ai.tools import TOOL_SPECS, ToolContext, execute_tool
 from app.api.dependencies import get_current_user, rate_limit_chat
 from app.core.config import settings
+from app.core.exceptions import ConsentDeniedError, LLMUnavailableError
+from app.core.logging import get_logger
 from app.db.enums import ConsentType
 from app.db.mongo import MongoDatabase
 from app.db.session import get_session as get_db
@@ -27,6 +38,8 @@ from app.schemas.chat import (
     ChatSessionRead,
 )
 from app.services.consent.service import require_consent
+
+logger = get_logger(__name__)
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -48,9 +61,6 @@ async def stream_chat(
     db: MongoDatabase = Depends(get_db),
     _: None = Depends(rate_limit_chat),
 ) -> StreamingResponse:
-    from app.ai.memory import to_llm_history
-    from app.ai.router import route_intent
-
     routing = route_intent(data.message)
     intent = str(routing["intent"])
     needs_context = bool(routing["needs_context"])
@@ -58,7 +68,6 @@ async def stream_chat(
         await require_consent(db, user.id, ConsentType.financial_data_analysis)
         await require_consent(db, user.id, ConsentType.chat_financial_context)
 
-    session = None
     if data.session_id:
         session = await get_session(db, user.id, data.session_id)
     else:
@@ -73,6 +82,7 @@ async def stream_chat(
     await add_message(db, session.id, "user", data.message, intent=intent)
 
     if not settings.llm_configured:
+
         async def no_llm_generator():
             reply = await _stream_fallback_reply(db, user.id, data.message, intent, session.id)
             await add_message(db, session.id, "assistant", reply, intent=intent)
@@ -88,25 +98,80 @@ async def stream_chat(
 
     context_text = None
     if needs_context:
-        from app.ai.agent import _financial_context
+        from app.services.finance.context import build_context_for_intent
 
-        context_text = await _financial_context(db, user.id, intent=intent, message=data.message)
+        slice_ = await build_context_for_intent(db, user.id, intent=intent, message=data.message)
+        context_text = slice_.text or None
 
     messages = build_messages(llm_history, financial_context=context_text, language=session.language)
     provider = get_provider()
 
     async def event_generator():
-        collected: list[str] = []
+        assistant_text = ""
+        tool_used: str | None = None
         try:
-            async for chunk in provider.generate_stream(messages):
-                collected.append(chunk)
-                yield f"data: {json.dumps({'delta': chunk}, ensure_ascii=False)}\n\n"
-        except Exception:
-            yield "data: {\"delta\": \"\"}\n\n"
-        finally:
-            full = "".join(collected)
-            await add_message(db, session.id, "assistant", full, intent=intent)
-            yield "data: [DONE]\n\n"
+            # Non-streaming first call WITH tools so the LLM can invoke financial tools.
+            first = await provider.generate(list(messages), tools=TOOL_SPECS)
+            tool_calls = first.get("tool_calls")
+
+            if tool_calls:
+                ctx = ToolContext(db=db, user_id=user.id, session_id=session.id)
+                tool_results: list[dict[str, str]] = []
+                for call in tool_calls:
+                    fn = call["function"]
+                    name = fn.get("name", "")
+                    tool_used = name
+                    try:
+                        args = json.loads(fn.get("arguments") or "{}")
+                    except json.JSONDecodeError:
+                        args = {}
+                    try:
+                        result = await execute_tool(ctx, name, args)
+                        content = json.dumps(result, default=str, ensure_ascii=False)
+                    except ConsentDeniedError:
+                        content = json.dumps({"error": "consent_denied", "message": "Consent required."})
+                    except Exception as exc:  # noqa: BLE001
+                        logger.warning("Tool %s failed in stream: %s", name, exc)
+                        content = json.dumps({"error": "tool_failed", "message": "This calculation could not be completed."})
+                    tool_results.append({"role": "tool", "content": content})
+
+                # Rebuild messages with tool results, then stream the final reply.
+                stream_messages = list(messages) + [first] + tool_results
+                async for chunk in provider.generate_stream(stream_messages):
+                    assistant_text += chunk
+                    yield f"data: {json.dumps({'delta': chunk}, ensure_ascii=False)}\n\n"
+            else:
+                # No tool calls — the LLM replied directly (possibly using context).
+                content = first.get("content") or ""
+                if content:
+                    assistant_text = content
+                    yield f"data: {json.dumps({'delta': content}, ensure_ascii=False)}\n\n"
+
+        except LLMUnavailableError as exc:
+            logger.warning("LLM unavailable during stream for user %s: %s", user.id, exc)
+            assistant_text = "I'm temporarily unable to process your request. Please try again."
+            yield f"data: {json.dumps({'delta': assistant_text}, ensure_ascii=False)}\n\n"
+        except Exception as exc:
+            logger.error("Stream chat error for user %s: %s", user.id, exc, exc_info=True)
+            assistant_text = "An error occurred while generating your response."
+            yield f"data: {json.dumps({'delta': assistant_text}, ensure_ascii=False)}\n\n"
+
+        # Apply safety validation to the streamed reply.
+        if assistant_text.strip():
+            assistant_text = sanitize_financial_claims(assistant_text)
+            if requires_borrowing_caution(intent):
+                assistant_text = assistant_text.rstrip() + borrowing_caution_suffix()
+            is_safe, replacement = validate_response(assistant_text)
+            if not is_safe and replacement:
+                assistant_text = replacement
+
+        # Persist only meaningful replies — skip error placeholders and empty content.
+        _error_prefixes = ("I'm temporarily", "An error occurred")
+        if assistant_text.strip() and not assistant_text.startswith(_error_prefixes):
+            await add_message(
+                db, session.id, "assistant", assistant_text, intent=intent, tool_used=tool_used
+            )
+        yield "data: [DONE]\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
@@ -120,13 +185,11 @@ async def _stream_fallback_reply(
 ) -> str:
     """Deterministic no-LLM stream reply (same behaviour as the non-stream fallback)."""
     from app.knowledge.base import get_knowledge_retriever
-    from app.services.consent.service import require_consent
 
     reply: str
     if intent in ("savings", "personal_general"):
         try:
             await require_consent(db, user_id, ConsentType.financial_data_analysis)
-            from app.ai.tools import ToolContext, execute_tool
             from app.services.readiness.factors import build_readiness_input
 
             ctx = ToolContext(db=db, user_id=user_id, session_id=session_id)

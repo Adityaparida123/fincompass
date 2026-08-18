@@ -155,6 +155,8 @@ async def detect_recurring_patterns(
         if len(events) < 2:
             continue
         amounts = [a for _, a in events]
+        if not amounts:
+            continue
         avg = sum(amounts, Decimal("0")) / Decimal(len(amounts))
         gaps = [(events[i][0] - events[i - 1][0]).days for i in range(1, len(events))]
         avg_gap = int(sum(gaps) / len(gaps)) if gaps else None

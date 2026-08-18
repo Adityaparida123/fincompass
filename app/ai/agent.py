@@ -148,14 +148,15 @@ async def chat(
     if not is_safe and replacement:
         reply = replacement
 
-    await add_message(
-        db,
-        session.id,
-        "assistant",
-        reply,
-        intent=intent,
-        tool_used=tool_used,
-    )
+    if reply.strip():
+        await add_message(
+            db,
+            session.id,
+            "assistant",
+            reply,
+            intent=intent,
+            tool_used=tool_used,
+        )
     await log_audit(
         db,
         action="chat.message",
@@ -266,7 +267,8 @@ async def _no_llm_fallback(
                 "Financial calculators are at /api/v1/tools/*. Set LLM credentials to enable chat."
             )
 
-    await add_message(db, session.id, "assistant", reply, intent=intent, tool_used=tool_used)
+    if reply.strip():
+        await add_message(db, session.id, "assistant", reply, intent=intent, tool_used=tool_used)
     await db.commit()
     return CR(
         reply=reply,
