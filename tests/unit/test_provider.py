@@ -123,7 +123,7 @@ async def test_invalid_key_returns_safe_error(monkeypatch):
     with pytest.raises(LLMUnavailableError) as exc_info:
         await provider.generate([{"role": "user", "content": "hi"}])
     assert "sk-bad-key" not in str(exc_info.value)
-    assert "temporarily unavailable" in str(exc_info.value)
+    assert "LLM API returned HTTP" in str(exc_info.value)
 
 
 async def test_timeout_returns_safe_error(monkeypatch):

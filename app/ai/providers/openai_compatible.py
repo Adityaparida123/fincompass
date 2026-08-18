@@ -59,8 +59,14 @@ class OpenAICompatibleProvider(LLMProvider):
                     attempt += 1
                     await self._sleep(attempt)
                     continue
-                logger.error("LLM request failed after %d attempt(s): %s", attempt + 1, exc)
-                raise LLMUnavailableError("The AI assistant is temporarily unavailable.") from exc
+                logger.error(
+                    "LLM request failed after %d attempt(s): model=%s url=%s error=%s",
+                    attempt + 1, self._model, self._chat_url, exc,
+                    exc_info=True,
+                )
+                raise LLMUnavailableError(
+                    f"LLM request failed after {attempt + 1} attempt(s): {exc}"
+                ) from exc
 
             if response.status_code in _RETRIABLE_STATUS and attempt < self._max_retries:
                 attempt += 1
@@ -69,8 +75,14 @@ class OpenAICompatibleProvider(LLMProvider):
 
             if response.status_code >= 400:
                 # Invalid key / model / rate limit (exhausted) — never expose internals.
-                logger.error("LLM error %s: %s", response.status_code, response.text[:300])
-                raise LLMUnavailableError("The AI assistant is temporarily unavailable.")
+                body_preview = response.text[:500] if hasattr(response, 'text') else '<no body>'
+                logger.error(
+                    "LLM HTTP error %s: model=%s url=%s body=%s",
+                    response.status_code, self._model, self._chat_url, body_preview,
+                )
+                raise LLMUnavailableError(
+                    f"LLM API returned HTTP {response.status_code}"
+                )
             return response
 
     async def generate(
@@ -141,11 +153,13 @@ class OpenAICompatibleProvider(LLMProvider):
                             continue
                         if response.status_code >= 400:
                             logger.error(
-                                "LLM stream error %s: %s",
-                                response.status_code,
-                                response.text[:300],
+                                "LLM stream error %s: model=%s url=%s body=%s",
+                                response.status_code, self._model, self._chat_url,
+                                response.text[:500],
                             )
-                            raise LLMUnavailableError("The AI assistant is temporarily unavailable.")
+                            raise LLMUnavailableError(
+                                f"LLM stream API returned HTTP {response.status_code}"
+                            )
                         chunk_count = 0
                         total_len = 0
                         async for line in response.aiter_lines():
@@ -170,5 +184,11 @@ class OpenAICompatibleProvider(LLMProvider):
                     attempt += 1
                     await self._sleep(attempt)
                     continue
-                logger.error("LLM stream failed after %d attempt(s): %s", attempt + 1, exc)
-                raise LLMUnavailableError("The AI assistant is temporarily unavailable.") from exc
+                logger.error(
+                    "LLM stream failed after %d attempt(s): model=%s url=%s error=%s",
+                    attempt + 1, self._model, self._chat_url, exc,
+                    exc_info=True,
+                )
+                raise LLMUnavailableError(
+                    f"LLM stream failed after {attempt + 1} attempt(s): {exc}"
+                ) from exc

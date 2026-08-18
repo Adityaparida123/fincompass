@@ -77,8 +77,6 @@ async def chat(
 
     history = await get_messages(db, session.id)
     llm_history = [{"role": m.role, "content": m.content} for m in history if m.role in ("user", "assistant")]
-    if llm_history and llm_history[-1]["role"] == "user":
-        llm_history = llm_history[:-1]
 
     context_parts: list[str] = []
     if needs_context:
@@ -128,7 +126,8 @@ async def chat(
                 content = json.dumps({"error": "tool_failed", "message": "This calculation could not be completed."})
             tool_results.append({"role": "tool", "content": content})
 
-        llm_messages.append(first)
+        assistant_msg = {"role": "assistant", "content": first.get("content") or "", "tool_calls": tool_calls}
+        llm_messages.append(assistant_msg)
         for result in tool_results:
             llm_messages.append(result)
 

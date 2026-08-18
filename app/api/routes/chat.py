@@ -107,8 +107,6 @@ async def stream_chat(
 
     history = await get_messages(db, session.id)
     llm_history = to_llm_history(history)
-    if llm_history and llm_history[-1]["role"] == "user":
-        llm_history = llm_history[:-1]
 
     context_text = None
     if needs_context:
@@ -158,7 +156,8 @@ async def stream_chat(
                         content = json.dumps({"error": "tool_failed", "message": "This calculation could not be completed."})
                     tool_results.append({"role": "tool", "content": content})
 
-                stream_messages = list(messages) + [first] + tool_results
+                assistant_msg = {"role": "assistant", "content": first.get("content") or "", "tool_calls": tool_calls}
+                stream_messages = list(messages) + [assistant_msg] + tool_results
                 t_stream = time.monotonic()
                 chunk_count = 0
                 async for chunk in provider.generate_stream(stream_messages):
@@ -180,7 +179,11 @@ async def stream_chat(
                     yield f"data: {json.dumps({'delta': assistant_text}, ensure_ascii=False)}\n\n"
 
         except LLMUnavailableError as exc:
-            logger.warning("LLM unavailable during stream for user %s: %s", user.id, exc)
+            logger.warning(
+                "LLM unavailable during stream user=%s model=%s tools=%d error=%s",
+                user.id, getattr(provider, '_model', 'unknown'), len(TOOL_SPECS), exc,
+                exc_info=True,
+            )
             assistant_text = "I'm temporarily unable to process your request. Please try again."
             yield f"data: {json.dumps({'delta': assistant_text}, ensure_ascii=False)}\n\n"
         except Exception as exc:
