@@ -29,6 +29,7 @@ async def test_analyze_requires_auth(client):
 
 
 async def test_analyze_requires_consent(client, auth_headers):
+    await client.delete("/api/v1/consent/financial_data_analysis", headers=auth_headers)
     response = await _upload(client, auth_headers)
     assert response.status_code == 403
     assert response.json()["error"]["code"] == "CONSENT_DENIED"

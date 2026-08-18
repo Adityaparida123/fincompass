@@ -137,6 +137,7 @@ async def test_chat_session_isolation(client, auth_headers):
 
 
 async def test_chat_personal_requires_consent_with_llm(client, auth_headers, monkeypatch):
+    await client.delete("/api/v1/consent/chat_financial_context", headers=auth_headers)
     fake = await _enable_llm(monkeypatch)
     response = await client.post(
         "/api/v1/chat",
@@ -148,6 +149,7 @@ async def test_chat_personal_requires_consent_with_llm(client, auth_headers, mon
 
 
 async def test_chat_stream_personal_requires_consent(client, auth_headers, monkeypatch):
+    await client.delete("/api/v1/consent/chat_financial_context", headers=auth_headers)
     await _enable_llm(monkeypatch)
     async with client.stream(
         "POST",

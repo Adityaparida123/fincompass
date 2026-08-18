@@ -13,6 +13,7 @@ def trained_models():
 
 @pytest.mark.asyncio
 async def test_ml_spending_patterns_requires_consent(client, auth_headers, trained_models):
+    await client.delete("/api/v1/consent/financial_data_analysis", headers=auth_headers)
     response = await client.get("/api/v1/ml/spending-patterns", headers=auth_headers)
     assert response.status_code == 403
 

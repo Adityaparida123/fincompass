@@ -275,8 +275,12 @@ async def tool_calculate_cash_flow(ctx: ToolContext, args: dict[str, Any]) -> di
 
 @_register("calculate_savings_capacity")
 async def tool_calculate_savings_capacity(ctx: ToolContext, args: dict[str, Any]) -> dict[str, Any]:
+    raw_income = args.get("income") or 0
+    income_val = Decimal(str(raw_income))
+    if income_val <= 0:
+        income_val = Decimal("0.01")
     data = SavingsCapacityInput(
-        income=Decimal(str(args["income"])),
+        income=income_val,
         expenses=Decimal(str(args.get("expenses", 0))),
         debt_payments=Decimal(str(args.get("debt_payments", 0))),
     )

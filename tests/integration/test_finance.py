@@ -98,6 +98,7 @@ async def test_transaction_crud(client, consented_headers):
 
 
 async def test_expense_analysis_requires_consent(client, auth_headers):
+    await client.delete("/api/v1/consent/financial_data_analysis", headers=auth_headers)
     response = await client.get("/api/v1/expenses/monthly?period=2026-08", headers=auth_headers)
     assert response.status_code == 403
     assert response.json()["error"]["code"] == "CONSENT_DENIED"

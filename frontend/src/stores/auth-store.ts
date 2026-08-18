@@ -3,6 +3,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { api } from "@/lib/api";
+import { clearQueryCache } from "@/lib/query-client";
 import type { AuthResponse, UserSummary } from "@/types";
 
 interface AuthState {
@@ -26,16 +27,19 @@ export const useAuthStore = create<AuthState>()(
       setHydrated: (v) => set({ isHydrated: v }),
 
       setAuth: (data) => {
+        clearQueryCache();
         api.setTokens(data.tokens.access_token, data.tokens.refresh_token);
         set({ user: data.user, isAuthenticated: true });
       },
 
       clearAuth: () => {
+        clearQueryCache();
         api.clearTokens();
         set({ user: null, isAuthenticated: false });
       },
 
       login: async (email, password, rememberMe = false) => {
+        clearQueryCache();
         const data = await api.post<AuthResponse>(
           "/auth/login",
           { email, password, remember_me: rememberMe },
@@ -46,6 +50,7 @@ export const useAuthStore = create<AuthState>()(
       },
 
       register: async (fullName, email, password) => {
+        clearQueryCache();
         const data = await api.post<AuthResponse>(
           "/auth/register",
           { full_name: fullName, email, password },
@@ -61,6 +66,7 @@ export const useAuthStore = create<AuthState>()(
         } catch {
           // ignore logout errors
         }
+        clearQueryCache();
         api.clearTokens();
         set({ user: null, isAuthenticated: false });
       },

@@ -27,6 +27,16 @@ async def get_current_user(
     if user is None or not user.is_active:
         raise UnauthorizedError("Authentication required.")
     request.state.audit = {"user_id": user.id}
+    from app.core.config import settings
+    if settings.is_development or settings.APP_ENV == "test":
+        from app.core.middleware import current_request_id
+        logger.debug(
+            "AUTH USER: id=%s path=%s %s request_id=%s",
+            user.id,
+            request.method,
+            request.url.path,
+            current_request_id() or "-",
+        )
     return user
 
 

@@ -329,6 +329,7 @@ async def test_budget_cross_user_isolation(client, db_session):
 @pytest.mark.asyncio
 async def test_budget_requires_consent(client, auth_headers):
     """Budget endpoints require financial_data_analysis consent."""
+    await client.delete("/api/v1/consent/financial_data_analysis", headers=auth_headers)
     resp = await client.get(
         "/api/v1/budget/status?period=2026-08", headers=auth_headers
     )

@@ -52,7 +52,7 @@ async def grant_consent(
         )
     else:
         if existing.status == ConsentStatus.granted.value:
-            raise ConflictError(f"Consent '{consent_type.value}' is already granted.")
+            return existing
         await db.update_one(
             "consents",
             {"id": existing.id},

@@ -206,6 +206,10 @@ class Settings(BaseSettings):
         return self.APP_ENV == "production"
 
     @property
+    def is_development(self) -> bool:
+        return self.APP_ENV == "development"
+
+    @property
     def is_sqlite(self) -> bool:
         return self.DATABASE_URL.startswith("sqlite")
 

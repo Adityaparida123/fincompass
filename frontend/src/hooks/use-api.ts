@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { useAuthStore } from "@/stores/auth-store";
 import type {
   ExpenseSummary,
   CategoryBreakdown,
@@ -30,46 +31,62 @@ import type {
 } from "@/types";
 
 export function useExpensesWeekly(year: number, week: number) {
+  const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   return useQuery({
-    queryKey: ["expenses", "weekly", year, week],
+    queryKey: ["expenses", "weekly", user?.id ?? "anonymous", year, week],
     queryFn: () => api.get<ExpenseSummary>(`/expenses/weekly?year=${year}&week=${week}`),
+    enabled: !!user?.id && isAuthenticated,
   });
 }
 
 export function useExpensesMonthly(period: string) {
+  const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   return useQuery({
-    queryKey: ["expenses", "monthly", period],
+    queryKey: ["expenses", "monthly", user?.id ?? "anonymous", period],
     queryFn: () => api.get<ExpenseSummary>(`/expenses/monthly?period=${period}`),
+    enabled: !!user?.id && isAuthenticated,
   });
 }
 
 export function useExpenseCategories(start?: string, end?: string) {
+  const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const params = new URLSearchParams();
   if (start) params.set("start", start);
   if (end) params.set("end", end);
   return useQuery({
-    queryKey: ["expenses", "categories", start, end],
+    queryKey: ["expenses", "categories", user?.id ?? "anonymous", start, end],
     queryFn: () => api.get<CategoryBreakdown[]>(`/expenses/categories?${params}`),
+    enabled: !!user?.id && isAuthenticated,
   });
 }
 
 export function useExpenseTrends(months = 6) {
+  const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   return useQuery({
-    queryKey: ["expenses", "trends", months],
+    queryKey: ["expenses", "trends", user?.id ?? "anonymous", months],
     queryFn: () => api.get<ExpenseTrends>(`/expenses/trends?months=${months}`),
+    enabled: !!user?.id && isAuthenticated,
   });
 }
 
 export function useTransactions(params?: Record<string, string | number>) {
+  const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const qs = params ? "?" + new URLSearchParams(params as Record<string, string>).toString() : "";
   return useQuery({
-    queryKey: ["transactions", params],
+    queryKey: ["transactions", user?.id ?? "anonymous", params],
     queryFn: () => api.get<Page<Transaction>>(`/transactions${qs}`),
+    enabled: !!user?.id && isAuthenticated,
   });
 }
 
 export function useCreateTransaction() {
   const qc = useQueryClient();
+  const user = useAuthStore((s) => s.user);
   return useMutation({
     mutationFn: (body: Record<string, unknown>) => api.post<Transaction>("/transactions", body),
     onSuccess: () => {
@@ -131,9 +148,12 @@ export function useImportStatement() {
 }
 
 export function useSavingsGoals() {
+  const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   return useQuery({
-    queryKey: ["savings", "goals"],
+    queryKey: ["savings", "goals", user?.id ?? "anonymous"],
     queryFn: () => api.get<SavingsGoal[]>("/savings/goals"),
+    enabled: !!user?.id && isAuthenticated,
   });
 }
 
@@ -149,17 +169,23 @@ export function useCreateSavingsGoal() {
 }
 
 export function useBudgetStatus(period: string) {
+  const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   return useQuery({
-    queryKey: ["budget", "status", period],
+    queryKey: ["budget", "status", user?.id ?? "anonymous", period],
     queryFn: () => api.get<BudgetStatus[]>(`/budget/status?period=${period}`),
+    enabled: !!user?.id && isAuthenticated,
   });
 }
 
 export function useBudgets(period?: string) {
+  const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const qs = period ? `?period=${period}` : "";
   return useQuery({
-    queryKey: ["budget", period],
+    queryKey: ["budget", user?.id ?? "anonymous", period],
     queryFn: () => api.get<BudgetItem[]>(`/budget${qs}`),
+    enabled: !!user?.id && isAuthenticated,
   });
 }
 
@@ -184,9 +210,12 @@ export function useDeleteBudget() {
 }
 
 export function useDebts() {
+  const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   return useQuery({
-    queryKey: ["debt"],
+    queryKey: ["debt", user?.id ?? "anonymous"],
     queryFn: () => api.get<DebtObligation[]>("/debt"),
+    enabled: !!user?.id && isAuthenticated,
   });
 }
 
@@ -202,9 +231,12 @@ export function useCreateDebt() {
 }
 
 export function useReadiness() {
+  const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   return useQuery({
-    queryKey: ["readiness"],
+    queryKey: ["readiness", user?.id ?? "anonymous"],
     queryFn: () => api.get<ReadinessResult>("/credit-readiness"),
+    enabled: !!user?.id && isAuthenticated,
   });
 }
 
@@ -218,9 +250,12 @@ export function useCorrectReadiness() {
 }
 
 export function useRecommendations() {
+  const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   return useQuery({
-    queryKey: ["recommendations"],
+    queryKey: ["recommendations", user?.id ?? "anonymous"],
     queryFn: () => api.get<{ recommendations: Recommendation[]; generated_at: string }>("/recommendations"),
+    enabled: !!user?.id && isAuthenticated,
   });
 }
 
@@ -232,9 +267,12 @@ export function useSchemes() {
 }
 
 export function useConsents() {
+  const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   return useQuery({
-    queryKey: ["consent"],
+    queryKey: ["consent", user?.id ?? "anonymous"],
     queryFn: () => api.get<{ items: ConsentItem[] }>("/consent"),
+    enabled: !!user?.id && isAuthenticated,
   });
 }
 
@@ -255,11 +293,14 @@ export function useRevokeConsent() {
 }
 
 export function useNotifications(unreadOnly = false) {
+  const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   return useQuery({
-    queryKey: ["notifications", unreadOnly],
+    queryKey: ["notifications", user?.id ?? "anonymous", unreadOnly],
     queryFn: () => api.get<{ items: Notification[]; total: number; unread: number }>(
       `/notifications${unreadOnly ? "?unread_only=true" : ""}`,
     ),
+    enabled: !!user?.id && isAuthenticated,
   });
 }
 
@@ -280,9 +321,12 @@ export function useMarkAllNotificationsRead() {
 }
 
 export function useRecycleBin() {
+  const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   return useQuery({
-    queryKey: ["recycle-bin"],
+    queryKey: ["recycle-bin", user?.id ?? "anonymous"],
     queryFn: () => api.get<RecycleBinItem[]>("/recycle-bin"),
+    enabled: !!user?.id && isAuthenticated,
   });
 }
 
@@ -312,22 +356,31 @@ export function useLoanSimulation() {
 }
 
 export function useMLForecast() {
+  const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   return useQuery({
-    queryKey: ["ml", "forecast"],
+    queryKey: ["ml", "forecast", user?.id ?? "anonymous"],
     queryFn: () => api.get<CashflowForecastResponse>("/ml/cashflow-forecast"),
+    enabled: !!user?.id && isAuthenticated,
   });
 }
 
 export function useMLPatterns() {
+  const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   return useQuery({
-    queryKey: ["ml", "patterns"],
+    queryKey: ["ml", "patterns", user?.id ?? "anonymous"],
     queryFn: () => api.get<SpendingPatternResponse>("/ml/spending-patterns"),
+    enabled: !!user?.id && isAuthenticated,
   });
 }
 
 export function useMLSavingsCapacity() {
+  const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   return useQuery({
-    queryKey: ["ml", "savings-capacity"],
+    queryKey: ["ml", "savings-capacity", user?.id ?? "anonymous"],
     queryFn: () => api.get<SavingsCapacityResponse>("/ml/savings-capacity"),
+    enabled: !!user?.id && isAuthenticated,
   });
 }

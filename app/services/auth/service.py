@@ -70,6 +70,14 @@ async def register(db: MongoDatabase, data: RegisterRequest) -> tuple[Doc, Any]:
         user_id=user.id,
         resource_id=user.id,
     )
+    from app.db.enums import ConsentType
+    from app.services.consent.service import grant_consent
+    for consent_type in ConsentType:
+        try:
+            await grant_consent(db, user.id, consent_type)
+        except ConflictError:
+            pass
+
     tokens = await issue_and_persist_tokens(db, user.id, remember_me=False)
     return user, tokens
 
