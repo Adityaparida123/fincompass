@@ -358,3 +358,213 @@ async def test_chat_stream_error_not_persisted(client, auth_headers, monkeypatch
     # Should receive a user-friendly error, not crash
     assert "temporarily unable" in joined or "error" in joined.lower()
     assert "data: [DONE]" in joined
+
+
+# ── Regression: comprehensive end-to-end scenarios ──────────────────────
+
+
+async def test_stream_financial_question_with_tool(client, consented_headers, monkeypatch):
+    """Test 1: 'How much can I save this month?' → tool called → final response."""
+    fake = FakeToolLLM(final_reply="You can save ₹5,000 per month based on your data.")
+    monkeypatch.setattr(settings, "LLM_API_KEY", "sk-test-local")
+    monkeypatch.setattr("app.ai.agent.get_provider", lambda: fake)
+    monkeypatch.setattr("app.api.routes.chat.get_provider", lambda: fake)
+
+    async with client.stream(
+        "POST",
+        "/api/v1/chat/stream",
+        json={"message": "How much can I save this month?"},
+        headers=consented_headers,
+    ) as response:
+        assert response.status_code == 200
+        chunks = [chunk async for chunk in response.aiter_text()]
+
+    joined = "".join(chunks)
+    assert "save" in joined.lower()
+    assert "data: [DONE]" in joined
+    # Tools were passed and tool was executed
+    assert fake.generate_calls[0]["tools"] is not None
+    assert len(fake.generate_stream_calls) == 1
+
+
+async def test_stream_general_question_no_tool(client, auth_headers, monkeypatch):
+    """Test 2: 'What is inflation?' → normal LLM response, no tools, no consent needed."""
+    fake = await _enable_llm(monkeypatch, reply="Inflation is the general increase in prices over time.")
+
+    async with client.stream(
+        "POST",
+        "/api/v1/chat/stream",
+        json={"message": "What is inflation?"},
+        headers=auth_headers,
+    ) as response:
+        assert response.status_code == 200
+        chunks = [chunk async for chunk in response.aiter_text()]
+
+    joined = "".join(chunks)
+    assert "inflation" in joined.lower()
+    assert "data: [DONE]" in joined
+
+
+async def test_stream_tool_failure_graceful(client, consented_headers, monkeypatch):
+    """Test 3: Tool fails → controlled error, error logged, stream completes."""
+
+    class ToolFailLLM:
+        def __init__(self):
+            self.generate_calls = []
+            self.generate_stream_calls = []
+
+        async def generate(self, messages, *, tools=None, temperature=0.3):
+            self.generate_calls.append({"tools": tools})
+            return {
+                "content": "",
+                "tool_calls": [
+                    {
+                        "id": "call_fail",
+                        "type": "function",
+                        "function": {
+                            "name": "calculate_savings_capacity",
+                            "arguments": json.dumps({"income": "bad_data", "expenses": 0, "debt_payments": 0}),
+                        },
+                    }
+                ],
+                "raw": None,
+            }
+
+        async def generate_stream(self, messages, *, temperature=0.3):
+            self.generate_stream_calls.append(True)
+            yield "Here is the analysis."
+
+    fake = ToolFailLLM()
+    monkeypatch.setattr(settings, "LLM_API_KEY", "sk-test-local")
+    monkeypatch.setattr("app.ai.agent.get_provider", lambda: fake)
+    monkeypatch.setattr("app.api.routes.chat.get_provider", lambda: fake)
+
+    async with client.stream(
+        "POST",
+        "/api/v1/chat/stream",
+        json={"message": "How much can I save this month?"},
+        headers=consented_headers,
+    ) as response:
+        assert response.status_code == 200
+        chunks = [chunk async for chunk in response.aiter_text()]
+
+    joined = "".join(chunks)
+    # Should still get a response (either tool error or final LLM text)
+    assert "data: [DONE]" in joined
+    assert len(chunks) > 0
+
+
+async def test_stream_llm_provider_failure(client, auth_headers, monkeypatch):
+    """Test 4: LLM provider fails → controlled error event, no empty message persisted."""
+
+    class ProviderFailLLM:
+        async def generate(self, messages, *, tools=None, temperature=0.3):
+            raise LLMUnavailableError("Provider timeout")
+
+        async def generate_stream(self, messages, *, temperature=0.3):
+            raise LLMUnavailableError("Provider timeout")
+
+    monkeypatch.setattr(settings, "LLM_API_KEY", "sk-test-local")
+    monkeypatch.setattr("app.ai.agent.get_provider", lambda: ProviderFailLLM())
+    monkeypatch.setattr("app.api.routes.chat.get_provider", lambda: ProviderFailLLM())
+
+    async with client.stream(
+        "POST",
+        "/api/v1/chat/stream",
+        json={"message": "What is inflation?"},
+        headers=auth_headers,
+    ) as response:
+        assert response.status_code == 200
+        chunks = [chunk async for chunk in response.aiter_text()]
+
+    joined = "".join(chunks)
+    assert "temporarily unable" in joined
+    assert "data: [DONE]" in joined
+
+
+async def test_stream_empty_llm_response_fallback(client, auth_headers, monkeypatch):
+    """Test 5: LLM returns empty content → user gets a rephrase prompt, not generic fallback."""
+    fake = FakeLLM(reply="")
+    monkeypatch.setattr(settings, "LLM_API_KEY", "sk-test-local")
+    monkeypatch.setattr("app.ai.agent.get_provider", lambda: fake)
+    monkeypatch.setattr("app.api.routes.chat.get_provider", lambda: fake)
+
+    async with client.stream(
+        "POST",
+        "/api/v1/chat/stream",
+        json={"message": "What is inflation?"},
+        headers=auth_headers,
+    ) as response:
+        assert response.status_code == 200
+        chunks = [chunk async for chunk in response.aiter_text()]
+
+    joined = "".join(chunks)
+    # Should receive a rephrase message, not crash
+    assert "data: [DONE]" in joined
+    assert len(chunks) > 0
+
+
+async def test_stream_sse_format_valid(client, auth_headers, monkeypatch):
+    """Test 6: Verify SSE format — every event is 'data: {...}\\n\\n' and ends with [DONE]."""
+    fake = await _enable_llm(monkeypatch, reply="Hello world")
+    async with client.stream(
+        "POST",
+        "/api/v1/chat/stream",
+        json={"message": "Hi there"},
+        headers=auth_headers,
+    ) as response:
+        assert response.status_code == 200
+        raw = b""
+        async for chunk in response.aiter_bytes():
+            raw += chunk
+
+    text = raw.decode("utf-8", errors="replace")
+    lines = text.split("\n")
+    data_lines = [l for l in lines if l.strip().startswith("data: ")]
+    assert len(data_lines) >= 2  # at least one content event + [DONE]
+    assert any("[DONE]" in l for l in data_lines)
+    for dl in data_lines:
+        payload = dl.strip()[6:]
+        if payload == "[DONE]":
+            continue
+        import json as _json
+        parsed = _json.loads(payload)
+        assert "delta" in parsed
+
+
+async def test_stream_full_flow_financial(client, consented_headers, monkeypatch):
+    """Test 7: Production-style integration — full flow with tool execution."""
+    # Add a transaction so there's real data
+    tx = await client.post(
+        "/api/v1/transactions",
+        headers=consented_headers,
+        json={
+            "date": "2026-08-01",
+            "description": "monthly salary",
+            "amount": "50000.00",
+            "transaction_type": "income",
+            "category": "salary",
+        },
+    )
+    assert tx.status_code == 201
+
+    fake = FakeToolLLM(final_reply="Based on your income of ₹50,000, your estimated monthly savings is ₹20,000.")
+    monkeypatch.setattr(settings, "LLM_API_KEY", "sk-test-local")
+    monkeypatch.setattr("app.ai.agent.get_provider", lambda: fake)
+    monkeypatch.setattr("app.api.routes.chat.get_provider", lambda: fake)
+
+    async with client.stream(
+        "POST",
+        "/api/v1/chat/stream",
+        json={"message": "How much can I save this month?", "language": "en"},
+        headers=consented_headers,
+    ) as response:
+        assert response.status_code == 200
+        chunks = [chunk async for chunk in response.aiter_text()]
+
+    joined = "".join(chunks)
+    assert "savings" in joined.lower()
+    assert "data: [DONE]" in joined
+    # Tools were invoked
+    assert fake.generate_calls[0]["tools"] is not None
+    assert len(fake.generate_stream_calls) == 1

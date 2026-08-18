@@ -51,17 +51,35 @@ export function FinAIChat() {
       });
 
       if (!res.ok || !res.body) {
-        const fallback = await api.post<{ reply: string; session_id: number }>(
-          "/chat",
-          {
-            message: text,
-            session_id: sessionId,
-            language: locale,
-          },
-          { timeout: 90_000 },
-        );
-        setSessionId(fallback.session_id);
-        addMessage({ id: crypto.randomUUID(), role: "assistant", content: fallback.reply, timestamp: new Date() });
+        let errorMsg = "FinAI is temporarily unavailable. Please try again.";
+        try {
+          const errorData = await res.json().catch(() => null);
+          if (res.status === 403) {
+            errorMsg = "You need to grant consent for financial analysis. Please visit your settings.";
+          } else if (res.status === 429) {
+            errorMsg = "Too many requests. Please wait a moment and try again.";
+          } else if (res.status === 503) {
+            errorMsg = errorData?.error?.message ?? "FinAI is temporarily unavailable. Please try again.";
+          } else if (errorData?.error?.message) {
+            errorMsg = errorData.error.message;
+          }
+        } catch { /* use default message */ }
+
+        try {
+          const fallback = await api.post<{ reply: string; session_id: number }>(
+            "/chat",
+            {
+              message: text,
+              session_id: sessionId,
+              language: locale,
+            },
+            { timeout: 90_000 },
+          );
+          setSessionId(fallback.session_id);
+          addMessage({ id: crypto.randomUUID(), role: "assistant", content: fallback.reply, timestamp: new Date() });
+        } catch {
+          addMessage({ id: crypto.randomUUID(), role: "assistant", content: errorMsg, timestamp: new Date() });
+        }
         return;
       }
 
@@ -69,31 +87,37 @@ export function FinAIChat() {
       const decoder = new TextDecoder();
       let assistantText = "";
       const assistantId = crypto.randomUUID();
+      let streamDone = false;
+      let lineBuffer = "";
 
-      while (true) {
+      while (!streamDone) {
         const { done, value } = await reader.read();
         if (done) break;
-        const chunk = decoder.decode(value);
-        for (const line of chunk.split("\n")) {
-          if (!line.startsWith("data: ")) continue;
-          const payload = line.slice(6).trim();
-          if (payload === "[DONE]") break;
+        lineBuffer += decoder.decode(value, { stream: true });
+        const lines = lineBuffer.split("\n");
+        lineBuffer = lines.pop() ?? "";
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed.startsWith("data: ")) continue;
+          const payload = trimmed.slice(6);
+          if (payload === "[DONE]") {
+            streamDone = true;
+            break;
+          }
           try {
             const parsed = JSON.parse(payload);
             if (parsed.delta) assistantText += parsed.delta;
             if (parsed.session_id) setSessionId(parsed.session_id);
-          } catch { /* skip */ }
+          } catch { /* skip malformed chunks */ }
         }
       }
 
-      addMessage({ id: assistantId, role: "assistant", content: assistantText || "I couldn't generate a response.", timestamp: new Date() });
-    } catch {
-      addMessage({
-        id: crypto.randomUUID(),
-        role: "assistant",
-        content: "Unable to reach FinAI. Please try again.",
-        timestamp: new Date(),
-      });
+      addMessage({ id: assistantId, role: "assistant", content: assistantText || "I wasn't able to generate a response. Please try rephrasing your question.", timestamp: new Date() });
+    } catch (err) {
+      const msg = err instanceof TypeError && err.message.includes("fetch")
+        ? "Unable to connect to FinAI. Please check your connection."
+        : "Unable to reach FinAI. Please try again.";
+      addMessage({ id: crypto.randomUUID(), role: "assistant", content: msg, timestamp: new Date() });
     } finally {
       setLoading(false);
     }

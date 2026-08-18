@@ -1,6 +1,7 @@
 """FinAI chat endpoints."""
 
 import json
+import time
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
@@ -43,6 +44,12 @@ logger = get_logger(__name__)
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
+_SSE_HEADERS = {
+    "Cache-Control": "no-cache",
+    "Connection": "keep-alive",
+    "X-Accel-Buffering": "no",
+}
+
 
 @router.post("", response_model=ChatResponse)
 async def post_chat(
@@ -61,9 +68,16 @@ async def stream_chat(
     db: MongoDatabase = Depends(get_db),
     _: None = Depends(rate_limit_chat),
 ) -> StreamingResponse:
+    t0 = time.monotonic()
     routing = route_intent(data.message)
     intent = str(routing["intent"])
     needs_context = bool(routing["needs_context"])
+
+    logger.info(
+        "stream_chat user=%s intent=%s needs_context=%s msg_len=%d",
+        user.id, intent, needs_context, len(data.message),
+    )
+
     if needs_context:
         await require_consent(db, user.id, ConsentType.financial_data_analysis)
         await require_consent(db, user.id, ConsentType.chat_financial_context)
@@ -89,7 +103,7 @@ async def stream_chat(
             yield f"data: {json.dumps({'delta': reply}, ensure_ascii=False)}\n\n"
             yield "data: [DONE]\n\n"
 
-        return StreamingResponse(no_llm_generator(), media_type="text/event-stream")
+        return StreamingResponse(no_llm_generator(), media_type="text/event-stream", headers=_SSE_HEADERS)
 
     history = await get_messages(db, session.id)
     llm_history = to_llm_history(history)
@@ -109,10 +123,17 @@ async def stream_chat(
     async def event_generator():
         assistant_text = ""
         tool_used: str | None = None
+        t_start = time.monotonic()
         try:
-            # Non-streaming first call WITH tools so the LLM can invoke financial tools.
+            logger.info("stream LLM generate user=%s model=%s tool_count=%d", user.id, getattr(provider, '_model', 'unknown'), len(TOOL_SPECS))
             first = await provider.generate(list(messages), tools=TOOL_SPECS)
+            t_first = time.monotonic() - t_start
             tool_calls = first.get("tool_calls")
+            first_content_len = len(first.get("content") or "")
+            logger.info(
+                "stream LLM first_call user=%s elapsed=%.2fs tool_calls=%s content_len=%d",
+                user.id, t_first, bool(tool_calls), first_content_len,
+            )
 
             if tool_calls:
                 ctx = ToolContext(db=db, user_id=user.id, session_id=session.id)
@@ -128,24 +149,35 @@ async def stream_chat(
                     try:
                         result = await execute_tool(ctx, name, args)
                         content = json.dumps(result, default=str, ensure_ascii=False)
+                        logger.info("stream tool_ok user=%s tool=%s result_len=%d", user.id, name, len(content))
                     except ConsentDeniedError:
                         content = json.dumps({"error": "consent_denied", "message": "Consent required."})
+                        logger.warning("stream tool_consent_denied user=%s tool=%s", user.id, name)
                     except Exception as exc:  # noqa: BLE001
-                        logger.warning("Tool %s failed in stream: %s", name, exc)
+                        logger.warning("stream tool_fail user=%s tool=%s error=%s", user.id, name, exc)
                         content = json.dumps({"error": "tool_failed", "message": "This calculation could not be completed."})
                     tool_results.append({"role": "tool", "content": content})
 
-                # Rebuild messages with tool results, then stream the final reply.
                 stream_messages = list(messages) + [first] + tool_results
+                t_stream = time.monotonic()
+                chunk_count = 0
                 async for chunk in provider.generate_stream(stream_messages):
                     assistant_text += chunk
+                    chunk_count += 1
                     yield f"data: {json.dumps({'delta': chunk}, ensure_ascii=False)}\n\n"
+                logger.info(
+                    "stream LLM second_call user=%s elapsed=%.2fs chunks=%d total_len=%d",
+                    user.id, time.monotonic() - t_stream, chunk_count, len(assistant_text),
+                )
             else:
-                # No tool calls — the LLM replied directly (possibly using context).
                 content = first.get("content") or ""
                 if content:
                     assistant_text = content
                     yield f"data: {json.dumps({'delta': content}, ensure_ascii=False)}\n\n"
+                else:
+                    logger.warning("stream empty_response user=%s raw=%s", user.id, first.get("raw"))
+                    assistant_text = "I wasn't able to generate a response for that question. Please try rephrasing."
+                    yield f"data: {json.dumps({'delta': assistant_text}, ensure_ascii=False)}\n\n"
 
         except LLMUnavailableError as exc:
             logger.warning("LLM unavailable during stream for user %s: %s", user.id, exc)
@@ -166,14 +198,15 @@ async def stream_chat(
                 assistant_text = replacement
 
         # Persist only meaningful replies — skip error placeholders and empty content.
-        _error_prefixes = ("I'm temporarily", "An error occurred")
+        _error_prefixes = ("I'm temporarily", "An error occurred", "I wasn't able to")
         if assistant_text.strip() and not assistant_text.startswith(_error_prefixes):
             await add_message(
                 db, session.id, "assistant", assistant_text, intent=intent, tool_used=tool_used
             )
+        logger.info("stream done user=%s elapsed=%.2fs reply_len=%d", user.id, time.monotonic() - t0, len(assistant_text))
         yield "data: [DONE]\n\n"
 
-    return StreamingResponse(event_generator(), media_type="text/event-stream")
+    return StreamingResponse(event_generator(), media_type="text/event-stream", headers=_SSE_HEADERS)
 
 
 async def _stream_fallback_reply(

@@ -88,6 +88,10 @@ class OpenAICompatibleProvider(LLMProvider):
         }
         if tools:
             payload["tools"] = tools
+        logger.info(
+            "LLM generate model=%s stream=False tool_count=%d msg_count=%d",
+            self._model, len(tools) if tools else 0, len(messages),
+        )
         response = await self._request(payload)
         try:
             data = response.json()
@@ -96,8 +100,14 @@ class OpenAICompatibleProvider(LLMProvider):
             logger.error("Malformed LLM response: %s", str(exc)[:300])
             raise LLMUnavailableError("The AI assistant is temporarily unavailable.") from exc
         tool_calls = choice.get("tool_calls") or None
+        content = choice.get("content") or ""
+        logger.info(
+            "LLM generate result content_len=%d tool_calls=%s finish_reason=%s",
+            len(content), bool(tool_calls),
+            data.get("choices", [{}])[0].get("finish_reason", "unknown"),
+        )
         return {
-            "content": choice.get("content") or "",
+            "content": content,
             "tool_calls": tool_calls,
             "raw": data,
         }
@@ -118,6 +128,7 @@ class OpenAICompatibleProvider(LLMProvider):
         if self._api_key:
             headers["Authorization"] = f"Bearer {self._api_key}"
         attempt = 0
+        logger.info("LLM stream model=%s msg_count=%d", self._model, len(messages))
         while True:
             try:
                 async with httpx.AsyncClient(timeout=self._timeout) as client:
@@ -135,6 +146,8 @@ class OpenAICompatibleProvider(LLMProvider):
                                 response.text[:300],
                             )
                             raise LLMUnavailableError("The AI assistant is temporarily unavailable.")
+                        chunk_count = 0
+                        total_len = 0
                         async for line in response.aiter_lines():
                             if not line.startswith("data:"):
                                 continue
@@ -147,7 +160,10 @@ class OpenAICompatibleProvider(LLMProvider):
                             except (json.JSONDecodeError, KeyError, IndexError):
                                 continue
                             if delta:
+                                chunk_count += 1
+                                total_len += len(delta)
                                 yield delta
+                        logger.info("LLM stream done chunks=%d total_len=%d", chunk_count, total_len)
                         return
             except httpx.HTTPError as exc:
                 if attempt < self._max_retries:
