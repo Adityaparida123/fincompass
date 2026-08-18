@@ -155,7 +155,7 @@ Edit `.env` with your values. **Never commit `.env`.**
 | `MONGODB_DATABASE` | Database name (default `fincompass`) |
 | `REDIS_URL` | Redis URL for rate limiting |
 | `JWT_SECRET_KEY` | Strong random secret (change in production) |
-| `LLM_API_KEY`, `LLM_MODEL`, `LLM_BASE_URL` | LLM provider — Groq by default (`llama-3.3-70b-versatile`). Optional; chat works in fallback mode without a key |
+| `LLM_API_KEY`, `LLM_MODEL`, `LLM_BASE_URL` | LLM provider — Groq by default (`openai/gpt-oss-120b`). Optional; chat works in fallback mode without a key |
 | `CORS_ORIGINS` | Frontend origin(s), e.g. `http://localhost:3000` |
 | `CORS_ORIGIN_REGEX` | Optional regex of additional allowed origins (e.g. Vercel preview deployments); echoed per-origin, safe with credentials |
 | `DEFAULT_CURRENCY` | Default `INR` |
@@ -334,7 +334,7 @@ Configure the LLM via environment variables:
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `LLM_API_KEY` | Groq API key (local `.env` only, never committed) | *(none)* |
-| `LLM_MODEL` | Groq model name | `llama-3.3-70b-versatile` |
+| `LLM_MODEL` | Groq model name | `openai/gpt-oss-120b` |
 | `LLM_BASE_URL` | OpenAI-compatible endpoint | `https://api.groq.com/openai/v1` |
 
 Switch models by changing `LLM_MODEL` only. Timeouts and retries are controlled by

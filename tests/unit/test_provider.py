@@ -11,7 +11,7 @@ from app.core.config import settings
 from app.core.exceptions import LLMUnavailableError
 
 GROQ_BASE = "https://api.groq.com/openai/v1"
-MODEL = "llama-3.3-70b-versatile"
+MODEL = "openai/gpt-oss-120b"
 
 
 class FakeResponse:

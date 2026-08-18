@@ -15,7 +15,7 @@ FinAI uses an OpenAI-compatible chat-completions client pointed at Groq:
 | Setting | Default |
 |---------|---------|
 | `LLM_API_KEY` | *(from environment only — never committed)* |
-| `LLM_MODEL` | `llama-3.3-70b-versatile` |
+| `LLM_MODEL` | `openai/gpt-oss-120b` |
 | `LLM_BASE_URL` | `https://api.groq.com/openai/v1` |
 
 - All three settings are environment-driven (`app/core/config.py`).
@@ -58,6 +58,6 @@ When `LLM_API_KEY` is not configured, chat runs deterministic tools where consen
 
 ```env
 LLM_API_KEY=
-LLM_MODEL=llama-3.3-70b-versatile
+LLM_MODEL=openai/gpt-oss-120b
 LLM_BASE_URL=https://api.groq.com/openai/v1
 ```

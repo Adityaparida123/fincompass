@@ -12,7 +12,7 @@ def _settings(**overrides):
 
 
 def test_default_llm_model_is_groq():
-    assert _settings().LLM_MODEL == "llama-3.3-70b-versatile"
+    assert _settings().LLM_MODEL == "openai/gpt-oss-120b"
 
 
 def test_default_llm_base_url_is_groq():
@@ -28,7 +28,7 @@ def test_llm_not_configured_without_key():
 
 
 def test_llm_configured_with_key_and_model():
-    s = _settings(LLM_API_KEY="sk-test", LLM_MODEL="llama-3.3-70b-versatile")
+    s = _settings(LLM_API_KEY="sk-test", LLM_MODEL="openai/gpt-oss-120b")
     assert s.llm_configured is True
 
 
@@ -48,7 +48,7 @@ def test_llm_blank_env_falls_back_to_defaults(monkeypatch):
     monkeypatch.setenv("LLM_BASE_URL", "")
     monkeypatch.setenv("LLM_API_KEY", "")
     s = _settings()
-    assert s.LLM_MODEL == "llama-3.3-70b-versatile"
+    assert s.LLM_MODEL == "openai/gpt-oss-120b"
     assert s.LLM_BASE_URL == "https://api.groq.com/openai/v1"
     assert s.LLM_API_KEY is None
     assert s.llm_configured is False

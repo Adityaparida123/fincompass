@@ -61,7 +61,7 @@ class Settings(BaseSettings):
     # LLM provider (Groq by default, OpenAI-compatible). Override via env:
     # LLM_API_KEY, LLM_MODEL, LLM_BASE_URL.
     LLM_API_KEY: str | None = None
-    LLM_MODEL: str = "llama-3.3-70b-versatile"
+    LLM_MODEL: str = "openai/gpt-oss-120b"
     LLM_BASE_URL: str = "https://api.groq.com/openai/v1"
     LLM_TIMEOUT_SECONDS: float = 60.0
     LLM_READ_TIMEOUT_SECONDS: float = 90.0

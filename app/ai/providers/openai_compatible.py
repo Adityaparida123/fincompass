@@ -3,7 +3,7 @@
 Talks to any endpoint implementing the OpenAI chat completions API:
 
 - base_url <- settings.LLM_BASE_URL  (default: https://api.groq.com/openai/v1)
-- model    <- settings.LLM_MODEL      (default: llama-3.3-70b-versatile)
+- model    <- settings.LLM_MODEL      (default: openai/gpt-oss-120b)
 - api_key  <- settings.LLM_API_KEY    (never hardcoded, never logged)
 
 Timeout and retry behaviour is configuration-driven too.
