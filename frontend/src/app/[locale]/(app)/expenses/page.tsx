@@ -14,6 +14,7 @@ import {
 } from "@/hooks/use-api";
 import { ImportStatementDialog } from "@/components/expenses/import-statement";
 import { formatCurrency, toNumber } from "@/lib/utils";
+import { CATEGORIES } from "@/lib/constants";
 import { ApiRequestError } from "@/lib/api";
 import { Receipt, TrendingUp, FileText, Plus, Upload } from "lucide-react";
 
@@ -45,6 +46,16 @@ export default function ExpensesPage() {
   }));
   const monthlyData = Object.entries(monthly.data?.categories ?? {}).map(([name, val]) => ({
     name, value: toNumber(val),
+  }));
+
+  const categoryMap = new Map(
+    (categories.data ?? []).map((c) => [c.category, { total: toNumber(c.total), percent: c.share_percent, count: c.count }]),
+  );
+  const allCategories = CATEGORIES.map((cat) => ({
+    category: cat,
+    total: categoryMap.get(cat)?.total ?? 0,
+    percent: categoryMap.get(cat)?.percent ?? 0,
+    count: categoryMap.get(cat)?.count ?? 0,
   }));
 
   const handleAdd = async (e: React.FormEvent) => {
@@ -152,6 +163,37 @@ export default function ExpensesPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-medium">{t("categories")}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {categories.isLoading ? (
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {[1, 2, 3, 4, 5, 6].map((i) => <Skeleton key={i} className="h-20 w-full rounded-xl" />)}
+            </div>
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {allCategories.map((cat) => (
+                <div
+                  key={cat.category}
+                  className="flex items-center justify-between rounded-xl border border-muted/50 px-4 py-3 transition-colors hover:bg-muted/20"
+                >
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium capitalize">{cat.category.replace(/_/g, " ")}</p>
+                    <p className="text-xs text-muted-foreground">{cat.count} transaction{cat.count !== 1 ? "s" : ""}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-semibold">{formatCurrency(cat.total)}</p>
+                    <p className="text-xs text-muted-foreground">{cat.percent.toFixed(1)}%</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pb-3">

@@ -1,0 +1,16 @@
+export const CATEGORIES = [
+  "income",
+  "food",
+  "groceries",
+  "transport",
+  "housing",
+  "utilities",
+  "healthcare",
+  "education",
+  "shopping",
+  "entertainment",
+  "subscriptions",
+  "debt_payment",
+  "savings",
+  "other",
+] as const;

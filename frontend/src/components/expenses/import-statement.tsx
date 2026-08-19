@@ -15,27 +15,11 @@ import {
 } from "@/components/ui/dialog";
 import { useAnalyzeStatement, useImportStatement } from "@/hooks/use-api";
 import { ApiRequestError } from "@/lib/api";
+import { CATEGORIES } from "@/lib/constants";
 import type { StatementPreviewTransaction } from "@/types";
 
 const ACCEPT =
   ".pdf,.xlsx,.xls,.csv,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv";
-
-const CATEGORIES = [
-  "income",
-  "food",
-  "groceries",
-  "transport",
-  "housing",
-  "utilities",
-  "healthcare",
-  "education",
-  "shopping",
-  "entertainment",
-  "subscriptions",
-  "debt_payment",
-  "savings",
-  "other",
-];
 
 const STAGES = ["uploading", "reading", "extracting", "categorizing", "duplicates", "ready"];
 
