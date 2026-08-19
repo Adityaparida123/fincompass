@@ -146,7 +146,7 @@ app.include_router(recycle_bin.router, prefix=API_PREFIX)
 app.include_router(ml.router, prefix=API_PREFIX)
 
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 async def root() -> dict:
     return {
         "service": "finai-backend",

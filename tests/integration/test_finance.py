@@ -12,6 +12,16 @@ async def test_health(client):
     assert "database" in payload
 
 
+async def test_head_root_returns_200(client):
+    response = await client.head("/")
+    assert response.status_code == 200
+
+
+async def test_head_health_returns_200(client):
+    response = await client.head("/health")
+    assert response.status_code == 200
+
+
 async def test_emi_endpoint(client):
     response = await client.post(
         "/api/v1/tools/emi",

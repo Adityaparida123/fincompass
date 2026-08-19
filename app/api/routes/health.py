@@ -47,7 +47,7 @@ def _check_ml() -> dict:
     }
 
 
-@router.get("/health")
+@router.api_route("/health", methods=["GET", "HEAD"])
 async def health() -> dict:
     db_status = await _check_database()
     redis_status = await _check_redis()
