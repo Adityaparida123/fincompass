@@ -25,7 +25,7 @@ async def create_notification(
     db: MongoDatabase = Depends(get_session),
 ) -> NotificationRead:
     """Create a notification for the current user (system/trigger use)."""
-    notification = await notify(db, user.id, data.title, data.message, data.type)
+    notification = await notify(db, user.id, data.title, data.message, data.type, dedupe_window_minutes=None)
     return NotificationRead.model_validate(notification)
 
 
@@ -45,6 +45,17 @@ async def get_notifications(
     )
 
 
+# NOTE: /read-all MUST be registered before /{notification_id}/read
+# otherwise FastAPI matches "read-all" as a notification_id and returns 422.
+@router.patch("/read-all", response_model=dict)
+async def read_all(
+    user: Doc = Depends(get_current_user),
+    db: MongoDatabase = Depends(get_session),
+) -> dict:
+    marked = await mark_all_read(db, user.id)
+    return {"message": f"Marked {marked} notification(s) as read."}
+
+
 @router.patch("/{notification_id}/read", response_model=NotificationRead)
 async def read_one(
     notification_id: int,
@@ -53,15 +64,6 @@ async def read_one(
 ) -> NotificationRead:
     notification = await mark_read(db, user.id, notification_id)
     return NotificationRead.model_validate(notification)
-
-
-@router.patch("/read-all", response_model=dict)
-async def read_all(
-    user: Doc = Depends(get_current_user),
-    db: MongoDatabase = Depends(get_session),
-) -> dict:
-    marked = await mark_all_read(db, user.id)
-    return {"message": f"Marked {marked} notification(s) as read."}
 
 
 @router.delete("/{notification_id}", status_code=200)

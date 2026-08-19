@@ -17,6 +17,7 @@ export function NotificationBell() {
   const items = data?.items?.slice(0, 5) ?? [];
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const hasMarkedAllRef = useRef(false);
 
   const handleClickOutside = useCallback((e: MouseEvent) => {
     if (ref.current && !ref.current.contains(e.target as Node)) {
@@ -28,6 +29,20 @@ export function NotificationBell() {
     if (open) document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [open, handleClickOutside]);
+
+  useEffect(() => {
+    if (open && unread > 0 && !hasMarkedAllRef.current) {
+      hasMarkedAllRef.current = true;
+      markAllRead.mutate(undefined, {
+        onSettled: () => {
+          hasMarkedAllRef.current = false;
+        },
+      });
+    }
+    if (!open) {
+      hasMarkedAllRef.current = false;
+    }
+  }, [open, unread, markAllRead]);
 
   return (
     <div className="relative" ref={ref}>
