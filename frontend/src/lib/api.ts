@@ -39,6 +39,7 @@ class ApiClient {
   private refreshPromise: Promise<string | null> | null = null;
   private tokensRestored = false;
   private onAuthFailure: AuthFailureHandler | null = null;
+  private lastRefreshFailed = false;
 
   setAuthFailureHandler(handler: AuthFailureHandler) {
     this.onAuthFailure = handler;
@@ -110,6 +111,7 @@ class ApiClient {
   setTokens(access: string | null, refresh: string | null) {
     this.accessToken = access;
     this.refreshToken = refresh;
+    this.lastRefreshFailed = false;
     this.persistTokens();
   }
 
@@ -125,6 +127,7 @@ class ApiClient {
   clearTokens() {
     this.accessToken = null;
     this.refreshToken = null;
+    this.lastRefreshFailed = false;
     this.persistTokens();
   }
 
@@ -137,6 +140,7 @@ class ApiClient {
   }
 
   private async refreshAccessToken(): Promise<string | null> {
+    if (this.lastRefreshFailed) return null;
     if (!this.refreshToken && typeof window === "undefined") return null;
     if (this.refreshPromise) return this.refreshPromise;
 
@@ -149,17 +153,21 @@ class ApiClient {
           body: JSON.stringify({ refresh_token: this.refreshToken ?? "" }),
           signal: AbortSignal.timeout(DEFAULT_TIMEOUT_MS),
         });
-        if (!res.ok) {
+        if (res.status === 401) {
+          this.lastRefreshFailed = true;
           this.notifyAuthFailure();
+          return null;
+        }
+        if (!res.ok) {
           return null;
         }
         const data = await res.json();
         this.accessToken = data.access_token;
         this.refreshToken = data.refresh_token;
+        this.lastRefreshFailed = false;
         this.persistTokens();
         return this.accessToken;
       } catch {
-        this.notifyAuthFailure();
         return null;
       } finally {
         this.refreshPromise = null;

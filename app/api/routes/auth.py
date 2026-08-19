@@ -12,6 +12,7 @@ from app.api.dependencies import (
 )
 from app.core.exceptions import UnauthorizedError
 from app.core.logging import get_logger
+from app.core.middleware import current_request_id
 from app.core.security import TokenError, refresh_token_metadata
 from app.db.mongo import Doc, MongoDatabase
 from app.db.session import get_session
@@ -80,10 +81,23 @@ async def refresh(
     refresh_cookie: str | None = Cookie(default=None, alias=REFRESH_COOKIE_NAME),
     _: None = Depends(rate_limit_refresh),
 ) -> TokenPair:
+    rid = current_request_id()
     token = data.refresh_token or refresh_cookie
     if not token:
+        logger.warning(
+            "Refresh failed: no token provided (body or cookie)",
+            extra={"request_id": rid},
+        )
         raise UnauthorizedError("Refresh token missing.")
-    user_id, remember_me, family_id, _expires = await validate_and_rotate(db, token)
+    try:
+        user_id, remember_me, family_id, _expires = await validate_and_rotate(db, token)
+    except UnauthorizedError as exc:
+        logger.warning(
+            "Refresh failed: %s",
+            exc.message,
+            extra={"request_id": rid},
+        )
+        raise
     tokens = await auth_service.rotate_tokens(db, user_id, remember_me, family_id)
     await db.commit()
     set_refresh_cookie(response, tokens.refresh_token, remember_me=remember_me)
