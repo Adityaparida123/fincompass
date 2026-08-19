@@ -7,7 +7,7 @@ import {
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/utils";
 
-const COLORS = ["#14b8a6", "#818cf8", "#f59e0b", "#f87171", "#a78bfa", "#22d3ee", "#34d399", "#fb923c"];
+const COLORS = ["#6bd8cb", "#818cf8", "#f59e0b", "#f87171", "#a78bfa", "#22d3ee", "#34d399", "#fb923c"];
 
 function ChartTooltipContent({ active, payload, label, formatter }: {
   active?: boolean;
@@ -17,12 +17,12 @@ function ChartTooltipContent({ active, payload, label, formatter }: {
 }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-lg border bg-card px-3 py-2 shadow-lg">
-      {label && <p className="mb-1 text-xs font-medium text-muted-foreground">{label}</p>}
+    <div className="glass-panel rounded-lg px-3 py-2 shadow-lg">
+      {label && <p className="mb-1 text-xs font-medium text-text-muted">{label}</p>}
       {payload.map((entry, i) => (
         <div key={i} className="flex items-center gap-2 text-sm">
           <span className="h-2 w-2 rounded-full" style={{ backgroundColor: entry.color }} />
-          <span className="text-muted-foreground">{entry.name}:</span>
+          <span className="text-text-muted">{entry.name}:</span>
           <span className="font-medium">{formatter ? formatter(entry.value, entry.name) : entry.value.toLocaleString()}</span>
         </div>
       ))}
@@ -38,9 +38,9 @@ function PieTooltipContent({ active, payload, formatter }: {
   if (!active || !payload?.length) return null;
   const entry = payload[0];
   return (
-    <div className="rounded-lg border bg-card px-3 py-2 shadow-lg">
+    <div className="glass-panel rounded-lg px-3 py-2 shadow-lg">
       <p className="text-sm font-medium">{entry.name}</p>
-      <p className="text-sm text-muted-foreground">{formatter ? formatter(entry.value) : entry.value.toLocaleString()}</p>
+      <p className="text-sm text-text-muted">{formatter ? formatter(entry.value) : entry.value.toLocaleString()}</p>
     </div>
   );
 }
@@ -67,10 +67,10 @@ export function ResponsiveBarChart({
     <div className={cn("w-full min-w-0", height ?? "h-64 sm:h-72 lg:h-80", className)}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-          {showGrid && <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />}
-          <XAxis dataKey={xKey} tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false} />
-          <YAxis tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false} tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} />
-          <Tooltip content={<ChartTooltipContent formatter={fmt} />} cursor={{ fill: "var(--muted)", opacity: 0.3 }} />
+          {showGrid && <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" vertical={false} />}
+          <XAxis dataKey={xKey} tick={{ fontSize: 11, fill: "var(--text-muted)" }} tickLine={false} axisLine={false} />
+          <YAxis tick={{ fontSize: 11, fill: "var(--text-muted)" }} tickLine={false} axisLine={false} tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} />
+          <Tooltip content={<ChartTooltipContent formatter={fmt} />} cursor={{ fill: "var(--surface-container)", opacity: 0.3 }} />
           <Legend wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
           {bars.map((b, i) => (
             <Bar key={b.key} dataKey={b.key} fill={b.color ?? COLORS[i % COLORS.length]} name={b.name ?? b.key} radius={[4, 4, 0, 0]} />
@@ -105,9 +105,9 @@ export function ResponsiveLineChart({
     <div className={cn("w-full min-w-0", height ?? "h-64 sm:h-72 lg:h-80", className)}>
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-          {showGrid && <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />}
-          <XAxis dataKey={xKey} tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false} />
-          <YAxis tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false} tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} />
+          {showGrid && <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" vertical={false} />}
+          <XAxis dataKey={xKey} tick={{ fontSize: 11, fill: "var(--text-muted)" }} tickLine={false} axisLine={false} />
+          <YAxis tick={{ fontSize: 11, fill: "var(--text-muted)" }} tickLine={false} axisLine={false} tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} />
           <Tooltip content={<ChartTooltipContent formatter={fmt} />} />
           <Legend wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
           {lines.map((l, i) => {
@@ -165,10 +165,10 @@ export function ResponsivePieChart({
 
 export function ChartSkeleton({ className }: { className?: string }) {
   return (
-    <div className={cn("w-full min-w-0 h-64 sm:h-72 lg:h-80 animate-pulse rounded-xl bg-muted/50", className)}>
+    <div className={cn("w-full min-w-0 h-64 sm:h-72 lg:h-80 animate-shimmer rounded-xl", className)}>
       <div className="flex h-full items-end gap-2 p-6">
         {[40, 70, 55, 80, 45, 65].map((h, i) => (
-          <div key={i} className="flex-1 rounded-t bg-muted" style={{ height: `${h}%` }} />
+          <div key={i} className="flex-1 rounded-t bg-surface-container-high" style={{ height: `${h}%` }} />
         ))}
       </div>
     </div>
@@ -178,7 +178,7 @@ export function ChartSkeleton({ className }: { className?: string }) {
 export function PageError({ message, onRetry }: { message: string; onRetry?: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-destructive/30 bg-destructive/5 p-8 text-center">
-      <p className="text-sm text-muted-foreground">{message}</p>
+      <p className="text-sm text-text-muted">{message}</p>
       {onRetry && (
         <button className="rounded-lg bg-primary/10 px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/20" onClick={onRetry}>
           Try again

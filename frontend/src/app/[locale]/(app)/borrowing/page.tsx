@@ -85,20 +85,20 @@ export default function BorrowingPage() {
 
       {emiResult && (
         <Card>
-          <CardHeader className="pb-3"><CardTitle className="text-sm font-medium">{t("emi")}</CardTitle></CardHeader>
+          <CardHeader className="pb-3">          <CardTitle className="text-[12px] font-semibold uppercase tracking-[0.05em] text-text-muted">{t("emi")}</CardTitle></CardHeader>
           <CardContent>
             <div className="grid gap-4 sm:grid-cols-3">
               <div className="rounded-lg bg-primary/5 px-4 py-3">
-                <p className="text-xs text-muted-foreground">{t("emi")}</p>
-                <p className="mt-1 text-2xl font-bold">{formatCurrency(toNumber(emiResult.monthly_emi))}</p>
+                <p className="text-xs text-text-muted">{t("emi")}</p>
+                <p className="mt-1 text-2xl font-bold font-[family-name:var(--font-jetbrains-mono)]">{formatCurrency(toNumber(emiResult.monthly_emi))}</p>
               </div>
-              <div className="rounded-lg bg-muted/30 px-4 py-3">
-                <p className="text-xs text-muted-foreground">Total interest</p>
-                <p className="mt-1 text-lg font-semibold">{formatCurrency(toNumber(emiResult.total_interest))}</p>
+              <div className="rounded-lg bg-surface-container/30 px-4 py-3">
+                <p className="text-xs text-text-muted">Total interest</p>
+                <p className="mt-1 text-lg font-semibold font-[family-name:var(--font-jetbrains-mono)]">{formatCurrency(toNumber(emiResult.total_interest))}</p>
               </div>
-              <div className="rounded-lg bg-muted/30 px-4 py-3">
-                <p className="text-xs text-muted-foreground">Total payment</p>
-                <p className="mt-1 text-lg font-semibold">{formatCurrency(toNumber(emiResult.total_payment))}</p>
+              <div className="rounded-lg bg-surface-container/30 px-4 py-3">
+                <p className="text-xs text-text-muted">Total payment</p>
+                <p className="mt-1 text-lg font-semibold font-[family-name:var(--font-jetbrains-mono)]">{formatCurrency(toNumber(emiResult.total_payment))}</p>
               </div>
             </div>
           </CardContent>
@@ -113,27 +113,27 @@ export default function BorrowingPage() {
             <CardHeader className="pb-3">
               <div className="flex items-center gap-2">
                 {toNumber(simResult.affordability_ratio) > 40 ? <XCircle className="h-4 w-4 text-destructive" /> : <CheckCircle className="h-4 w-4 text-income" />}
-                <CardTitle className="text-sm font-medium">{t("recommendation")}</CardTitle>
+                <CardTitle className="text-[12px] font-semibold uppercase tracking-[0.05em] text-text-muted">{t("recommendation")}</CardTitle>
               </div>
             </CardHeader>
             <CardContent className="space-y-4 text-sm">
-              <p className="text-muted-foreground leading-relaxed">{simResult.recommendation}</p>
+              <p className="text-text-muted leading-relaxed">{simResult.recommendation}</p>
               <div className="grid gap-3 sm:grid-cols-2">
-                <div className="rounded-lg bg-muted/30 px-4 py-3">
-                  <p className="text-xs text-muted-foreground">Cash flow before</p>
-                  <p className="font-semibold">{formatCurrency(toNumber(simResult.cash_flow_before))}</p>
+                <div className="rounded-lg bg-surface-container/30 px-4 py-3">
+                  <p className="text-xs text-text-muted">Cash flow before</p>
+                  <p className="font-semibold font-[family-name:var(--font-jetbrains-mono)]">{formatCurrency(toNumber(simResult.cash_flow_before))}</p>
                 </div>
-                <div className="rounded-lg bg-muted/30 px-4 py-3">
-                  <p className="text-xs text-muted-foreground">Cash flow after</p>
-                  <p className={`font-semibold ${toNumber(simResult.cash_flow_after) < 0 ? "text-destructive" : ""}`}>{formatCurrency(toNumber(simResult.cash_flow_after))}</p>
+                <div className="rounded-lg bg-surface-container/30 px-4 py-3">
+                  <p className="text-xs text-text-muted">Cash flow after</p>
+                  <p className={`font-semibold font-[family-name:var(--font-jetbrains-mono)] ${toNumber(simResult.cash_flow_after) < 0 ? "text-destructive" : ""}`}>{formatCurrency(toNumber(simResult.cash_flow_after))}</p>
                 </div>
-                <div className="rounded-lg bg-muted/30 px-4 py-3">
-                  <p className="text-xs text-muted-foreground">Debt burden before</p>
-                  <p className="font-semibold">{toNumber(simResult.debt_burden_before).toFixed(1)}%</p>
+                <div className="rounded-lg bg-surface-container/30 px-4 py-3">
+                  <p className="text-xs text-text-muted">Debt burden before</p>
+                  <p className="font-semibold font-[family-name:var(--font-jetbrains-mono)]">{toNumber(simResult.debt_burden_before).toFixed(1)}%</p>
                 </div>
-                <div className="rounded-lg bg-muted/30 px-4 py-3">
-                  <p className="text-xs text-muted-foreground">Debt burden after</p>
-                  <p className={`font-semibold ${toNumber(simResult.debt_burden_after) > 40 ? "text-destructive" : ""}`}>{toNumber(simResult.debt_burden_after).toFixed(1)}%</p>
+                <div className="rounded-lg bg-surface-container/30 px-4 py-3">
+                  <p className="text-xs text-text-muted">Debt burden after</p>
+                  <p className={`font-semibold font-[family-name:var(--font-jetbrains-mono)] ${toNumber(simResult.debt_burden_after) > 40 ? "text-destructive" : ""}`}>{toNumber(simResult.debt_burden_after).toFixed(1)}%</p>
                 </div>
               </div>
               {simResult.warnings?.length > 0 && (
@@ -142,7 +142,7 @@ export default function BorrowingPage() {
                     <AlertTriangle className="h-3.5 w-3.5 text-warning" />
                     <p className="font-medium text-xs">{t("warnings")}</p>
                   </div>
-                  <ul className="space-y-1 text-xs text-muted-foreground">
+                  <ul className="space-y-1 text-xs text-text-muted">
                     {simResult.warnings.map((w, i) => <li key={i}>· {w}</li>)}
                   </ul>
                 </div>
@@ -155,14 +155,14 @@ export default function BorrowingPage() {
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-2">
                   <HandCoins className="h-4 w-4 text-primary" />
-                  <CardTitle className="text-sm font-medium">{t("alternatives")}</CardTitle>
+                  <CardTitle className="text-[12px] font-semibold uppercase tracking-[0.05em] text-text-muted">{t("alternatives")}</CardTitle>
                 </div>
               </CardHeader>
               <CardContent className="space-y-2">
                 {altItems.map((a, i) => (
-                  <div key={i} className="rounded-lg border border-muted/50 p-3 transition-colors hover:bg-muted/20">
+                  <div key={i} className="rounded-lg border border-border-subtle p-3 transition-colors hover:bg-surface-container">
                     <p className="text-sm font-medium">{a.title}</p>
-                    {a.description && <p className="mt-1 text-xs text-muted-foreground">{a.description}</p>}
+                    {a.description && <p className="mt-1 text-xs text-text-muted">{a.description}</p>}
                   </div>
                 ))}
               </CardContent>

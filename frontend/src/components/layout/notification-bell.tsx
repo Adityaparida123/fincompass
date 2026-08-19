@@ -46,27 +46,24 @@ export function NotificationBell() {
 
   return (
     <div className="relative" ref={ref}>
-      <Button
-        variant="ghost"
-        size="icon"
-        aria-label="Notifications"
+      <button
+        className="relative hover:text-primary transition-colors text-on-surface-variant"
         onClick={() => setOpen((v) => !v)}
+        aria-label="Notifications"
       >
-        <Bell className="h-4 w-4" />
+        <Bell className="h-5 w-5" />
         {unread > 0 && (
-          <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] text-white">
-            {unread > 9 ? "9+" : unread}
-          </span>
+          <span className="absolute top-0 right-0 w-2 h-2 bg-error rounded-full" />
         )}
-      </Button>
+      </button>
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-2 w-80 rounded-xl border bg-card p-2 shadow-lg">
+        <div className="absolute right-0 top-full z-50 mt-2 w-80 rounded-xl border border-border-subtle bg-surface-card p-2 shadow-lg">
           <div className="flex items-center justify-between px-3 py-1">
-            <p className="text-xs font-medium text-muted-foreground">Notifications</p>
+            <p className="text-[12px] font-semibold uppercase tracking-[0.05em] text-text-muted">Notifications</p>
             <div className="flex items-center gap-2">
               {unread > 0 && (
                 <button
-                  className="text-xs text-muted-foreground hover:text-foreground"
+                  className="text-xs text-text-muted hover:text-foreground"
                   onClick={() => { markAllRead.mutate(); setOpen(false); }}
                 >
                   Mark all read
@@ -82,13 +79,13 @@ export function NotificationBell() {
             </div>
           </div>
           {items.length === 0 ? (
-            <p className="p-3 text-sm text-muted-foreground">No notifications</p>
+            <p className="p-3 text-sm text-text-muted">No notifications</p>
           ) : (
             items.map((n) => (
               <button
                 key={n.id}
                 className={cn(
-                  "w-full rounded-lg p-3 text-left text-sm hover:bg-muted",
+                  "w-full rounded-lg p-3 text-left text-sm hover:bg-surface-container-high transition-colors",
                   !n.is_read && "bg-primary/5",
                 )}
                 onClick={() => {
@@ -97,7 +94,7 @@ export function NotificationBell() {
                 }}
               >
                 <p className="font-medium">{n.title}</p>
-                <p className="text-muted-foreground line-clamp-2">{n.message}</p>
+                <p className="text-text-muted line-clamp-2">{n.message}</p>
               </button>
             ))
           )}

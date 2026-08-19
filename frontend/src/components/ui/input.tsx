@@ -6,7 +6,7 @@ export const Input = React.forwardRef<HTMLInputElement, React.InputHTMLAttribute
     <input
       type={type}
       className={cn(
-        "flex h-10 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+        "flex h-10 w-full rounded-lg border border-border-subtle bg-surface-container-low px-3 py-2 text-sm text-foreground ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-text-muted focus-visible:outline-none focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary transition-all disabled:cursor-not-allowed disabled:opacity-50",
         className,
       )}
       ref={ref}
@@ -31,7 +31,7 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, React.TextareaHTML
   ({ className, ...props }, ref) => (
     <textarea
       className={cn(
-        "flex min-h-[80px] w-full rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+        "flex min-h-[80px] w-full rounded-lg border border-border-subtle bg-surface-container-low px-3 py-2 text-sm text-foreground ring-offset-background placeholder:text-text-muted focus-visible:outline-none focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary transition-all disabled:cursor-not-allowed disabled:opacity-50",
         className,
       )}
       ref={ref}
@@ -42,19 +42,19 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, React.TextareaHTML
 Textarea.displayName = "Textarea";
 
 export function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("animate-pulse rounded-md bg-muted", className)} {...props} />;
+  return <div className={cn("animate-shimmer rounded-md bg-surface-container-high", className)} {...props} />;
 }
 
 export function Badge({ className, variant = "default", ...props }: React.HTMLAttributes<HTMLDivElement> & { variant?: "default" | "secondary" | "destructive" | "outline" | "success" }) {
   const variants = {
-    default: "bg-primary text-primary-foreground",
-    secondary: "bg-secondary text-secondary-foreground",
-    destructive: "bg-destructive text-destructive-foreground",
-    outline: "border text-foreground",
-    success: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300",
+    default: "bg-primary/20 text-primary border border-primary/20",
+    secondary: "bg-surface-container-high text-foreground border border-border-subtle",
+    destructive: "bg-destructive/20 text-destructive border border-destructive/20",
+    outline: "border border-border-subtle text-foreground",
+    success: "bg-primary/10 text-primary border border-primary/20",
   };
   return (
-    <div className={cn("inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold", variants[variant], className)} {...props} />
+    <div className={cn("inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-semibold tracking-wide", variants[variant], className)} {...props} />
   );
 }
 
@@ -62,9 +62,9 @@ export function Progress({ value, className }: { value: number | string; classNa
   const n = typeof value === "string" ? Number(value) : value;
   const pct = Number.isFinite(n) ? Math.min(100, Math.max(0, n)) : 0;
   return (
-    <div className={cn("relative h-2 w-full overflow-hidden rounded-full bg-secondary", className)}>
+    <div className={cn("relative h-2 w-full overflow-hidden rounded-full bg-surface-container-high", className)}>
       <div
-        className="h-full bg-primary transition-all duration-300"
+        className="h-full bg-primary rounded-full transition-all duration-500"
         style={{ width: `${pct}%` }}
       />
     </div>

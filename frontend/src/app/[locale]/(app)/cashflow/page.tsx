@@ -67,7 +67,7 @@ export default function CashflowPage() {
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium">{t("trends")}</CardTitle>
+          <CardTitle className="text-[12px] font-semibold uppercase tracking-[0.05em] text-text-muted">{t("trends")}</CardTitle>
         </CardHeader>
         <CardContent>
           {trends.isLoading ? <ChartSkeleton /> : trends.isError ? (
@@ -79,7 +79,7 @@ export default function CashflowPage() {
               { key: "net", name: t("net"), color: "#f59e0b" },
             ]} />
           ) : (
-            <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">
+            <div className="flex h-64 items-center justify-center text-sm text-text-muted">
               No trend data yet. Add transactions across multiple months to see trends.
             </div>
           )}
@@ -89,7 +89,7 @@ export default function CashflowPage() {
       <Card>
         <CardHeader className="pb-3">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <CardTitle className="text-sm font-medium">{t("forecast")}</CardTitle>
+            <CardTitle className="text-[12px] font-semibold uppercase tracking-[0.05em] text-text-muted">{t("forecast")}</CardTitle>
             <div className="flex flex-wrap items-center gap-2">
               {forecastMethod === "rolling_baseline" && (
                 <Badge variant="secondary" className="text-[10px]">{t("baselineMethod")}</Badge>
@@ -115,8 +115,8 @@ export default function CashflowPage() {
           ) : isInsufficientData ? (
             <div className="rounded-xl border border-dashed border-warning/30 bg-warning/5 p-6 text-center">
               <p className="text-sm font-medium">{t("insufficientData")}</p>
-              <p className="mt-1 text-xs text-muted-foreground">{t("insufficientDataDesc")}</p>
-              <p className="mt-2 text-xs text-muted-foreground">
+              <p className="mt-1 text-xs text-text-muted">{t("insufficientDataDesc")}</p>
+              <p className="mt-2 text-xs text-text-muted">
                 {t("availableMonths", { count: forecast.data?.available_months ?? 0 })}
                 {" · "}
                 {t("requiredMonths", { count: forecast.data?.required_months ?? 3 })}
@@ -126,30 +126,30 @@ export default function CashflowPage() {
             <>
               <div className="grid gap-4 sm:grid-cols-3 mb-6">
                 {expenseForecast && (
-                  <div className="rounded-xl border border-muted/50 bg-muted/10 p-4">
-                    <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{t("expectedExpenses")}</p>
-                    <p className="mt-1 text-2xl font-bold tracking-tight">{formatCurrency(expenseForecast.predicted)}</p>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
+                  <div className="rounded-xl border border-border-subtle bg-surface-container-low p-4">
+                    <p className="text-[12px] font-semibold uppercase tracking-[0.05em] text-text-muted">{t("expectedExpenses")}</p>
+                    <p className="mt-1 text-2xl font-bold tracking-tight font-[family-name:var(--font-jetbrains-mono)]">{formatCurrency(expenseForecast.predicted)}</p>
+                    <p className="mt-0.5 text-xs text-text-muted">
                       Range: {formatCurrency(expenseForecast.lower)} – {formatCurrency(expenseForecast.upper)}
                     </p>
                   </div>
                 )}
                 {incomeForecast && (
-                  <div className="rounded-xl border border-muted/50 bg-muted/10 p-4">
-                    <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{t("expectedIncome")}</p>
-                    <p className="mt-1 text-2xl font-bold tracking-tight">{formatCurrency(incomeForecast.predicted)}</p>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
+                  <div className="rounded-xl border border-border-subtle bg-surface-container-low p-4">
+                    <p className="text-[12px] font-semibold uppercase tracking-[0.05em] text-text-muted">{t("expectedIncome")}</p>
+                    <p className="mt-1 text-2xl font-bold tracking-tight font-[family-name:var(--font-jetbrains-mono)]">{formatCurrency(incomeForecast.predicted)}</p>
+                    <p className="mt-0.5 text-xs text-text-muted">
                       Range: {formatCurrency(incomeForecast.lower)} – {formatCurrency(incomeForecast.upper)}
                     </p>
                   </div>
                 )}
                 {expenseForecast && incomeForecast && (
-                  <div className="rounded-xl border border-muted/50 bg-muted/10 p-4">
-                    <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{t("expectedCashFlow")}</p>
-                    <p className={`mt-1 text-2xl font-bold tracking-tight ${(incomeForecast.predicted - expenseForecast.predicted) < 0 ? "text-destructive" : "text-income"}`}>
+                  <div className="rounded-xl border border-border-subtle bg-surface-container-low p-4">
+                    <p className="text-[12px] font-semibold uppercase tracking-[0.05em] text-text-muted">{t("expectedCashFlow")}</p>
+                    <p className={`mt-1 text-2xl font-bold tracking-tight font-[family-name:var(--font-jetbrains-mono)] ${(incomeForecast.predicted - expenseForecast.predicted) < 0 ? "text-destructive" : "text-income"}`}>
                       {formatCurrency(incomeForecast.predicted - expenseForecast.predicted)}
                     </p>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
+                    <p className="mt-0.5 text-xs text-text-muted">
                       {t("expectedRange")}: {formatCurrency(Math.max(incomeForecast.lower - expenseForecast.upper, 0))} – {formatCurrency(incomeForecast.upper - expenseForecast.lower)}
                     </p>
                   </div>
@@ -164,17 +164,17 @@ export default function CashflowPage() {
 
               {categoryForecasts.length > 0 && (
                 <div className="mt-6">
-                  <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-3">{t("categoryForecasts")}</h3>
+                  <h3 className="text-[12px] font-semibold uppercase tracking-[0.05em] text-text-muted mb-3">{t("categoryForecasts")}</h3>
                   <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                     {categoryForecasts.map((cf) => (
-                      <div key={cf.category} className="flex items-center justify-between rounded-lg border border-muted/50 px-3 py-2.5 transition-colors hover:bg-muted/20">
+                      <div key={cf.category} className="flex items-center justify-between rounded-lg border border-border-subtle px-3 py-2.5 transition-colors hover:bg-surface-container">
                         <div>
                           <span className="text-sm capitalize font-medium">{cf.category}</span>
-                          <span className="ml-2 text-[10px] text-muted-foreground">
+                          <span className="ml-2 text-[10px] text-text-muted">
                             {t("monthsOfData", { count: cf.months_of_data })}
                           </span>
                         </div>
-                        <span className="text-sm font-semibold">{formatCurrency(cf.predicted)}</span>
+                        <span className="text-sm font-semibold font-[family-name:var(--font-jetbrains-mono)]">{formatCurrency(cf.predicted)}</span>
                       </div>
                     ))}
                   </div>
@@ -182,9 +182,9 @@ export default function CashflowPage() {
               )}
 
               {forecast.data?.explanation?.length ? (
-                <div className="mt-4 rounded-lg bg-muted/20 px-4 py-3">
+                <div className="mt-4 rounded-lg bg-surface-container/20 px-4 py-3">
                   {forecast.data.explanation.map((e, i) => (
-                    <p key={i} className="text-xs text-muted-foreground leading-relaxed">{e.description}</p>
+                    <p key={i} className="text-xs text-text-muted leading-relaxed">{e.description}</p>
                   ))}
                 </div>
               ) : null}

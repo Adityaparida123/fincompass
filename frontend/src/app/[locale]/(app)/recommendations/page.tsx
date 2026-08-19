@@ -64,7 +64,7 @@ export default function RecommendationsPage() {
                   </Badge>
                 </CardHeader>
                 <CardContent className="pl-12">
-                  <p className="text-xs text-muted-foreground leading-relaxed">{r.reason}</p>
+                  <p className="text-xs text-text-muted leading-relaxed">{r.reason}</p>
                   <Badge variant="outline" className="mt-2 text-[10px]">{r.type.replace(/_/g, " ")}</Badge>
                 </CardContent>
               </Card>

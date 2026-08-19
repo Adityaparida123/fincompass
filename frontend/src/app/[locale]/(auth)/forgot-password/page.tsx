@@ -31,7 +31,7 @@ export default function ForgotPasswordPage() {
           <CardHeader><CardTitle>Forgot password</CardTitle></CardHeader>
           <CardContent>
             {sent ? (
-              <p className="text-sm text-muted-foreground">If that email exists, a reset link has been issued.</p>
+              <p className="text-sm text-text-muted">If that email exists, a reset link has been issued.</p>
             ) : (
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 <div>

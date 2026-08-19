@@ -95,7 +95,7 @@ export default function RegisterPage() {
                 {error && <p className="text-sm text-destructive">{error}</p>}
                 <Button type="submit" className="w-full" disabled={isSubmitting}>{t("registerButton")}</Button>
               </form>
-              <p className="mt-4 text-center text-sm">{t("hasAccount")} <Link href={`/${locale}/login`} className="text-primary hover:underline">Login</Link></p>
+              <p className="mt-4 text-center text-sm text-text-muted">{t("hasAccount")} <Link href={`/${locale}/login`} className="text-primary hover:underline">Login</Link></p>
             </CardContent>
           </Card>
         </motion.div>

@@ -90,16 +90,16 @@ export default function DebtPage() {
             </CardHeader>
             <CardContent className="space-y-2 text-sm">
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">{t("monthlyPayment")}</span>
-                <span className="font-semibold">{formatCurrency(toNumber(d.monthly_payment))}</span>
+                <span className="text-text-muted">{t("monthlyPayment")}</span>
+                <span className="font-semibold font-[family-name:var(--font-jetbrains-mono)]">{formatCurrency(toNumber(d.monthly_payment))}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">{t("remainingBalance")}</span>
-                <span className="font-medium">{formatCurrency(toNumber(d.remaining_balance))}</span>
+                <span className="text-text-muted">{t("remainingBalance")}</span>
+                <span className="font-medium font-[family-name:var(--font-jetbrains-mono)]">{formatCurrency(toNumber(d.remaining_balance))}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">{t("interestRate")}</span>
-                <span>{toNumber(d.interest_rate).toFixed(2)}%</span>
+                <span className="text-text-muted">{t("interestRate")}</span>
+                <span className="font-[family-name:var(--font-jetbrains-mono)]">{toNumber(d.interest_rate).toFixed(2)}%</span>
               </div>
             </CardContent>
           </Card>

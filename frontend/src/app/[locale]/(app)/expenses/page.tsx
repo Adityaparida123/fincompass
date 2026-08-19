@@ -137,7 +137,7 @@ export default function ExpensesPage() {
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">{t("weeklyChart")}</CardTitle>
+            <CardTitle className="text-[12px] font-semibold uppercase tracking-[0.05em] text-text-muted">{t("weeklyChart")}</CardTitle>
           </CardHeader>
           <CardContent>
             {weekly.isLoading ? <ChartSkeleton /> : weekly.isError ? (
@@ -145,7 +145,7 @@ export default function ExpensesPage() {
             ) : weeklyData.length ? (
               <ResponsiveBarChart data={weeklyData} xKey="day" bars={[{ key: "amount", name: t("expense"), color: "#818cf8" }]} valueFormatter={(v) => formatCurrency(v)} />
             ) : (
-              <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">
+              <div className="flex h-64 items-center justify-center text-sm text-text-muted">
                 No weekly data yet. Add transactions for this week.
               </div>
             )}
@@ -153,7 +153,7 @@ export default function ExpensesPage() {
         </Card>
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">{t("monthlyChart")}</CardTitle>
+            <CardTitle className="text-[12px] font-semibold uppercase tracking-[0.05em] text-text-muted">{t("monthlyChart")}</CardTitle>
           </CardHeader>
           <CardContent>
             {monthly.isLoading ? <ChartSkeleton /> : monthly.isError ? (
@@ -161,7 +161,7 @@ export default function ExpensesPage() {
             ) : monthlyData.length ? (
               <ResponsivePieChart data={monthlyData} valueFormatter={(v) => formatCurrency(v)} />
             ) : (
-              <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">
+              <div className="flex h-64 items-center justify-center text-sm text-text-muted">
                 No category data yet.
               </div>
             )}
@@ -171,7 +171,7 @@ export default function ExpensesPage() {
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium">{t("categories")}</CardTitle>
+          <CardTitle className="text-[12px] font-semibold uppercase tracking-[0.05em] text-text-muted">{t("categories")}</CardTitle>
         </CardHeader>
         <CardContent>
           {categories.isLoading ? (
@@ -183,15 +183,15 @@ export default function ExpensesPage() {
               {allCategories.map((cat) => (
                 <div
                   key={cat.category}
-                  className="flex items-center justify-between rounded-xl border border-muted/50 px-4 py-3 transition-colors hover:bg-muted/20"
+                  className="flex items-center justify-between rounded-xl border border-border-subtle px-4 py-3 transition-colors hover:bg-surface-container"
                 >
                   <div className="min-w-0">
                     <p className="text-sm font-medium capitalize">{cat.category.replace(/_/g, " ")}</p>
-                    <p className="text-xs text-muted-foreground">{cat.count} transaction{cat.count !== 1 ? "s" : ""}</p>
+                    <p className="text-xs text-text-muted">{cat.count} transaction{cat.count !== 1 ? "s" : ""}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-semibold">{formatCurrency(cat.total)}</p>
-                    <p className="text-xs text-muted-foreground">{cat.percent.toFixed(1)}%</p>
+                    <p className="text-sm font-semibold font-[family-name:var(--font-jetbrains-mono)]">{formatCurrency(cat.total)}</p>
+                    <p className="text-xs text-text-muted">{cat.percent.toFixed(1)}%</p>
                   </div>
                 </div>
               ))}
@@ -202,7 +202,7 @@ export default function ExpensesPage() {
 
       <Card>
         <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pb-3">
-          <CardTitle className="text-sm font-medium">{t("title")}</CardTitle>
+          <CardTitle className="text-[12px] font-semibold uppercase tracking-[0.05em] text-text-muted">{t("title")}</CardTitle>
           <div className="flex flex-wrap gap-2">
             <select className="h-8 rounded-lg border border-input bg-background px-2 text-xs" value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
               <option value="">{t("allCategories")}</option>
@@ -219,18 +219,18 @@ export default function ExpensesPage() {
           ) : transactions.isError ? (
             <PageError message={tc("error")} onRetry={() => transactions.refetch()} />
           ) : transactions.data?.items?.length ? transactions.data.items.map((tx) => (
-            <div key={tx.id} className="flex items-center gap-3 rounded-lg border border-muted/50 px-4 py-3 transition-colors hover:bg-muted/20">
+            <div key={tx.id} className="flex items-center gap-3 rounded-lg border border-border-subtle px-4 py-3 transition-colors hover:bg-surface-container">
               <div className={`h-8 w-1 rounded-full ${tx.transaction_type === "income" ? "bg-income" : "bg-expense"}`} />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">{tx.description}</p>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <div className="flex items-center gap-2 text-xs text-text-muted">
                   <span>{tx.date}</span>
                   <span>·</span>
                   <span className="capitalize">{tx.category}</span>
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <span className={`text-sm font-semibold ${tx.transaction_type === "income" ? "text-income" : ""}`}>
+                <span className={`text-sm font-semibold font-[family-name:var(--font-jetbrains-mono)] ${tx.transaction_type === "income" ? "text-income" : ""}`}>
                   {tx.transaction_type === "income" ? "+" : "-"}{formatCurrency(toNumber(tx.amount))}
                 </span>
                 <Badge variant={tx.transaction_type === "income" ? "success" : "secondary"} className="text-[10px]">{tx.transaction_type}</Badge>
@@ -253,7 +253,7 @@ export default function ExpensesPage() {
             />
           )}
           {transactions.data && transactions.data.total > 20 && (
-            <p className="text-center text-xs text-muted-foreground pt-2">
+            <p className="text-center text-xs text-text-muted pt-2">
               Showing {transactions.data.items.length} of {transactions.data.total} transactions
             </p>
           )}

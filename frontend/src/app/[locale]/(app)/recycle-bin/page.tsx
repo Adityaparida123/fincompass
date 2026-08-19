@@ -48,7 +48,7 @@ export default function RecycleBinPage() {
               <CardContent className="flex items-center justify-between py-4">
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium capitalize">{item.resource_type.replace(/_/g, " ")}</p>
-                  <p className="text-xs text-muted-foreground">{t("deletedAt")}: {format(new Date(item.deleted_at), "PPp")}</p>
+                  <p className="text-xs text-text-muted">{t("deletedAt")}: {format(new Date(item.deleted_at), "PPp")}</p>
                 </div>
                 {confirmId === item.id ? (
                   <div className="flex gap-2">

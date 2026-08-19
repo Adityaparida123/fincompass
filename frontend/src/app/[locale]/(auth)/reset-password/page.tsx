@@ -39,7 +39,7 @@ export default function ResetPasswordPage() {
           <CardHeader><CardTitle>Reset password</CardTitle></CardHeader>
           <CardContent>
             {done ? (
-              <p className="text-sm text-muted-foreground">Password updated. Redirecting to login...</p>
+              <p className="text-sm text-text-muted">Password updated. Redirecting to login...</p>
             ) : (
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 <div>

@@ -28,8 +28,8 @@ export default function LandingPage() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-30 border-b bg-card/80 backdrop-blur">
+    <div className="min-h-screen bg-background-page">
+      <header className="sticky top-0 z-30 border-b bg-surface-card/80 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
           <div className="flex items-center gap-2">
             <Compass className="h-7 w-7 text-primary" />
@@ -67,7 +67,7 @@ export default function LandingPage() {
             <h1 className="whitespace-pre-line text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
               {t("heroTitle")}
             </h1>
-            <p className="mt-6 text-base text-muted-foreground sm:text-lg">
+            <p className="mt-6 text-base text-text-muted sm:text-lg">
               {t("heroSubtitle")}
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
@@ -96,7 +96,7 @@ export default function LandingPage() {
           </motion.div>
         </section>
 
-        <section className="border-y bg-muted/30 py-16 sm:py-20">
+        <section className="border-y bg-surface-container/30 py-16 sm:py-20">
           <div className="mx-auto max-w-6xl px-4 sm:px-6">
             <h2 className="text-center text-2xl font-semibold sm:text-3xl">{t("howItWorks")}</h2>
             <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -109,7 +109,7 @@ export default function LandingPage() {
                     <CardTitle className="text-base">{t(`step${step}Title` as "step1Title")}</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-sm text-muted-foreground">{t(`step${step}Desc` as "step1Desc")}</p>
+                    <p className="text-sm text-text-muted">{t(`step${step}Desc` as "step1Desc")}</p>
                   </CardContent>
                 </Card>
               ))}
@@ -122,7 +122,7 @@ export default function LandingPage() {
             <h2 className="text-center text-2xl font-semibold sm:text-3xl">{t("features")}</h2>
             <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {features.map(({ icon: Icon, title }) => (
-                <div key={title} className="flex items-center gap-3 rounded-xl border bg-card p-4">
+                <div key={title} className="flex items-center gap-3 rounded-xl border bg-surface-card p-4">
                   <Icon className="h-5 w-5 shrink-0 text-primary" />
                   <span className="text-sm font-medium">{title}</span>
                 </div>
@@ -131,11 +131,11 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section className="border-t bg-accent/30 py-16 sm:py-20">
+        <section className="border-t bg-surface-container/30 py-16 sm:py-20">
           <div className="mx-auto max-w-3xl px-4 text-center sm:px-6">
             <Shield className="mx-auto h-10 w-10 text-primary" />
             <h2 className="mt-4 text-2xl font-semibold">{t("privacy")}</h2>
-            <p className="mt-4 text-muted-foreground">{t("privacyDesc")}</p>
+            <p className="mt-4 text-text-muted">{t("privacyDesc")}</p>
           </div>
         </section>
 

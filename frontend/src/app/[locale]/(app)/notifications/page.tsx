@@ -61,14 +61,14 @@ export default function NotificationsPage() {
           {data.items.map((n) => (
             <Card key={n.id} className={`transition-colors ${!n.is_read ? "border-primary/20 bg-primary/5" : ""}`}>
               <CardContent className="flex items-start gap-3 py-4">
-                <div className={`rounded-lg p-1.5 ${!n.is_read ? "bg-primary/10" : "bg-muted"}`}>
-                  <Bell className={`h-4 w-4 ${!n.is_read ? "text-primary" : "text-muted-foreground"}`} />
+                <div className={`rounded-lg p-1.5 ${!n.is_read ? "bg-primary/10" : "bg-surface-container"}`}>
+                  <Bell className={`h-4 w-4 ${!n.is_read ? "text-primary" : "text-text-muted"}`} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <p className="text-sm font-medium">{n.title}</p>
-                      <p className="text-[11px] text-muted-foreground">{format(new Date(n.created_at), "PPp")}</p>
+                      <p className="text-[11px] text-text-muted">{format(new Date(n.created_at), "PPp")}</p>
                     </div>
                     {!n.is_read && (
                       <Button size="sm" variant="ghost" className="h-7 shrink-0 px-2 text-xs" onClick={() => handleMarkRead(n.id)} disabled={markRead.isPending}>
@@ -76,7 +76,7 @@ export default function NotificationsPage() {
                       </Button>
                     )}
                   </div>
-                  <p className="mt-1 text-xs text-muted-foreground leading-relaxed">{n.message}</p>
+                  <p className="mt-1 text-xs text-text-muted leading-relaxed">{n.message}</p>
                 </div>
               </CardContent>
             </Card>

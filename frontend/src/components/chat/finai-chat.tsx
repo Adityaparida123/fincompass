@@ -143,7 +143,7 @@ export function FinAIChat() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             className={cn(
-              "fixed z-50 flex flex-col border bg-card shadow-2xl",
+              "fixed z-50 flex flex-col border border-border-subtle bg-surface-card shadow-2xl",
               isFullscreen
                 ? "inset-0"
                 : "bottom-20 right-4 left-4 h-[min(70vh,32rem)] rounded-2xl lg:bottom-6 lg:left-auto lg:w-96",
@@ -164,12 +164,12 @@ export function FinAIChat() {
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
               {messages.length === 0 && (
                 <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">{t("disclaimer")}</p>
+                  <p className="text-sm text-text-muted">{t("disclaimer")}</p>
                   <div className="flex flex-wrap gap-2">
                     {suggestions.map((s) => (
                       <button
                         key={s}
-                        className="rounded-full border px-3 py-1.5 text-xs hover:bg-muted"
+                        className="rounded-full border border-border-subtle px-3 py-1.5 text-xs hover:bg-surface-container-high transition-colors"
                         onClick={() => sendMessage(s)}
                       >
                         {s}
@@ -183,7 +183,7 @@ export function FinAIChat() {
                   <div
                     className={cn(
                       "max-w-[85%] rounded-2xl px-4 py-2 text-sm",
-                      m.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted",
+                      m.role === "user" ? "bg-primary text-on-primary-container" : "bg-surface-container",
                     )}
                   >
                     {m.content}
@@ -192,7 +192,7 @@ export function FinAIChat() {
               ))}
               {isLoading && (
                 <div className="flex justify-start">
-                  <div className="rounded-2xl bg-muted px-4 py-2 text-sm text-muted-foreground animate-pulse">
+                  <div className="rounded-2xl bg-surface-container px-4 py-2 text-sm text-text-muted animate-pulse">
                     FinAI is thinking...
                   </div>
                 </div>
@@ -201,7 +201,7 @@ export function FinAIChat() {
             </div>
 
             <form
-              className="flex gap-2 border-t p-3"
+              className="flex gap-2 border-t border-border-subtle p-3"
               onSubmit={(e) => { e.preventDefault(); sendMessage(input); }}
             >
               <Input

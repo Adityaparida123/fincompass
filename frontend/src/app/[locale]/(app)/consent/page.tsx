@@ -55,8 +55,8 @@ export default function ConsentPage() {
             return (
               <Card key={consentType}>
                 <CardContent className="flex items-center gap-4 py-4">
-                  <div className={`rounded-lg p-2 ${granted ? "bg-income/10" : "bg-muted"}`}>
-                    {granted ? <Unlock className="h-4 w-4 text-income" /> : <Lock className="h-4 w-4 text-muted-foreground" />}
+                  <div className={`rounded-lg p-2 ${granted ? "bg-income/10" : "bg-surface-container"}`}>
+                    {granted ? <Unlock className="h-4 w-4 text-income" /> : <Lock className="h-4 w-4 text-text-muted" />}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
@@ -65,7 +65,7 @@ export default function ConsentPage() {
                         {item ? item.status : t("notGranted")}
                       </Badge>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-0.5">{CONSENT_DESCRIPTIONS[consentType]}</p>
+                    <p className="text-xs text-text-muted mt-0.5">{CONSENT_DESCRIPTIONS[consentType]}</p>
                   </div>
                   <Button
                     size="sm"

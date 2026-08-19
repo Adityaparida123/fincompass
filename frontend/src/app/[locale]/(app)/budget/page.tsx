@@ -77,20 +77,20 @@ export default function BudgetPage() {
         <div className="grid gap-4 sm:grid-cols-3">
           <Card>
             <CardContent className="pt-5">
-              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Total Budget</p>
-              <p className="mt-1 text-2xl font-bold">{formatCurrency(totalBudget)}</p>
+              <p className="text-[12px] font-semibold uppercase tracking-[0.05em] text-text-muted">Total Budget</p>
+              <p className="mt-1 text-2xl font-bold font-[family-name:var(--font-jetbrains-mono)]">{formatCurrency(totalBudget)}</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-5">
-              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Spent</p>
-              <p className="mt-1 text-2xl font-bold">{formatCurrency(totalSpent)}</p>
+              <p className="text-[12px] font-semibold uppercase tracking-[0.05em] text-text-muted">Spent</p>
+              <p className="mt-1 text-2xl font-bold font-[family-name:var(--font-jetbrains-mono)]">{formatCurrency(totalSpent)}</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-5">
-              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Remaining</p>
-              <p className={`mt-1 text-2xl font-bold ${totalRemaining < 0 ? "text-destructive" : "text-income"}`}>{formatCurrency(totalRemaining)}</p>
+              <p className="text-[12px] font-semibold uppercase tracking-[0.05em] text-text-muted">Remaining</p>
+              <p className={`mt-1 text-2xl font-bold font-[family-name:var(--font-jetbrains-mono)] ${totalRemaining < 0 ? "text-destructive" : "text-income"}`}>{formatCurrency(totalRemaining)}</p>
             </CardContent>
           </Card>
         </div>
@@ -99,7 +99,7 @@ export default function BudgetPage() {
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-sm font-medium">{t("title")}</CardTitle>
+            <CardTitle className="text-[12px] font-semibold uppercase tracking-[0.05em] text-text-muted">{t("title")}</CardTitle>
             {overBudgetCount > 0 && (
               <Badge variant="destructive" className="text-[10px]">
                 <AlertTriangle className="mr-1 h-3 w-3" />{overBudgetCount} over budget
@@ -127,7 +127,7 @@ export default function BudgetPage() {
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="capitalize font-medium text-sm">{b.category}</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">{formatCurrency(toNumber(b.spent))} / {formatCurrency(limit)}</span>
+                    <span className="text-xs text-text-muted font-[family-name:var(--font-jetbrains-mono)]">{formatCurrency(toNumber(b.spent))} / {formatCurrency(limit)}</span>
                     {over && <Badge variant="destructive" className="text-[10px]">Over budget</Badge>}
                     {nearing && <Badge variant="secondary" className="text-[10px]">Nearing limit</Badge>}
                     <Button variant="ghost" size="sm" className="h-6 px-2 text-xs text-destructive hover:text-destructive" onClick={() => { if (window.confirm(t("confirmDelete"))) deleteBudget.mutate(b.id); }}>
@@ -135,14 +135,14 @@ export default function BudgetPage() {
                     </Button>
                   </div>
                 </div>
-                <div className="h-2 rounded-full bg-muted overflow-hidden">
+                <div className="h-2 rounded-full bg-surface-container overflow-hidden">
                   <div
                     className={`h-full rounded-full transition-all duration-500 ${over ? "bg-destructive" : nearing ? "bg-warning" : "bg-primary"}`}
                     style={{ width: `${Math.min(100, pctUsed)}%` }}
                   />
                 </div>
                 <div className="flex items-center justify-between">
-                  <p className="text-xs text-muted-foreground">{pctUsed.toFixed(1)}% used · {formatCurrency(toNumber(b.remaining))} remaining</p>
+                  <p className="text-xs text-text-muted font-[family-name:var(--font-jetbrains-mono)]">{pctUsed.toFixed(1)}% used · {formatCurrency(toNumber(b.remaining))} remaining</p>
                   {forecastDiff !== null && (
                     <p className={`text-xs font-medium ${forecastDiff > 0 ? "text-destructive" : "text-income"}`}>
                       {forecastDiff > 0
@@ -166,7 +166,7 @@ export default function BudgetPage() {
             />
           )}
           {!budget.isLoading && !hasForecastData && budget.data?.length ? (
-            <p className="text-xs text-muted-foreground text-center pt-2">{t("noForecastData")}</p>
+            <p className="text-xs text-text-muted text-center pt-2">{t("noForecastData")}</p>
           ) : null}
         </CardContent>
       </Card>

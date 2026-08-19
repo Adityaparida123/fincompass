@@ -31,16 +31,16 @@ function SavingsGoalCard({ goal }: { goal: SavingsGoal }) {
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="flex items-baseline justify-between">
-          <span className="text-xl font-bold">{formatCurrency(currentAmount)}</span>
-          <span className="text-sm text-muted-foreground">of {formatCurrency(targetAmount)}</span>
+          <span className="text-xl font-bold font-[family-name:var(--font-jetbrains-mono)]">{formatCurrency(currentAmount)}</span>
+          <span className="text-sm text-text-muted">of {formatCurrency(targetAmount)}</span>
         </div>
         <Progress value={progress} className="h-2" />
         <div className="flex items-center justify-between">
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-text-muted">
             {progress.toFixed(0)}% complete
           </p>
           {goal.target_date && (
-            <p className="text-xs text-muted-foreground">Target: {goal.target_date}</p>
+            <p className="text-xs text-text-muted">Target: {goal.target_date}</p>
           )}
         </div>
       </CardContent>
@@ -117,31 +117,31 @@ export default function SavingsPage() {
         <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium">{t("mlCapacity")}</CardTitle>
+              <CardTitle className="text-[12px] font-semibold uppercase tracking-[0.05em] text-text-muted">{t("mlCapacity")}</CardTitle>
               <Badge variant="outline" className="text-[10px]">{tc("forecastDisclaimer")}</Badge>
             </div>
           </CardHeader>
           <CardContent>
             {mlCapacity.isLoading ? <Skeleton className="h-12 w-48" /> : cap ? (
               <div>
-                <p className="text-2xl font-bold tracking-tight">{formatCurrency(toNumber(cap.lower))} – {formatCurrency(toNumber(cap.upper))}</p>
-                {cap.disclaimer && <p className="mt-2 text-xs text-muted-foreground">{cap.disclaimer}</p>}
-                {cap.explanation?.slice(0, 1).map((e, i) => <p key={i} className="mt-1 text-xs text-muted-foreground">{e.description}</p>)}
+                <p className="text-2xl font-bold tracking-tight font-[family-name:var(--font-jetbrains-mono)]">{formatCurrency(toNumber(cap.lower))} – {formatCurrency(toNumber(cap.upper))}</p>
+                {cap.disclaimer && <p className="mt-2 text-xs text-text-muted">{cap.disclaimer}</p>}
+                {cap.explanation?.slice(0, 1).map((e, i) => <p key={i} className="mt-1 text-xs text-text-muted">{e.description}</p>)}
               </div>
-            ) : <p className="text-sm text-muted-foreground">{tc("noData")}</p>}
+            ) : <p className="text-sm text-text-muted">{tc("noData")}</p>}
           </CardContent>
         </Card>
 
         {projectedSurplus !== null && (
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">{t("forecastSurplus")}</CardTitle>
+              <CardTitle className="text-[12px] font-semibold uppercase tracking-[0.05em] text-text-muted">{t("forecastSurplus")}</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className={`text-2xl font-bold tracking-tight ${projectedSurplus >= 0 ? "text-income" : "text-destructive"}`}>
+              <p className={`text-2xl font-bold tracking-tight font-[family-name:var(--font-jetbrains-mono)] ${projectedSurplus >= 0 ? "text-income" : "text-destructive"}`}>
                 {formatCurrency(projectedSurplus)}
               </p>
-              <p className="mt-1 text-xs text-muted-foreground">
+              <p className="mt-1 text-xs text-text-muted">
                 {projectedSurplus >= 0
                   ? `You may be able to allocate approximately ${formatCurrency(projectedSurplus)} toward savings.`
                   : `Projected expenses exceed income by ${formatCurrency(Math.abs(projectedSurplus))}.`}

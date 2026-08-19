@@ -86,7 +86,7 @@ export default function LoginPage() {
               </form>
               <div className="mt-4 flex flex-col gap-2 text-center text-sm">
                 <Link href={`/${locale}/forgot-password`} className="text-primary hover:underline">{t("forgotPassword")}</Link>
-                <p>{t("noAccount")} <Link href={`/${locale}/register`} className="text-primary hover:underline">Register</Link></p>
+                <p className="text-text-muted">{t("noAccount")} <Link href={`/${locale}/register`} className="text-primary hover:underline">Register</Link></p>
               </div>
             </CardContent>
           </Card>
