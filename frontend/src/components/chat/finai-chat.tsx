@@ -127,12 +127,12 @@ export function FinAIChat() {
     <>
       {!isOpen && (
         <Button
-          className="fixed bottom-20 right-4 z-50 h-14 w-14 rounded-full shadow-lg lg:bottom-6"
+          className="fixed bottom-16 right-4 z-50 h-12 w-12 rounded-full shadow-lg lg:bottom-5"
           size="icon"
           onClick={() => setOpen(true)}
           aria-label={t("title")}
         >
-          <MessageCircle className="h-6 w-6" />
+          <MessageCircle className="h-5 w-5" />
         </Button>
       )}
 
@@ -142,21 +142,22 @@ export function FinAIChat() {
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
             className={cn(
-              "fixed z-50 flex flex-col border border-border-subtle bg-surface-card shadow-2xl",
+              "fixed z-50 flex flex-col glass-panel shadow-lg",
               isFullscreen
-                ? "inset-0"
-                : "bottom-20 right-4 left-4 h-[min(70vh,32rem)] rounded-2xl lg:bottom-6 lg:left-auto lg:w-96",
+                ? "inset-0 rounded-none"
+                : "bottom-16 right-4 left-4 h-[min(70vh,32rem)] rounded-2xl lg:bottom-5 lg:left-auto lg:w-96",
             )}
           >
-            <div className="flex items-center justify-between border-b px-4 py-3">
-              <h2 className="font-semibold">{t("title")}</h2>
-              <div className="flex gap-1">
-                <Button variant="ghost" size="icon" onClick={() => setFullscreen(!isFullscreen)}>
-                  <Minimize2 className="h-4 w-4" />
+            <div className="flex items-center justify-between border-b border-border-subtle px-4 py-2.5">
+              <h2 className="font-semibold text-[14px] text-text-primary">{t("title")}</h2>
+              <div className="flex gap-0.5">
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setFullscreen(!isFullscreen)}>
+                  <Minimize2 className="h-3.5 w-3.5" />
                 </Button>
-                <Button variant="ghost" size="icon" onClick={() => setOpen(false)}>
-                  <X className="h-4 w-4" />
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setOpen(false)}>
+                  <X className="h-3.5 w-3.5" />
                 </Button>
               </div>
             </div>
@@ -164,12 +165,12 @@ export function FinAIChat() {
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
               {messages.length === 0 && (
                 <div className="space-y-2">
-                  <p className="text-sm text-text-muted">{t("disclaimer")}</p>
-                  <div className="flex flex-wrap gap-2">
+                  <p className="text-[12px] text-text-muted leading-relaxed">{t("disclaimer")}</p>
+                  <div className="flex flex-wrap gap-1.5">
                     {suggestions.map((s) => (
                       <button
                         key={s}
-                        className="rounded-full border border-border-subtle px-3 py-1.5 text-xs hover:bg-surface-container-high transition-colors"
+                        className="rounded-full border border-border-subtle px-3 py-1 text-[11px] text-text-muted hover:bg-surface-container-high/60 hover:text-text-primary transition-colors"
                         onClick={() => sendMessage(s)}
                       >
                         {s}
@@ -182,8 +183,8 @@ export function FinAIChat() {
                 <div key={m.id} className={cn("flex", m.role === "user" ? "justify-end" : "justify-start")}>
                   <div
                     className={cn(
-                      "max-w-[85%] rounded-2xl px-4 py-2 text-sm",
-                      m.role === "user" ? "bg-primary text-on-primary-container" : "bg-surface-container",
+                      "max-w-[85%] rounded-2xl px-3.5 py-2 text-[13px] leading-relaxed",
+                      m.role === "user" ? "bg-primary text-on-primary-container" : "bg-surface-container-high/60 text-text-primary",
                     )}
                   >
                     {m.content}
@@ -192,7 +193,7 @@ export function FinAIChat() {
               ))}
               {isLoading && (
                 <div className="flex justify-start">
-                  <div className="rounded-2xl bg-surface-container px-4 py-2 text-sm text-text-muted animate-pulse">
+                  <div className="rounded-2xl bg-surface-container-high/60 px-3.5 py-2 text-[13px] text-text-muted animate-pulse">
                     FinAI is thinking...
                   </div>
                 </div>
@@ -209,8 +210,9 @@ export function FinAIChat() {
                 onChange={(e) => setInput(e.target.value)}
                 placeholder={t("placeholder")}
                 disabled={isLoading}
+                className="h-9 text-[13px]"
               />
-              <Button type="submit" size="icon" disabled={isLoading || !input.trim()}>
+              <Button type="submit" size="icon" className="h-9 w-9 shrink-0" disabled={isLoading || !input.trim()}>
                 <Send className="h-4 w-4" />
               </Button>
             </form>

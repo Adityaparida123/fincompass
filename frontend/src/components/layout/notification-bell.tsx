@@ -47,23 +47,23 @@ export function NotificationBell() {
   return (
     <div className="relative" ref={ref}>
       <button
-        className="relative hover:text-primary transition-colors text-on-surface-variant"
+        className="relative hover:text-primary transition-colors text-on-surface-variant p-1 rounded-lg hover:bg-surface-container-high/60"
         onClick={() => setOpen((v) => !v)}
         aria-label="Notifications"
       >
-        <Bell className="h-5 w-5" />
+        <Bell className="h-4 w-4" />
         {unread > 0 && (
-          <span className="absolute top-0 right-0 w-2 h-2 bg-error rounded-full" />
+          <span className="absolute top-0.5 right-0.5 w-2 h-2 bg-error rounded-full ring-2 ring-background-page" />
         )}
       </button>
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-2 w-80 rounded-xl border border-border-subtle bg-surface-card p-2 shadow-lg">
-          <div className="flex items-center justify-between px-3 py-1">
-            <p className="text-[12px] font-semibold uppercase tracking-[0.05em] text-text-muted">Notifications</p>
+        <div className="absolute right-0 top-full z-50 mt-2 w-80 rounded-xl border border-border-subtle bg-surface-card p-1.5 shadow-lg">
+          <div className="flex items-center justify-between px-3 py-1.5">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-text-muted">Notifications</p>
             <div className="flex items-center gap-2">
               {unread > 0 && (
                 <button
-                  className="text-xs text-text-muted hover:text-foreground"
+                  className="text-[11px] text-text-muted hover:text-foreground transition-colors"
                   onClick={() => { markAllRead.mutate(); setOpen(false); }}
                 >
                   Mark all read
@@ -71,7 +71,7 @@ export function NotificationBell() {
               )}
               <Link
                 href={`/${locale}/notifications`}
-                className="text-xs text-primary hover:underline"
+                className="text-[11px] text-primary hover:underline"
                 onClick={() => setOpen(false)}
               >
                 View all
@@ -79,13 +79,13 @@ export function NotificationBell() {
             </div>
           </div>
           {items.length === 0 ? (
-            <p className="p-3 text-sm text-text-muted">No notifications</p>
+            <p className="p-3 text-[13px] text-text-muted">No notifications</p>
           ) : (
             items.map((n) => (
               <button
                 key={n.id}
                 className={cn(
-                  "w-full rounded-lg p-3 text-left text-sm hover:bg-surface-container-high transition-colors",
+                  "w-full rounded-lg p-2.5 text-left text-[13px] hover:bg-surface-container-high/60 transition-colors",
                   !n.is_read && "bg-primary/5",
                 )}
                 onClick={() => {
@@ -93,8 +93,8 @@ export function NotificationBell() {
                   setOpen(false);
                 }}
               >
-                <p className="font-medium">{n.title}</p>
-                <p className="text-text-muted line-clamp-2">{n.message}</p>
+                <p className="font-medium text-text-primary">{n.title}</p>
+                <p className="text-text-muted line-clamp-2 text-[12px]">{n.message}</p>
               </button>
             ))
           )}

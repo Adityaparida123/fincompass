@@ -5,7 +5,6 @@ import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton, Badge } from "@/components/ui/input";
 import { ResponsiveBarChart, ResponsiveLineChart, ChartSkeleton, PageError } from "@/components/charts/responsive-charts";
-import { StatCard } from "@/components/common/shared";
 import {
   useExpensesMonthly, useExpenseTrends, useReadiness,
   useRecommendations, useNotifications, useBudgetStatus, useSavingsGoals,
@@ -13,7 +12,7 @@ import {
 } from "@/hooks/use-api";
 import { formatCurrency, toNumber, formatPercent } from "@/lib/utils";
 import Link from "next/link";
-import { TrendingUp, Wallet, Receipt, Gauge, PiggyBank, ArrowRight, Lightbulb, Target, FileText, Flag, Calculator, Info } from "lucide-react";
+import { TrendingUp, Receipt, ArrowRight, Lightbulb, Target, FileText, Flag, Calculator, Info } from "lucide-react";
 
 export default function DashboardPage() {
   const t = useTranslations("dashboard");
@@ -36,10 +35,8 @@ export default function DashboardPage() {
   const totalExpenses = monthly.data ? toNumber(monthly.data.total_expenses) : 0;
   const totalSavings = savings.data?.reduce((s, g) => s + toNumber(g.current_amount), 0) ?? 0;
   const score = readiness.data?.score ?? 0;
-  const unreadNotifs = notifications.data?.unread ?? 0;
 
   const changePercent = monthly.data?.change_percent != null ? toNumber(monthly.data.change_percent) : null;
-  const trendDirection = monthly.data?.trend_direction as "up" | "down" | "flat" | undefined;
 
   const trendData = trends.data?.points?.map((p) => ({
     period: p.period,
@@ -66,127 +63,124 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="space-y-10">
-      {/* Welcome Section */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+    <div className="space-y-6">
+      {/* Welcome + Portfolio Row */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
-          <h1 className="text-[32px] leading-[40px] font-semibold tracking-[-0.01em] mb-2">{t("greeting")}</h1>
-          <p className="text-[16px] leading-[24px] text-text-muted">{format(new Date(), "EEEE, MMMM d, yyyy")}</p>
+          <h1 className="text-[28px] leading-[36px] font-semibold tracking-[-0.01em]">{t("greeting")}</h1>
+          <p className="text-[14px] leading-[20px] text-text-muted mt-0.5">{format(new Date(), "EEEE, MMMM d, yyyy")}</p>
         </div>
-        <div className="glass-panel rounded-xl p-6 min-w-[300px] relative overflow-hidden">
-          <div className="absolute -right-10 -top-10 w-32 h-32 bg-primary/10 rounded-full blur-2xl" />
-          <p className="text-[12px] font-semibold uppercase tracking-[0.05em] text-text-muted mb-2">TOTAL PORTFOLIO VALUE</p>
-          <div className="flex items-end gap-4">
-            <h3 className="text-[48px] leading-[56px] font-bold tracking-[-0.02em] font-[family-name:var(--font-jetbrains-mono)] text-white">
-              {monthly.isLoading ? "--" : formatCurrency(totalIncome + totalSavings)}
-            </h3>
-          </div>
-          <div className="flex items-center gap-2 mt-3">
+        <div className="glass-panel rounded-xl p-5 min-w-[280px] relative overflow-hidden">
+          <div className="absolute -right-8 -top-8 w-28 h-28 bg-primary/8 rounded-full blur-2xl" />
+          <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-text-muted mb-1.5">TOTAL PORTFOLIO VALUE</p>
+          <h3 className="text-[36px] leading-[44px] font-bold tracking-[-0.02em] font-[family-name:var(--font-jetbrains-mono)] text-text-primary">
+            {monthly.isLoading ? "--" : formatCurrency(totalIncome + totalSavings)}
+          </h3>
+          <div className="flex items-center gap-2 mt-2">
             {changePercent != null && (
-              <div className="flex items-center justify-center bg-primary/20 text-primary rounded-full px-2 py-1 gap-1">
-                <TrendingUp className="h-3.5 w-3.5" />
-                <span className="text-[14px] leading-[20px] font-semibold">{formatPercent(changePercent)}</span>
+              <div className="flex items-center justify-center bg-primary/15 text-primary rounded-full px-2 py-0.5 gap-1">
+                <TrendingUp className="h-3 w-3" />
+                <span className="text-[13px] leading-[18px] font-semibold">{formatPercent(changePercent)}</span>
               </div>
             )}
-            <span className="text-[14px] leading-[20px] text-text-muted">All time</span>
+            <span className="text-[13px] leading-[18px] text-text-muted">All time</span>
           </div>
         </div>
       </div>
 
-      {/* Dashboard Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Credit Readiness Card (Bento span 4) */}
-        <div className="lg:col-span-4 glass-panel rounded-xl p-6 flex flex-col relative group">
-          <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-xl pointer-events-none" />
-          <div className="flex justify-between items-center mb-6">
-            <h4 className="text-[12px] font-semibold uppercase tracking-[0.05em] text-text-muted">Credit Readiness Index</h4>
-            <Info className="h-4 w-4 text-text-muted" />
+      {/* Bento Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        {/* Credit Readiness */}
+        <div className="lg:col-span-4 glass-panel rounded-xl p-5 flex flex-col relative group">
+          <div className="absolute inset-0 bg-gradient-to-b from-primary/[0.04] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-xl pointer-events-none" />
+          <div className="flex justify-between items-center mb-4">
+            <h4 className="text-[10px] font-semibold uppercase tracking-[0.1em] text-text-muted">Credit Readiness</h4>
+            <Info className="h-3.5 w-3.5 text-text-muted/50" />
           </div>
-          <div className="flex-1 flex flex-col items-center justify-center relative my-4">
+          <div className="flex-1 flex flex-col items-center justify-center relative my-2">
             {readiness.isLoading ? (
-              <Skeleton className="w-40 h-40 rounded-full" />
+              <Skeleton className="w-36 h-36 rounded-full" />
             ) : (
-              <div className="relative w-40 h-40 flex items-center justify-center">
+              <div className="relative w-36 h-36 flex items-center justify-center">
                 <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-                  <circle cx="50" cy="50" fill="none" r="45" stroke="#334155" strokeDasharray="283" strokeDashoffset="0" strokeWidth="8" />
+                  <circle cx="50" cy="50" fill="none" r="45" className="stroke-surface-container-high" strokeDasharray="283" strokeDashoffset="0" strokeWidth="7" />
                   <circle
                     className="transition-all duration-1000 ease-out"
-                    cx="50" cy="50" fill="none" r="45" stroke="#0D9488"
-                    strokeDasharray="283" strokeDashoffset={dashOffset} strokeLinecap="round" strokeWidth="8"
+                    cx="50" cy="50" fill="none" r="45" stroke="var(--primary)"
+                    strokeDasharray="283" strokeDashoffset={dashOffset} strokeLinecap="round" strokeWidth="7"
                   />
                 </svg>
                 <div className="absolute flex flex-col items-center justify-center text-center">
-                  <span className="text-[48px] leading-[56px] font-bold font-[family-name:var(--font-jetbrains-mono)] text-white leading-none">{score}</span>
-                  <span className="text-[14px] leading-[20px] text-text-muted mt-1">/100</span>
+                  <span className="text-[40px] leading-[48px] font-bold font-[family-name:var(--font-jetbrains-mono)] text-text-primary leading-none">{score}</span>
+                  <span className="text-[12px] leading-[16px] text-text-muted mt-0.5">/100</span>
                 </div>
               </div>
             )}
-            <div className="mt-4 px-3 py-1 bg-primary/10 text-primary border border-primary/20 rounded-full text-[14px] leading-[20px]">
-              {scoreStatus} Status
+            <div className="mt-3 px-2.5 py-0.5 bg-primary/10 text-primary border border-primary/20 rounded-full text-[12px] leading-[16px] font-medium">
+              {scoreStatus}
             </div>
           </div>
-          <Link href={`/${locale}/readiness`} className="w-full mt-auto bg-surface-container-high border border-border-subtle text-white font-medium py-3 rounded-lg hover:bg-surface-bright transition-colors flex items-center justify-center gap-2 text-sm">
+          <Link href={`/${locale}/readiness`} className="w-full mt-3 bg-surface-container-high/60 border border-border-subtle text-text-primary font-medium py-2.5 rounded-lg hover:bg-surface-container-high transition-colors flex items-center justify-center gap-2 text-[13px]">
             View Analysis
-            <ArrowRight className="h-4 w-4" />
+            <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         </div>
 
-        {/* Recent Activity List (Bento span 5) */}
-        <div className="lg:col-span-5 glass-panel rounded-xl p-6 flex flex-col">
-          <div className="flex justify-between items-center mb-6">
-            <h4 className="text-[12px] font-semibold uppercase tracking-[0.05em] text-text-muted">Recent Activity</h4>
-            <Link href={`/${locale}/expenses`} className="text-primary text-[14px] leading-[20px] hover:underline">View All</Link>
+        {/* Recent Activity */}
+        <div className="lg:col-span-5 glass-panel rounded-xl p-5 flex flex-col">
+          <div className="flex justify-between items-center mb-4">
+            <h4 className="text-[10px] font-semibold uppercase tracking-[0.1em] text-text-muted">Recent Activity</h4>
+            <Link href={`/${locale}/expenses`} className="text-primary text-[12px] font-medium hover:underline">View All</Link>
           </div>
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-3">
             {trends.isLoading ? (
-              <div className="space-y-4">
-                {[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 w-full rounded-xl" />)}
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => <Skeleton key={i} className="h-14 w-full rounded-lg" />)}
               </div>
             ) : trendData.length > 0 ? (
               trendData.slice(0, 3).map((item, idx) => {
                 const isIncome = item.income > item.expenses;
                 return (
-                  <div key={idx} className="flex items-center gap-4 p-3 rounded-lg hover:bg-surface-container-high transition-colors group cursor-pointer border border-transparent hover:border-border-subtle">
-                    <div className={`w-10 h-10 rounded-full bg-surface-container flex items-center justify-center transition-colors ${isIncome ? "text-primary group-hover:bg-primary/20" : "text-text-muted group-hover:text-white"}`}>
-                      {isIncome ? <TrendingUp className="h-5 w-5" /> : <Receipt className="h-5 w-5" />}
+                  <div key={idx} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-surface-container-high/60 transition-colors group cursor-pointer border border-transparent hover:border-border-subtle">
+                    <div className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${isIncome ? "bg-primary/10 text-primary group-hover:bg-primary/20" : "bg-surface-container-high text-text-muted group-hover:text-foreground"}`}>
+                      {isIncome ? <TrendingUp className="h-4 w-4" /> : <Receipt className="h-4 w-4" />}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h5 className="text-[16px] leading-[24px] font-medium text-white truncate">{isIncome ? "Income" : "Expense"} — {item.period}</h5>
-                      <p className="text-[14px] leading-[20px] text-text-muted">{isIncome ? "Income received" : "Expenses tracked"}</p>
+                      <h5 className="text-[14px] leading-[20px] font-medium text-text-primary truncate">{isIncome ? "Income" : "Expense"} — {item.period}</h5>
+                      <p className="text-[12px] leading-[16px] text-text-muted">{isIncome ? "Received" : "Tracked"}</p>
                     </div>
-                    <div className="text-right">
-                      <p className={`text-[16px] leading-[24px] font-medium font-[family-name:var(--font-jetbrains-mono)] ${isIncome ? "text-primary" : "text-white"}`}>
+                    <div className="text-right shrink-0">
+                      <p className={`text-[14px] leading-[20px] font-medium font-[family-name:var(--font-jetbrains-mono)] ${isIncome ? "text-primary" : "text-text-primary"}`}>
                         {isIncome ? "+" : "-"}{formatCurrency(isIncome ? item.income : item.expenses)}
                       </p>
-                      <p className="text-[14px] leading-[20px] text-text-muted">{item.period}</p>
                     </div>
                   </div>
                 );
               })
             ) : (
-              <div className="flex flex-col items-center justify-center py-8 text-center">
-                <Receipt className="mb-2 h-8 w-8 text-text-muted/50" />
-                <p className="text-sm text-text-muted">No recent activity yet.</p>
+              <div className="flex flex-col items-center justify-center py-6 text-center">
+                <Receipt className="mb-2 h-7 w-7 text-text-muted/40" />
+                <p className="text-[13px] text-text-muted">No recent activity yet.</p>
               </div>
             )}
           </div>
         </div>
 
-        {/* Quick Actions (Bento span 3) */}
-        <div className="lg:col-span-3 flex flex-col gap-4">
-          <h4 className="text-[12px] font-semibold uppercase tracking-[0.05em] text-text-muted mb-2">Quick Actions</h4>
+        {/* Quick Actions */}
+        <div className="lg:col-span-3 flex flex-col gap-3">
+          <h4 className="text-[10px] font-semibold uppercase tracking-[0.1em] text-text-muted">Quick Actions</h4>
           {quickActions.map((action) => (
             <Link
               key={action.label}
               href={action.href}
-              className="w-full glass-panel border border-border-subtle p-4 rounded-xl flex items-center gap-4 hover:border-primary/50 hover:bg-surface-container transition-all group text-left"
+              className="w-full glass-panel p-3.5 rounded-xl flex items-center gap-3 border border-border-subtle hover:border-primary/40 hover:bg-surface-container-high/40 transition-all group text-left"
             >
-              <div className="w-10 h-10 rounded-full bg-surface-container-low flex items-center justify-center text-white group-hover:bg-primary group-hover:text-background-page transition-colors">
-                <action.icon className="h-5 w-5" />
+              <div className="w-9 h-9 rounded-lg bg-surface-container-high flex items-center justify-center text-text-muted group-hover:bg-primary group-hover:text-on-primary-container transition-colors shrink-0">
+                <action.icon className="h-4 w-4" />
               </div>
-              <div>
-                <div className="text-[16px] leading-[24px] font-medium text-white">{action.label}</div>
-                <div className="text-[14px] leading-[20px] text-text-muted">{action.desc}</div>
+              <div className="min-w-0">
+                <div className="text-[13px] leading-[18px] font-medium text-text-primary">{action.label}</div>
+                <div className="text-[11px] leading-[14px] text-text-muted truncate">{action.desc}</div>
               </div>
             </Link>
           ))}
@@ -194,11 +188,11 @@ export default function DashboardPage() {
       </div>
 
       {/* Charts Row */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-5 lg:grid-cols-2">
         <Card>
-          <CardHeader className="pb-3">
+          <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-[12px] font-semibold uppercase tracking-[0.05em] text-text-muted">{t("incomeVsExpenses")}</CardTitle>
+              <CardTitle className="text-[10px] font-semibold uppercase tracking-[0.1em] text-text-muted">{t("incomeVsExpenses")}</CardTitle>
               <Badge variant="outline">6 months</Badge>
             </div>
           </CardHeader>
@@ -207,46 +201,46 @@ export default function DashboardPage() {
               <PageError message="Unable to load spending trends." onRetry={() => trends.refetch()} />
             ) : trendData.length ? (
               <ResponsiveBarChart data={trendData} xKey="period" valueFormatter={(v) => formatCurrency(v)} bars={[
-                { key: "income", name: "Income", color: "#6bd8cb" },
+                { key: "income", name: "Income", color: "#5fd4c6" },
                 { key: "expenses", name: "Expenses", color: "#818cf8" },
               ]} />
             ) : (
-              <div className="flex h-64 items-center justify-center text-sm text-text-muted">
-                <p>No trend data yet. Add transactions to see trends.</p>
+              <div className="flex h-56 items-center justify-center text-[13px] text-text-muted">
+                <p>No trend data yet.</p>
               </div>
             )}
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="pb-3">
+          <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-[12px] font-semibold uppercase tracking-[0.05em] text-text-muted">{t("budgetStatus")}</CardTitle>
-              <Link href={`/${locale}/budget`} className="flex items-center gap-1 text-xs text-primary hover:underline">
+              <CardTitle className="text-[10px] font-semibold uppercase tracking-[0.1em] text-text-muted">{t("budgetStatus")}</CardTitle>
+              <Link href={`/${locale}/budget`} className="flex items-center gap-1 text-[12px] text-primary hover:underline">
                 View all <ArrowRight className="h-3 w-3" />
               </Link>
             </div>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3">
             {budget.isLoading ? (
-              <div className="space-y-3">
-                {[1, 2, 3].map((i) => <Skeleton key={i} className="h-10 w-full" />)}
+              <div className="space-y-2">
+                {[1, 2, 3].map((i) => <Skeleton key={i} className="h-9 w-full" />)}
               </div>
             ) : budget.isError ? (
               <PageError message="Unable to load budget status." onRetry={() => budget.refetch()} />
             ) : budget.data?.length ? (
-              budget.data.slice(0, 5).map((b) => {
+              budget.data.slice(0, 4).map((b) => {
                 const pctUsed = toNumber(b.percent_used);
                 const over = pctUsed > 100;
                 const nearing = pctUsed > 80 && !over;
                 return (
-                  <div key={b.id} className="space-y-1.5">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="capitalize font-medium">{b.category}</span>
+                  <div key={b.id} className="space-y-1">
+                    <div className="flex items-center justify-between text-[13px]">
+                      <span className="capitalize font-medium text-text-primary">{b.category}</span>
                       <div className="flex items-center gap-2">
-                        <span className="text-text-muted">{formatCurrency(toNumber(b.spent))} / {formatCurrency(toNumber(b.limit_amount))}</span>
+                        <span className="text-text-muted text-[12px]">{formatCurrency(toNumber(b.spent))} / {formatCurrency(toNumber(b.limit_amount))}</span>
                         {over && <Badge variant="destructive">Over</Badge>}
-                        {nearing && <Badge variant="secondary">Near limit</Badge>}
+                        {nearing && <Badge variant="secondary">Near</Badge>}
                       </div>
                     </div>
                     <div className="h-1.5 rounded-full bg-surface-container-high overflow-hidden">
@@ -259,10 +253,10 @@ export default function DashboardPage() {
                 );
               })
             ) : (
-              <div className="flex flex-col items-center justify-center py-8 text-center">
-                <Target className="mb-2 h-8 w-8 text-text-muted/50" />
-                <p className="text-sm text-text-muted">{t("noBudgets")}</p>
-                <Link href={`/${locale}/budget`} className="mt-2 text-xs text-primary hover:underline">Create a budget</Link>
+              <div className="flex flex-col items-center justify-center py-6 text-center">
+                <Target className="mb-2 h-7 w-7 text-text-muted/40" />
+                <p className="text-[13px] text-text-muted">{t("noBudgets")}</p>
+                <Link href={`/${locale}/budget`} className="mt-1.5 text-[12px] text-primary hover:underline">Create a budget</Link>
               </div>
             )}
           </CardContent>
@@ -270,11 +264,11 @@ export default function DashboardPage() {
       </div>
 
       {/* Insights Row */}
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-5 lg:grid-cols-3">
         <Card>
-          <CardHeader className="pb-3">
+          <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-[12px] font-semibold uppercase tracking-[0.05em] text-text-muted">{t("forecast")}</CardTitle>
+              <CardTitle className="text-[10px] font-semibold uppercase tracking-[0.1em] text-text-muted">{t("forecast")}</CardTitle>
               {forecast.data?.forecast_quality && (
                 <Badge variant={forecast.data.forecast_quality === "good" ? "success" : forecast.data.forecast_quality === "moderate" ? "secondary" : "outline"}>
                   {forecast.data.forecast_quality}
@@ -284,21 +278,21 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             {forecast.isLoading ? (
-              <div className="space-y-2"><Skeleton className="h-16 w-full" /><Skeleton className="h-8 w-full" /></div>
+              <div className="space-y-2"><Skeleton className="h-14 w-full" /><Skeleton className="h-6 w-full" /></div>
             ) : forecast.isError ? (
               <PageError message="Forecast temporarily unavailable." onRetry={() => forecast.refetch()} />
             ) : isInsufficientData ? (
               <div className="space-y-2">
                 {(forecast.data?.available_months ?? 0) === 0 ? (
                   <>
-                    <p className="text-sm font-medium">{t("forecastNoTransactions")}</p>
-                    <p className="text-xs text-text-muted">{t("forecastNoTransactionsDesc")}</p>
+                    <p className="text-[13px] font-medium text-text-primary">{t("forecastNoTransactions")}</p>
+                    <p className="text-[12px] text-text-muted">{t("forecastNoTransactionsDesc")}</p>
                   </>
                 ) : (
                   <>
-                    <p className="text-sm font-medium">{t("forecastInsufficient")}</p>
-                    <p className="text-xs text-text-muted">{t("forecastInsufficientDesc")}</p>
-                    <p className="text-xs text-text-muted">
+                    <p className="text-[13px] font-medium text-text-primary">{t("forecastInsufficient")}</p>
+                    <p className="text-[12px] text-text-muted">{t("forecastInsufficientDesc")}</p>
+                    <p className="text-[12px] text-text-muted">
                       {t("forecastAvailable", { count: forecast.data?.available_months ?? 0 })}
                       {" · "}
                       {t("forecastRequired", { count: forecast.data?.required_months ?? 3 })}
@@ -307,107 +301,107 @@ export default function DashboardPage() {
                 )}
               </div>
             ) : forecast.data?.expense_forecast || forecast.data?.income_forecast ? (
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 {forecast.data.expense_forecast && (
-                  <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center justify-between text-[13px]">
                     <span className="text-text-muted">{t("expectedExpenses")}</span>
-                    <span className="font-medium font-[family-name:var(--font-jetbrains-mono)]">{formatCurrency(forecast.data.expense_forecast.predicted)}</span>
+                    <span className="font-medium font-[family-name:var(--font-jetbrains-mono)] text-text-primary">{formatCurrency(forecast.data.expense_forecast.predicted)}</span>
                   </div>
                 )}
                 {forecast.data.income_forecast && (
-                  <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center justify-between text-[13px]">
                     <span className="text-text-muted">{t("expectedIncome")}</span>
-                    <span className="font-medium font-[family-name:var(--font-jetbrains-mono)]">{formatCurrency(forecast.data.income_forecast.predicted)}</span>
+                    <span className="font-medium font-[family-name:var(--font-jetbrains-mono)] text-text-primary">{formatCurrency(forecast.data.income_forecast.predicted)}</span>
                   </div>
                 )}
                 {forecast.data.expense_forecast && forecast.data.income_forecast && (
-                  <div className="flex items-center justify-between border-t border-border-subtle pt-2 text-sm">
+                  <div className="flex items-center justify-between border-t border-border-subtle pt-2 text-[13px]">
                     <span className="text-text-muted">{t("expectedSurplus")}</span>
-                    <span className={`font-medium font-[family-name:var(--font-jetbrains-mono)] ${(forecast.data.income_forecast.predicted - forecast.data.expense_forecast.predicted) < 0 ? "text-destructive" : "text-income"}`}>
+                    <span className={`font-medium font-[family-name:var(--font-jetbrains-mono)] ${(forecast.data.income_forecast.predicted - forecast.data.expense_forecast.predicted) < 0 ? "text-destructive" : "text-primary"}`}>
                       {formatCurrency(forecast.data.income_forecast.predicted - forecast.data.expense_forecast.predicted)}
                     </span>
                   </div>
                 )}
                 {forecast.data.explanation?.slice(0, 1).map((e, i) => (
-                  <p key={i} className="text-[11px] text-text-muted">{e.description}</p>
+                  <p key={i} className="text-[11px] text-text-muted leading-relaxed">{e.description}</p>
                 ))}
-                <Link href={`/${locale}/cashflow`} className="flex items-center gap-1 text-xs font-medium text-primary hover:underline">
+                <Link href={`/${locale}/cashflow`} className="flex items-center gap-1 text-[12px] font-medium text-primary hover:underline">
                   View forecast <ArrowRight className="h-3 w-3" />
                 </Link>
               </div>
             ) : forecastData.length ? (
               <div className="space-y-2">
                 {forecast.data?.forecasts?.slice(0, 3).map((f, i) => (
-                  <div key={i} className="flex items-center justify-between text-sm">
+                  <div key={i} className="flex items-center justify-between text-[13px]">
                     <span className="text-text-muted">{f.forecast_month}</span>
-                    <span className="font-medium font-[family-name:var(--font-jetbrains-mono)]">{formatCurrency(f.expected_cashflow)}</span>
+                    <span className="font-medium font-[family-name:var(--font-jetbrains-mono)] text-text-primary">{formatCurrency(f.expected_cashflow)}</span>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-text-muted">{tc("noData")}</p>
+              <p className="text-[13px] text-text-muted">{tc("noData")}</p>
             )}
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-[12px] font-semibold uppercase tracking-[0.05em] text-text-muted">{t("insights")}</CardTitle>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-[10px] font-semibold uppercase tracking-[0.1em] text-text-muted">{t("insights")}</CardTitle>
           </CardHeader>
           <CardContent>
             {patterns.isLoading ? (
-              <div className="space-y-2"><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-full" /></div>
+              <div className="space-y-2"><Skeleton className="h-7 w-full" /><Skeleton className="h-7 w-full" /><Skeleton className="h-7 w-full" /></div>
             ) : patterns.isError ? (
               <PageError message={patterns.error instanceof Error ? patterns.error.message : tc("error")} onRetry={() => patterns.refetch()} />
             ) : (patterns.data as { patterns?: Array<{ pattern: string; description: string }> } | undefined)?.patterns?.length ? (
               <div className="space-y-2">
                 {(patterns.data as { patterns: Array<{ pattern: string; description: string }> }).patterns.slice(0, 4).map((p, i) => (
-                  <div key={i} className="flex items-start gap-2 rounded-lg bg-surface-container px-3 py-2 border border-border-subtle">
-                    <Lightbulb className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning" />
-                    <p className="text-xs text-text-muted leading-relaxed">{p.description}</p>
+                  <div key={i} className="flex items-start gap-2 rounded-lg bg-surface-container/60 px-3 py-2 border border-border-subtle">
+                    <Lightbulb className="mt-0.5 h-3 w-3 shrink-0 text-warning" />
+                    <p className="text-[12px] text-text-muted leading-relaxed">{p.description}</p>
                   </div>
                 ))}
               </div>
             ) : monthly.data?.insights?.length ? (
               <div className="space-y-2">
                 {monthly.data.insights.slice(0, 4).map((ins, i) => (
-                  <div key={i} className="flex items-start gap-2 rounded-lg bg-surface-container px-3 py-2 border border-border-subtle">
-                    <Lightbulb className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning" />
-                    <p className="text-xs text-text-muted leading-relaxed">{ins}</p>
+                  <div key={i} className="flex items-start gap-2 rounded-lg bg-surface-container/60 px-3 py-2 border border-border-subtle">
+                    <Lightbulb className="mt-0.5 h-3 w-3 shrink-0 text-warning" />
+                    <p className="text-[12px] text-text-muted leading-relaxed">{ins}</p>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-text-muted py-4 text-center">No insights yet. Add transactions to see patterns.</p>
+              <p className="text-[13px] text-text-muted py-4 text-center">No insights yet.</p>
             )}
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="pb-3">
+          <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-[12px] font-semibold uppercase tracking-[0.05em] text-text-muted">Recommendations</CardTitle>
-              <Link href={`/${locale}/recommendations`} className="flex items-center gap-1 text-xs text-primary hover:underline">
+              <CardTitle className="text-[10px] font-semibold uppercase tracking-[0.1em] text-text-muted">Recommendations</CardTitle>
+              <Link href={`/${locale}/recommendations`} className="flex items-center gap-1 text-[12px] text-primary hover:underline">
                 View all <ArrowRight className="h-3 w-3" />
               </Link>
             </div>
           </CardHeader>
           <CardContent>
             {recommendations.isLoading ? (
-              <div className="space-y-2"><Skeleton className="h-16 w-full" /><Skeleton className="h-16 w-full" /></div>
+              <div className="space-y-2"><Skeleton className="h-14 w-full" /><Skeleton className="h-14 w-full" /></div>
             ) : recommendations.isError ? (
               <PageError message={recommendations.error instanceof Error ? recommendations.error.message : tc("error")} onRetry={() => recommendations.refetch()} />
             ) : recommendations.data?.recommendations?.length ? (
               <div className="space-y-2">
                 {recommendations.data.recommendations.slice(0, 3).map((r, i) => (
-                  <div key={i} className="rounded-lg border border-border-subtle p-3 transition-colors hover:bg-surface-container-high">
-                    <p className="text-sm font-medium leading-snug">{r.title}</p>
-                    <p className="mt-1 text-xs text-text-muted line-clamp-2">{r.reason}</p>
+                  <div key={i} className="rounded-lg border border-border-subtle p-3 transition-colors hover:bg-surface-container-high/60">
+                    <p className="text-[13px] font-medium leading-snug text-text-primary">{r.title}</p>
+                    <p className="mt-0.5 text-[12px] text-text-muted line-clamp-2">{r.reason}</p>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-text-muted py-4 text-center">No recommendations yet.</p>
+              <p className="text-[13px] text-text-muted py-4 text-center">No recommendations yet.</p>
             )}
           </CardContent>
         </Card>
