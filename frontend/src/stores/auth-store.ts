@@ -1,7 +1,7 @@
 "use client";
 
 import { create } from "zustand";
-import { persist, type StateStorage } from "zustand/middleware";
+import { createJSONStorage, persist } from "zustand/middleware";
 import { api } from "@/lib/api";
 import { clearQueryCache } from "@/lib/query-client";
 import type { AuthResponse, UserSummary } from "@/types";
@@ -15,7 +15,12 @@ export function setRememberMe(value: boolean) {
   _rememberMe = value;
 }
 
-function createConditionalStorage(): StateStorage {
+interface PersistedAuthState {
+  user: UserSummary | null;
+  isAuthenticated: boolean;
+}
+
+function createConditionalStorage() {
   return {
     getItem: (name: string) => {
       if (typeof window === "undefined") return null;
@@ -63,7 +68,7 @@ interface AuthState {
 }
 
 export const useAuthStore = create<AuthState>()(
-  persist(
+  persist<AuthState, [], [], PersistedAuthState>(
     (set) => ({
       user: null,
       isAuthenticated: false,
@@ -137,11 +142,14 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: STORAGE_KEY,
-      storage: createConditionalStorage(),
-      partialize: (state) => ({ user: state.user, isAuthenticated: state.isAuthenticated }),
+      storage: createJSONStorage(() => createConditionalStorage()),
+      partialize: (state): PersistedAuthState => ({
+        user: state.user,
+        isAuthenticated: state.isAuthenticated,
+      }),
       onRehydrateStorage: () => (state) => {
         if (state?.isAuthenticated) {
-          const stored = api.getStoredRememberMe?.() ?? false;
+          const stored = api.getStoredRememberMe();
           setRememberMe(stored);
           api.setRememberMe(stored);
         }
