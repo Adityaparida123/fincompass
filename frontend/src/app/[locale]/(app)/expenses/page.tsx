@@ -102,7 +102,12 @@ export default function ExpensesPage() {
               <div><Label>{t("date")}</Label><Input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} required /></div>
               <div><Label>{t("description")}</Label><Input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} required /></div>
               <div><Label>{t("amount")}</Label><Input type="number" min="0" step="0.01" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} required /></div>
-              <div><Label>{t("category")}</Label><Input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} required /></div>
+              <div><Label>{t("category")}</Label>
+                <select className="flex h-10 w-full rounded-lg border border-input bg-background px-3 text-sm" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} required>
+                  <option value="" disabled>{t("selectCategory")}</option>
+                  {CATEGORIES.map((cat) => <option key={cat} value={cat}>{cat.replace(/_/g, " ")}</option>)}
+                </select>
+              </div>
               <div><Label>{t("type")}</Label>
                 <select className="flex h-10 w-full rounded-lg border border-input bg-background px-3 text-sm" value={form.transaction_type} onChange={(e) => setForm({ ...form, transaction_type: e.target.value })}>
                   <option value="expense">{t("expense")}</option><option value="income">{t("income")}</option>

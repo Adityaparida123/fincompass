@@ -138,6 +138,7 @@
     "description": "विवरण",
     "amount": "राशि",
     "category": "श्रेणी",
+    "selectCategory": "श्रेणी चुनें",
     "date": "तारीख",
     "type": "प्रकार",
     "noTransactions": "अभी कोई लेनदेन नहीं।",

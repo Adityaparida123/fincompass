@@ -146,6 +146,7 @@
     "description": "Description",
     "amount": "Amount",
     "category": "Category",
+    "selectCategory": "Select category",
     "date": "Date",
     "type": "Type",
     "noTransactions": "No transactions yet.",
