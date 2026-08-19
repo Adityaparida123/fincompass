@@ -128,6 +128,14 @@ class ApiClient {
     this.persistTokens();
   }
 
+  async verifySession(): Promise<boolean> {
+    this.restoreTokens();
+    if (this.isTokenUsable(this.accessToken)) return true;
+    if (!this.refreshToken) return false;
+    const fresh = await this.refreshAccessToken();
+    return fresh !== null;
+  }
+
   private async refreshAccessToken(): Promise<string | null> {
     if (!this.refreshToken && typeof window === "undefined") return null;
     if (this.refreshPromise) return this.refreshPromise;

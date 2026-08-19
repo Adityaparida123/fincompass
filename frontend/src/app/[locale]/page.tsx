@@ -5,10 +5,11 @@ import { useTranslations, useLocale } from "next-intl";
 import { motion } from "framer-motion";
 import {
   Compass, Shield, TrendingUp, PiggyBank, Wallet, Gauge,
-  HandCoins, Landmark, MessageCircle, ArrowRight,
+  HandCoins, Landmark, MessageCircle, ArrowRight, LayoutDashboard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuthStore } from "@/stores/auth-store";
 
 const features = [
   { icon: TrendingUp, title: "Cash-flow analysis" },
@@ -24,6 +25,7 @@ const features = [
 export default function LandingPage() {
   const t = useTranslations("landing");
   const locale = useLocale();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   return (
     <div className="min-h-screen bg-background">
@@ -34,12 +36,23 @@ export default function LandingPage() {
             <span className="text-xl font-semibold">FinCompass</span>
           </div>
           <div className="flex gap-2">
-            <Link href={`/${locale}/login`}>
-              <Button variant="ghost">{t("login")}</Button>
-            </Link>
-            <Link href={`/${locale}/register`}>
-              <Button>{t("getStarted")}</Button>
-            </Link>
+            {isAuthenticated ? (
+              <Link href={`/${locale}/dashboard`}>
+                <Button variant="ghost">
+                  <LayoutDashboard className="mr-1.5 h-4 w-4" />
+                  {t("dashboard")}
+                </Button>
+              </Link>
+            ) : (
+              <>
+                <Link href={`/${locale}/login`}>
+                  <Button variant="ghost">{t("login")}</Button>
+                </Link>
+                <Link href={`/${locale}/register`}>
+                  <Button>{t("getStarted")}</Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -58,16 +71,27 @@ export default function LandingPage() {
               {t("heroSubtitle")}
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
-              <Link href={`/${locale}/register`}>
-                <Button size="lg" className="w-full sm:w-auto">
-                  {t("getStarted")} <ArrowRight className="h-4 w-4" />
-                </Button>
-              </Link>
-              <Link href={`/${locale}/login`}>
-                <Button size="lg" variant="outline" className="w-full sm:w-auto">
-                  {t("login")}
-                </Button>
-              </Link>
+              {isAuthenticated ? (
+                <Link href={`/${locale}/dashboard`}>
+                  <Button size="lg" className="w-full sm:w-auto">
+                    <LayoutDashboard className="mr-1.5 h-4 w-4" />
+                    {t("dashboard")} <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </Link>
+              ) : (
+                <>
+                  <Link href={`/${locale}/register`}>
+                    <Button size="lg" className="w-full sm:w-auto">
+                      {t("getStarted")} <ArrowRight className="h-4 w-4" />
+                    </Button>
+                  </Link>
+                  <Link href={`/${locale}/login`}>
+                    <Button size="lg" variant="outline" className="w-full sm:w-auto">
+                      {t("login")}
+                    </Button>
+                  </Link>
+                </>
+              )}
             </div>
           </motion.div>
         </section>
@@ -118,9 +142,18 @@ export default function LandingPage() {
         <section className="py-16 sm:py-20">
           <div className="mx-auto max-w-3xl px-4 text-center sm:px-6">
             <h2 className="text-2xl font-semibold sm:text-3xl">{t("cta")}</h2>
-            <Link href={`/${locale}/register`} className="mt-6 inline-block">
-              <Button size="lg">{t("getStarted")}</Button>
-            </Link>
+            {isAuthenticated ? (
+              <Link href={`/${locale}/dashboard`} className="mt-6 inline-block">
+                <Button size="lg">
+                  <LayoutDashboard className="mr-1.5 h-4 w-4" />
+                  {t("dashboard")}
+                </Button>
+              </Link>
+            ) : (
+              <Link href={`/${locale}/register`} className="mt-6 inline-block">
+                <Button size="lg">{t("getStarted")}</Button>
+              </Link>
+            )}
           </div>
         </section>
       </main>

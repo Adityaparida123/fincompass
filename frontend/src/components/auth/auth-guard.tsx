@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale } from "next-intl";
 import { useAuthStore } from "@/stores/auth-store";
 import { Skeleton } from "@/components/ui/input";
+import { api } from "@/lib/api";
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isHydrated } = useAuthStore();
@@ -36,14 +37,24 @@ export function GuestGuard({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isHydrated } = useAuthStore();
   const router = useRouter();
   const locale = useLocale();
+  const [verifying, setVerifying] = useState(false);
+  const verifyingRef = useRef(false);
 
   useEffect(() => {
-    if (isHydrated && isAuthenticated) {
-      router.replace(`/${locale}/dashboard`);
-    }
+    if (!isHydrated || !isAuthenticated || verifyingRef.current) return;
+    verifyingRef.current = true;
+    setVerifying(true);
+    api.verifySession().then((valid) => {
+      if (valid) {
+        router.replace(`/${locale}/dashboard`);
+      } else {
+        useAuthStore.getState().clearAuth();
+      }
+      setVerifying(false);
+    });
   }, [isHydrated, isAuthenticated, router, locale]);
 
-  if (!isHydrated) return null;
+  if (!isHydrated || verifying) return null;
   if (isAuthenticated) return null;
   return <>{children}</>;
 }
