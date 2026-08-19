@@ -30,20 +30,17 @@ def issue_token_pair(user_id: int, *, remember_me: bool, family_id: str | None =
 
 
 def set_refresh_cookie(response: Response, refresh_token: str, *, remember_me: bool) -> None:
-    max_age = (
-        settings.REFRESH_TOKEN_EXPIRE_DAYS_REMEMBER * 86400
-        if remember_me
-        else settings.REFRESH_TOKEN_EXPIRE_DAYS * 86400
-    )
-    response.set_cookie(
-        key=REFRESH_COOKIE_NAME,
-        value=refresh_token,
-        max_age=max_age,
-        httponly=True,
-        secure=settings.cookie_secure,
-        samesite=settings.cookie_samesite,
-        path="/api/v1/auth",
-    )
+    cookie_kwargs: dict = {
+        "key": REFRESH_COOKIE_NAME,
+        "value": refresh_token,
+        "httponly": True,
+        "secure": settings.cookie_secure,
+        "samesite": settings.cookie_samesite,
+        "path": "/api/v1/auth",
+    }
+    if remember_me:
+        cookie_kwargs["max_age"] = settings.REFRESH_TOKEN_EXPIRE_DAYS_REMEMBER * 86400
+    response.set_cookie(**cookie_kwargs)
 
 
 def clear_refresh_cookie(response: Response) -> None:

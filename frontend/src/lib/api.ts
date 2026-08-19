@@ -12,6 +12,7 @@ type RequestOptions = RequestInit & {
 };
 
 const TOKEN_STORAGE_KEY = "fincompass-tokens";
+const TOKEN_STORAGE_KEY_SESSION = "fincompass-tokens-session";
 
 // Refresh the access token before it expires instead of waiting for a 401,
 // so expired sessions never leak raw 401 responses into the console.
@@ -40,6 +41,7 @@ class ApiClient {
   private tokensRestored = false;
   private onAuthFailure: AuthFailureHandler | null = null;
   private lastRefreshFailed = false;
+  private rememberMe = false;
 
   setAuthFailureHandler(handler: AuthFailureHandler) {
     this.onAuthFailure = handler;
@@ -48,6 +50,30 @@ class ApiClient {
   private notifyAuthFailure() {
     this.clearTokens();
     this.onAuthFailure?.();
+  }
+
+  setRememberMe(value: boolean) {
+    this.rememberMe = value;
+  }
+
+  getStoredRememberMe(): boolean {
+    if (typeof window === "undefined") return false;
+    try {
+      const raw =
+        window.sessionStorage.getItem(TOKEN_STORAGE_KEY_SESSION) ??
+        window.localStorage.getItem(TOKEN_STORAGE_KEY);
+      if (!raw) return false;
+      const parsed = JSON.parse(raw) as { refreshToken?: string };
+      if (!parsed.refreshToken) return false;
+      const payload = parsed.refreshToken.split(".")[1];
+      if (!payload) return false;
+      const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+      const padded = normalized + "=".repeat((4 - (normalized.length % 4)) % 4);
+      const data = JSON.parse(atob(padded)) as { remember_me?: boolean };
+      return data.remember_me === true;
+    } catch {
+      return false;
+    }
   }
 
   private static decodeExp(token: string): number | null {
@@ -75,6 +101,16 @@ class ApiClient {
     if (this.tokensRestored || typeof window === "undefined") return;
     this.tokensRestored = true;
     try {
+      const sessionRaw = window.sessionStorage.getItem(TOKEN_STORAGE_KEY_SESSION);
+      if (sessionRaw) {
+        const parsed = JSON.parse(sessionRaw) as {
+          accessToken?: string;
+          refreshToken?: string;
+        };
+        this.accessToken = parsed.accessToken ?? null;
+        this.refreshToken = parsed.refreshToken ?? null;
+        return;
+      }
       const raw = window.localStorage.getItem(TOKEN_STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw) as {
@@ -93,25 +129,33 @@ class ApiClient {
     if (typeof window === "undefined") return;
     try {
       if (this.accessToken && this.refreshToken) {
-        window.localStorage.setItem(
-          TOKEN_STORAGE_KEY,
-          JSON.stringify({
-            accessToken: this.accessToken,
-            refreshToken: this.refreshToken,
-          }),
-        );
+        const payload = JSON.stringify({
+          accessToken: this.accessToken,
+          refreshToken: this.refreshToken,
+        });
+        if (this.rememberMe) {
+          window.localStorage.setItem(TOKEN_STORAGE_KEY, payload);
+          window.sessionStorage.removeItem(TOKEN_STORAGE_KEY_SESSION);
+        } else {
+          window.sessionStorage.setItem(TOKEN_STORAGE_KEY_SESSION, payload);
+          window.localStorage.removeItem(TOKEN_STORAGE_KEY);
+        }
       } else {
         window.localStorage.removeItem(TOKEN_STORAGE_KEY);
+        window.sessionStorage.removeItem(TOKEN_STORAGE_KEY_SESSION);
       }
     } catch {
       // Ignore storage errors (private mode, quota).
     }
   }
 
-  setTokens(access: string | null, refresh: string | null) {
+  setTokens(access: string | null, refresh: string | null, rememberMe?: boolean) {
     this.accessToken = access;
     this.refreshToken = refresh;
     this.lastRefreshFailed = false;
+    if (typeof rememberMe === "boolean") {
+      this.rememberMe = rememberMe;
+    }
     this.persistTokens();
   }
 
@@ -128,7 +172,14 @@ class ApiClient {
     this.accessToken = null;
     this.refreshToken = null;
     this.lastRefreshFailed = false;
-    this.persistTokens();
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.removeItem(TOKEN_STORAGE_KEY);
+        window.sessionStorage.removeItem(TOKEN_STORAGE_KEY_SESSION);
+      } catch {
+        // Ignore storage errors.
+      }
+    }
   }
 
   async verifySession(): Promise<boolean> {
@@ -165,6 +216,19 @@ class ApiClient {
         this.accessToken = data.access_token;
         this.refreshToken = data.refresh_token;
         this.lastRefreshFailed = false;
+        try {
+          const payload = data.refresh_token.split(".")[1];
+          if (payload) {
+            const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+            const padded = normalized + "=".repeat((4 - (normalized.length % 4)) % 4);
+            const claims = JSON.parse(atob(padded)) as { remember_me?: boolean };
+            if (typeof claims.remember_me === "boolean") {
+              this.rememberMe = claims.remember_me;
+            }
+          }
+        } catch {
+          // Ignore decode errors; keep current rememberMe setting.
+        }
         this.persistTokens();
         return this.accessToken;
       } catch {

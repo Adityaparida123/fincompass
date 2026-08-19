@@ -341,3 +341,173 @@ async def test_refresh_returns_401_with_structured_error(client):
         assert "error" in body
         assert body["error"]["code"] == "UNAUTHORIZED"
         assert "request_id" in body["error"]
+
+
+# ---------------------------------------------------------------------------
+# Remember Me cookie behavior tests
+# ---------------------------------------------------------------------------
+
+
+async def test_refresh_cookie_has_max_age_when_remember_me_true():
+    """Remember Me checked: cookie must have Max-Age (persistent)."""
+    from fastapi import Response
+
+    response = Response()
+    set_refresh_cookie(response, refresh_token="fake-token", remember_me=True)
+
+    cookie = response.headers["set-cookie"]
+    assert "Max-Age" in cookie
+
+
+async def test_refresh_cookie_no_max_age_when_remember_me_false():
+    """Remember Me unchecked: cookie must NOT have Max-Age (session cookie)."""
+    from fastapi import Response
+
+    response = Response()
+    set_refresh_cookie(response, refresh_token="fake-token", remember_me=False)
+
+    cookie = response.headers["set-cookie"]
+    assert "Max-Age" not in cookie
+
+
+async def test_remember_me_true_login_sets_persistent_cookie(client):
+    """Login with remember_me=True sets a persistent cookie with Max-Age."""
+    await client.post(
+        "/api/v1/auth/register",
+        json={"full_name": "RM1", "email": "rm1@example.com", "password": "super-secure-pass"},
+    )
+    response = await client.post(
+        "/api/v1/auth/login",
+        json={"email": "rm1@example.com", "password": "super-secure-pass", "remember_me": True},
+    )
+    assert response.status_code == 200
+    cookie = response.headers.get("set-cookie", "")
+    assert "Max-Age" in cookie
+
+
+async def test_remember_me_false_login_sets_session_cookie(client):
+    """Login with remember_me=False sets a session cookie (no Max-Age)."""
+    await client.post(
+        "/api/v1/auth/register",
+        json={"full_name": "RM2", "email": "rm2@example.com", "password": "super-secure-pass"},
+    )
+    response = await client.post(
+        "/api/v1/auth/login",
+        json={"email": "rm2@example.com", "password": "super-secure-pass", "remember_me": False},
+    )
+    assert response.status_code == 200
+    cookie = response.headers.get("set-cookie", "")
+    assert "Max-Age" not in cookie
+
+
+async def test_refresh_preserves_remember_me_cookie_type(client):
+    """Refresh preserves the original remember_me cookie lifetime."""
+    await client.post(
+        "/api/v1/auth/register",
+        json={"full_name": "RM3", "email": "rm3@example.com", "password": "super-secure-pass"},
+    )
+    login = await client.post(
+        "/api/v1/auth/login",
+        json={"email": "rm3@example.com", "password": "super-secure-pass", "remember_me": True},
+    )
+    rt = login.json()["tokens"]["refresh_token"]
+
+    refresh_resp = await client.post("/api/v1/auth/refresh", json={"refresh_token": rt})
+    assert refresh_resp.status_code == 200
+    cookie = refresh_resp.headers.get("set-cookie", "")
+    assert "Max-Age" in cookie
+
+
+async def test_refresh_preserves_session_cookie_type(client):
+    """Refresh preserves session cookie (no Max-Age) when remember_me was false."""
+    await client.post(
+        "/api/v1/auth/register",
+        json={"full_name": "RM4", "email": "rm4@example.com", "password": "super-secure-pass"},
+    )
+    login = await client.post(
+        "/api/v1/auth/login",
+        json={"email": "rm4@example.com", "password": "super-secure-pass", "remember_me": False},
+    )
+    rt = login.json()["tokens"]["refresh_token"]
+
+    refresh_resp = await client.post("/api/v1/auth/refresh", json={"refresh_token": rt})
+    assert refresh_resp.status_code == 200
+    cookie = refresh_resp.headers.get("set-cookie", "")
+    assert "Max-Age" not in cookie
+
+
+async def test_logout_clears_refresh_cookie(client):
+    """Logout must clear the refresh cookie regardless of remember_me."""
+    await client.post(
+        "/api/v1/auth/register",
+        json={"full_name": "RM5", "email": "rm5@example.com", "password": "super-secure-pass"},
+    )
+    login = await client.post(
+        "/api/v1/auth/login",
+        json={"email": "rm5@example.com", "password": "super-secure-pass", "remember_me": True},
+    )
+    rt = login.json()["tokens"]["refresh_token"]
+
+    logout_resp = await client.post("/api/v1/auth/logout", json={"refresh_token": rt})
+    assert logout_resp.status_code in (204, 200)
+    cookie = logout_resp.headers.get("set-cookie", "")
+    assert REFRESH_COOKIE_NAME in cookie
+    assert "Max-Age=0" in cookie
+
+
+async def test_cross_user_token_isolation_after_switch(client):
+    """User A's refresh token must not work after User B logs in."""
+    reg_a = await client.post(
+        "/api/v1/auth/register",
+        json={"full_name": "UA2", "email": "ua2@example.com", "password": "super-secure-pass"},
+    )
+    rt_a = reg_a.json()["tokens"]["refresh_token"]
+
+    reg_b = await client.post(
+        "/api/v1/auth/register",
+        json={"full_name": "UB2", "email": "ub2@example.com", "password": "super-secure-pass"},
+    )
+    rt_b = reg_b.json()["tokens"]["refresh_token"]
+
+    refresh_resp = await client.post("/api/v1/auth/refresh", json={"refresh_token": rt_b})
+    assert refresh_resp.status_code == 200
+    new_at_b = refresh_resp.json()["access_token"]
+
+    me_resp = await client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {new_at_b}"})
+    assert me_resp.status_code == 200
+    assert me_resp.json()["user"]["email"] == "ub2@example.com"
+    assert me_resp.json()["user"]["id"] != reg_a.json()["user"]["id"]
+
+
+async def test_remember_me_login_token_contains_remember_me_flag(client):
+    """The refresh token from a remember_me=True login contains remember_me=True."""
+    from app.core.security import decode_token, REFRESH_TOKEN_TYPE
+
+    await client.post(
+        "/api/v1/auth/register",
+        json={"full_name": "RM6", "email": "rm6@example.com", "password": "super-secure-pass"},
+    )
+    login = await client.post(
+        "/api/v1/auth/login",
+        json={"email": "rm6@example.com", "password": "super-secure-pass", "remember_me": True},
+    )
+    rt = login.json()["tokens"]["refresh_token"]
+    payload = decode_token(rt, REFRESH_TOKEN_TYPE)
+    assert payload.get("remember_me") is True
+
+
+async def test_no_remember_me_login_token_contains_remember_me_false(client):
+    """The refresh token from a remember_me=False login contains remember_me=False."""
+    from app.core.security import decode_token, REFRESH_TOKEN_TYPE
+
+    await client.post(
+        "/api/v1/auth/register",
+        json={"full_name": "RM7", "email": "rm7@example.com", "password": "super-secure-pass"},
+    )
+    login = await client.post(
+        "/api/v1/auth/login",
+        json={"email": "rm7@example.com", "password": "super-secure-pass", "remember_me": False},
+    )
+    rt = login.json()["tokens"]["refresh_token"]
+    payload = decode_token(rt, REFRESH_TOKEN_TYPE)
+    assert payload.get("remember_me") is False
