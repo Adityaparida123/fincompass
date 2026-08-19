@@ -49,7 +49,7 @@ export default function ExpensesPage() {
   }));
 
   const categoryMap = new Map(
-    (categories.data ?? []).map((c) => [c.category, { total: toNumber(c.total), percent: c.share_percent, count: c.count }]),
+    (categories.data ?? []).map((c) => [c.category, { total: toNumber(c.total), percent: toNumber(c.share_percent), count: c.count }]),
   );
   const allCategories = CATEGORIES.map((cat) => ({
     category: cat,
