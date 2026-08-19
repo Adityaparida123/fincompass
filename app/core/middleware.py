@@ -17,21 +17,29 @@ from app.core.logging import get_logger
 logger = get_logger(__name__)
 
 _request_id_var: contextvars.ContextVar[str] = contextvars.ContextVar("request_id", default="-")
+_endpoint_var: contextvars.ContextVar[str] = contextvars.ContextVar("endpoint", default="-")
 
 
 def current_request_id() -> str:
     return _request_id_var.get()
 
 
+def current_endpoint() -> str:
+    return _endpoint_var.get()
+
+
 class RequestIDMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         request_id = request.headers.get("X-Request-ID") or uuid.uuid4().hex
-        token = _request_id_var.set(request_id)
+        rid_token = _request_id_var.set(request_id)
+        endpoint_str = f"{request.method} {request.url.path}"
+        ep_token = _endpoint_var.set(endpoint_str)
         started = time.perf_counter()
         try:
             response = await call_next(request)
         finally:
-            _request_id_var.reset(token)
+            _endpoint_var.reset(ep_token)
+            _request_id_var.reset(rid_token)
         elapsed_ms = (time.perf_counter() - started) * 1000
         logger.info(
             "request completed",

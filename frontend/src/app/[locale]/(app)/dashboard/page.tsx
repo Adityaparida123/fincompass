@@ -63,10 +63,22 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label={t("income")} value={formatCurrency(totalIncome)} icon={TrendingUp} loading={monthly.isLoading} subtitle={changePercent != null ? formatPercent(changePercent) : undefined} trend={trendDirection === "up" ? "up" : trendDirection === "down" ? "down" : undefined} />
-        <StatCard label={t("expenses")} value={formatCurrency(totalExpenses)} icon={Receipt} loading={monthly.isLoading} />
-        <StatCard label={t("cashFlow")} value={formatCurrency(netCashFlow)} icon={Wallet} loading={monthly.isLoading} subtitle={netCashFlow >= 0 ? "Positive cash flow" : "Negative cash flow"} trend={netCashFlow >= 0 ? "up" : "down"} />
-        <StatCard label={t("readiness")} value={`${score}/100`} icon={Gauge} loading={readiness.isLoading} subtitle={`${unreadNotifs} unread notifications`} />
+        {monthly.isError ? (
+          <div className="sm:col-span-2 xl:col-span-3">
+            <PageError message={monthly.error instanceof Error ? monthly.error.message : tc("error")} onRetry={() => monthly.refetch()} />
+          </div>
+        ) : (
+          <>
+            <StatCard label={t("income")} value={formatCurrency(totalIncome)} icon={TrendingUp} loading={monthly.isLoading} subtitle={changePercent != null ? formatPercent(changePercent) : undefined} trend={trendDirection === "up" ? "up" : trendDirection === "down" ? "down" : undefined} />
+            <StatCard label={t("expenses")} value={formatCurrency(totalExpenses)} icon={Receipt} loading={monthly.isLoading} />
+            <StatCard label={t("cashFlow")} value={formatCurrency(netCashFlow)} icon={Wallet} loading={monthly.isLoading} subtitle={netCashFlow >= 0 ? "Positive cash flow" : "Negative cash flow"} trend={netCashFlow >= 0 ? "up" : "down"} />
+          </>
+        )}
+        {readiness.isError ? (
+          <PageError message={readiness.error instanceof Error ? readiness.error.message : tc("error")} onRetry={() => readiness.refetch()} />
+        ) : (
+          <StatCard label={t("readiness")} value={`${score}/100`} icon={Gauge} loading={readiness.isLoading} subtitle={`${unreadNotifs} unread notifications`} />
+        )}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -231,6 +243,8 @@ export default function DashboardPage() {
           <CardContent>
             {patterns.isLoading ? (
               <div className="space-y-2"><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-full" /></div>
+            ) : patterns.isError ? (
+              <PageError message={patterns.error instanceof Error ? patterns.error.message : tc("error")} onRetry={() => patterns.refetch()} />
             ) : (patterns.data as { patterns?: Array<{ pattern: string; description: string }> } | undefined)?.patterns?.length ? (
               <div className="space-y-2">
                 {(patterns.data as { patterns: Array<{ pattern: string; description: string }> }).patterns.slice(0, 4).map((p, i) => (
@@ -267,6 +281,8 @@ export default function DashboardPage() {
           <CardContent>
             {recommendations.isLoading ? (
               <div className="space-y-2"><Skeleton className="h-16 w-full" /><Skeleton className="h-16 w-full" /></div>
+            ) : recommendations.isError ? (
+              <PageError message={recommendations.error instanceof Error ? recommendations.error.message : tc("error")} onRetry={() => recommendations.refetch()} />
             ) : recommendations.data?.recommendations?.length ? (
               <div className="space-y-2">
                 {recommendations.data.recommendations.slice(0, 3).map((r, i) => (

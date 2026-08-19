@@ -105,9 +105,17 @@ export default function ExpensesPage() {
       )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <StatCard label={t("expense")} value={formatCurrency(toNumber(monthly.data?.total_expenses))} icon={Receipt} loading={monthly.isLoading} />
-        <StatCard label={t("income")} value={formatCurrency(toNumber(monthly.data?.total_income))} icon={TrendingUp} loading={monthly.isLoading} />
-        <StatCard label={monthly.data?.period ?? period} value={`${monthly.data?.transaction_count ?? 0} txns`} icon={FileText} loading={monthly.isLoading} />
+        {monthly.isError ? (
+          <div className="sm:col-span-2 lg:col-span-3">
+            <PageError message={monthly.error instanceof Error ? monthly.error.message : tc("error")} onRetry={() => monthly.refetch()} />
+          </div>
+        ) : (
+          <>
+            <StatCard label={t("expense")} value={formatCurrency(toNumber(monthly.data?.total_expenses))} icon={Receipt} loading={monthly.isLoading} />
+            <StatCard label={t("income")} value={formatCurrency(toNumber(monthly.data?.total_income))} icon={TrendingUp} loading={monthly.isLoading} />
+            <StatCard label={monthly.data?.period ?? period} value={`${monthly.data?.transaction_count ?? 0} txns`} icon={FileText} loading={monthly.isLoading} />
+          </>
+        )}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -132,7 +140,9 @@ export default function ExpensesPage() {
             <CardTitle className="text-sm font-medium">{t("monthlyChart")}</CardTitle>
           </CardHeader>
           <CardContent>
-            {monthly.isLoading ? <ChartSkeleton /> : monthlyData.length ? (
+            {monthly.isLoading ? <ChartSkeleton /> : monthly.isError ? (
+              <PageError message={monthly.error instanceof Error ? monthly.error.message : tc("error")} onRetry={() => monthly.refetch()} />
+            ) : monthlyData.length ? (
               <ResponsivePieChart data={monthlyData} valueFormatter={(v) => formatCurrency(v)} />
             ) : (
               <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">

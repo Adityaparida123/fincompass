@@ -91,7 +91,12 @@ async def auth_headers(client):
 
 @pytest_asyncio.fixture
 async def consented_headers(client, auth_headers):
-    for ctype in ["financial_data_analysis", "personalized_recommendations", "chat_financial_context"]:
+    for ctype in [
+        "financial_data_analysis",
+        "personalized_recommendations",
+        "chat_financial_context",
+        "ml_analysis",
+    ]:
         response = await client.post("/api/v1/consent", json={"consent_type": ctype}, headers=auth_headers)
         assert response.status_code in (201, 200)
     return auth_headers

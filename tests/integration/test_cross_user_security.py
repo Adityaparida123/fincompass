@@ -143,3 +143,131 @@ async def test_recycle_bin_and_notifications_user_isolated(client):
     # Bob attempts to restore or delete Alice's recycle bin item -> 404
     assert (await client.post(f"/api/v1/recycle-bin/{item_id}/restore", headers=bob)).status_code == 404
     assert (await client.delete(f"/api/v1/recycle-bin/{item_id}", headers=bob)).status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_backfill_consents_creates_missing_records(client, db_session):
+    """backfill_consents creates consent records for users missing them, without
+    overwriting revoked consents."""
+    from app.db.enums import ConsentType, ConsentStatus
+    from app.services.consent.service import backfill_consents
+
+    # Register two users (registration auto-grants all consents)
+    alice, alice_id = await _user(client, "alice_backfill@example.com")
+    bob, bob_id = await _user(client, "bob_backfill@example.com")
+
+    # Verify both have all consents after registration
+    for ct in ConsentType:
+        c = await db_session.find_one(
+            "consents",
+            {"user_id": alice_id, "consent_type": ct.value},
+        )
+        assert c is not None, f"alice missing consent {ct.value} after registration"
+
+    # Simulate a pre-consent-system user: manually remove all of Bob's consents
+    await db_session.delete_many("consents", {"user_id": bob_id})
+
+    # Verify Bob has no consents now
+    bobs_consents = await db_session.find("consents", {"user_id": bob_id})
+    assert len(bobs_consents) == 0
+
+    # Now revoke Alice's financial_data_analysis (simulating an explicit revocation)
+    await db_session.update_one(
+        "consents",
+        {"user_id": alice_id, "consent_type": ConsentType.financial_data_analysis.value},
+        {"status": ConsentStatus.revoked.value},
+    )
+
+    # Run backfill
+    created = await backfill_consents(db_session)
+    assert created >= 4  # Bob needs all 4
+
+    # Verify Bob now has all 4 consents
+    for ct in ConsentType:
+        c = await db_session.find_one(
+            "consents",
+            {"user_id": bob_id, "consent_type": ct.value},
+        )
+        assert c is not None, f"backfill missed {ct.value} for bob"
+        assert c.status == ConsentStatus.granted.value
+
+    # Verify Alice's revoked consent was NOT overwritten
+    alice_fd = await db_session.find_one(
+        "consents",
+        {"user_id": alice_id, "consent_type": ConsentType.financial_data_analysis.value},
+    )
+    assert alice_fd.status == ConsentStatus.revoked.value
+
+    # Running backfill again should be idempotent (creates 0 new records)
+    created2 = await backfill_consents(db_session)
+    assert created2 == 0
+
+
+@pytest.mark.asyncio
+async def test_newly_registered_user_has_all_consents(client):
+    """A newly registered user can access all financial endpoints without 403."""
+    user, _ = await _user(client, "newuser_consents@example.com")
+
+    endpoints = [
+        "/api/v1/expenses/monthly?period=2026-08",
+        "/api/v1/expenses/trends?months=6",
+        "/api/v1/savings/goals",
+        "/api/v1/budget/status?period=2026-08",
+        "/api/v1/credit-readiness",
+        "/api/v1/recommendations",
+        "/api/v1/ml/cashflow-forecast",
+        "/api/v1/ml/spending-patterns",
+    ]
+    for ep in endpoints:
+        res = await client.get(ep, headers=user)
+        assert res.status_code == 200, f"{ep} returned {res.status_code}: {res.json()}"
+
+
+@pytest.mark.asyncio
+async def test_revoked_consent_returns_403_and_restoring_works(client):
+    """Revoking a consent type produces 403; re-granting restores access."""
+    user, _ = await _user(client, "consent_roundtrip@example.com")
+
+    # Confirm access works
+    res = await client.get("/api/v1/budget/status?period=2026-08", headers=user)
+    assert res.status_code == 200
+
+    # Revoke
+    await client.delete("/api/v1/consent/financial_data_analysis", headers=user)
+    res2 = await client.get("/api/v1/budget/status?period=2026-08", headers=user)
+    assert res2.status_code == 403
+    assert res2.json()["error"]["code"] == "CONSENT_DENIED"
+
+    # Restore
+    await client.post("/api/v1/consent", json={"consent_type": "financial_data_analysis"}, headers=user)
+    res3 = await client.get("/api/v1/budget/status?period=2026-08", headers=user)
+    assert res3.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_second_user_cannot_see_first_users_data(client):
+    """User isolation: second user sees none of the first user's data."""
+    alice, alice_id = await _user(client, "alice_iso2@example.com")
+    bob, bob_id = await _user(client, "bob_iso2@example.com")
+
+    # Alice creates data across all financial domains
+    await client.post(
+        "/api/v1/transactions",
+        json={"date": "2026-08-15", "description": "Alice private tx", "amount": 7777, "currency": "INR", "transaction_type": "expense", "category": "shopping"},
+        headers=alice,
+    )
+    await client.post(
+        "/api/v1/budget", json={"period": "2026-08-01", "category": "shopping", "limit_amount": 10000}, headers=alice,
+    )
+    await client.post(
+        "/api/v1/savings/goals", json={"name": "Alice Private Goal", "target_amount": 50000, "current_amount": 5000}, headers=alice,
+    )
+    await client.post(
+        "/api/v1/debt", json={"name": "Alice Loan", "principal": 100000, "monthly_payment": 2000, "interest_rate": 8.5, "remaining_balance": 90000}, headers=alice,
+    )
+
+    # Bob queries all endpoints — must see none of Alice's data
+    assert (await client.get("/api/v1/transactions", headers=bob)).json()["total"] == 0
+    assert len((await client.get("/api/v1/budget", headers=bob)).json()) == 0
+    assert len((await client.get("/api/v1/savings/goals", headers=bob)).json()) == 0
+    assert len((await client.get("/api/v1/debt", headers=bob)).json()) == 0

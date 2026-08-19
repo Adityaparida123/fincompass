@@ -53,7 +53,9 @@ async def lifespan(app: FastAPI):
 
     logger = get_logger("app.main")
 
-    # Connect to MongoDB, ensure indexes, and seed reference schemes if empty.
+    # Connect to MongoDB, ensure indexes, seed reference schemes, and
+    # backfill consent records for any users created before the consent
+    # system was introduced.
     try:
         await connect()
         db = get_database()
@@ -68,6 +70,11 @@ async def lifespan(app: FastAPI):
         migrated = await migrate_scheme_urls(db)
         if migrated:
             logger.info("Migrated source_url for %d schemes.", migrated)
+        from app.services.consent.service import backfill_consents
+
+        backfilled = await backfill_consents(db)
+        if backfilled:
+            logger.info("Backfilled %d missing consent records.", backfilled)
     except Exception as exc:  # noqa: BLE001
         # Production must fail fast: a running app without its database is a
         # broken deployment that health checks would otherwise mask as healthy.

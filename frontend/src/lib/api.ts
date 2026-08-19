@@ -30,6 +30,9 @@ const DEFAULT_STATUS_MESSAGES: Partial<Record<number, string>> = {
   500: "The server encountered an error. Please try again.",
 };
 
+const CONSENT_ERROR_MESSAGE =
+  "Consent required. Please grant the required permissions in your consent settings to access this feature.";
+
 class ApiClient {
   private accessToken: string | null = null;
   private refreshToken: string | null = null;
@@ -204,8 +207,10 @@ class ApiClient {
     const data = await res.json().catch(() => null);
     if (!res.ok) {
       const err = data as ApiError;
+      const isConsentDenied = err?.error?.code === "CONSENT_DENIED";
       const fallback =
         errorMessages?.[res.status] ??
+        (isConsentDenied ? CONSENT_ERROR_MESSAGE : undefined) ??
         (res.status === 401 && !skipAuth ? DEFAULT_STATUS_MESSAGES[401] : undefined) ??
         err?.error?.message ??
         DEFAULT_STATUS_MESSAGES[res.status] ??
