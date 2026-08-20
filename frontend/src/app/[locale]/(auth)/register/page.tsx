@@ -44,7 +44,8 @@ export default function RegisterPage() {
     setError("");
     try {
       await registerUser(data.fullName, data.email, data.password);
-      router.push(`/${locale}/dashboard`);
+      // Use window.location for more reliable redirect after authentication
+      window.location.href = `/${locale}/dashboard`;
     } catch (e) {
       if (e instanceof ApiRequestError) {
         setError(e.message);
@@ -58,44 +59,46 @@ export default function RegisterPage() {
 
   return (
     <GuestGuard>
-      <div className="flex min-h-screen items-center justify-center p-4">
+      <div className="flex min-h-screen items-center justify-center p-4 bg-background-page">
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
-          <div className="mb-8 flex items-center justify-center gap-2">
-            <Compass className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-semibold">FinCompass</span>
+          <div className="mb-8 flex items-center justify-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
+              <Compass className="h-6 w-6 text-primary" />
+            </div>
+            <span className="text-2xl font-semibold text-primary tracking-tight">FinCompass</span>
           </div>
           <Card>
-            <CardHeader><CardTitle>{t("registerTitle")}</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-lg">{t("registerTitle")}</CardTitle></CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
                 <div>
                   <Label>{t("fullName")}</Label>
-                  <Input {...register("fullName")} className="mt-1" />
-                  {errors.fullName && <p className="mt-1 text-xs text-destructive">{errors.fullName.message}</p>}
+                  <Input {...register("fullName")} className="mt-2" />
+                  {errors.fullName && <p className="mt-1.5 text-xs text-destructive">{errors.fullName.message}</p>}
                 </div>
                 <div>
                   <Label>{t("email")}</Label>
-                  <Input type="email" {...register("email")} className="mt-1" />
-                  {errors.email && <p className="mt-1 text-xs text-destructive">{errors.email.message}</p>}
+                  <Input type="email" {...register("email")} className="mt-2" />
+                  {errors.email && <p className="mt-1.5 text-xs text-destructive">{errors.email.message}</p>}
                 </div>
                 <div>
                   <Label>{t("password")}</Label>
-                  <Input type="password" {...register("password")} className="mt-1" />
-                  {errors.password && <p className="mt-1 text-xs text-destructive">{errors.password.message}</p>}
+                  <Input type="password" {...register("password")} className="mt-2" />
+                  {errors.password && <p className="mt-1.5 text-xs text-destructive">{errors.password.message}</p>}
                 </div>
                 <div>
                   <Label>{t("confirmPassword")}</Label>
-                  <Input type="password" {...register("confirmPassword")} className="mt-1" />
-                  {errors.confirmPassword && <p className="mt-1 text-xs text-destructive">{errors.confirmPassword.message}</p>}
+                  <Input type="password" {...register("confirmPassword")} className="mt-2" />
+                  {errors.confirmPassword && <p className="mt-1.5 text-xs text-destructive">{errors.confirmPassword.message}</p>}
                 </div>
                 <label className="flex items-start gap-2 text-sm">
-                  <input type="checkbox" {...register("terms")} className="mt-1" />
+                  <input type="checkbox" {...register("terms")} className="mt-1 rounded border-border-subtle" />
                   {t("termsAgree")}
                 </label>
                 {error && <p className="text-sm text-destructive">{error}</p>}
                 <Button type="submit" className="w-full" disabled={isSubmitting}>{t("registerButton")}</Button>
               </form>
-              <p className="mt-4 text-center text-sm text-text-muted">{t("hasAccount")} <Link href={`/${locale}/login`} className="text-primary hover:underline">Login</Link></p>
+              <p className="mt-6 text-center text-sm text-text-muted">{t("hasAccount")} <Link href={`/${locale}/login`} className="text-primary hover:underline">Login</Link></p>
             </CardContent>
           </Card>
         </motion.div>

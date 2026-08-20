@@ -46,7 +46,8 @@ export function GuestGuard({ children }: { children: React.ReactNode }) {
     setVerifying(true);
     api.verifySession().then((valid) => {
       if (valid) {
-        router.replace(`/${locale}/dashboard`);
+        // Use window.location for more reliable redirect
+        window.location.href = `/${locale}/dashboard`;
       } else {
         useAuthStore.getState().clearAuth();
       }

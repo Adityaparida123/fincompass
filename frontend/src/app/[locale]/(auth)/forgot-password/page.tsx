@@ -26,22 +26,22 @@ export default function ForgotPasswordPage() {
 
   return (
     <GuestGuard>
-      <div className="flex min-h-screen items-center justify-center p-4">
+      <div className="flex min-h-screen items-center justify-center p-4 bg-background-page">
         <Card className="w-full max-w-md">
-          <CardHeader><CardTitle>Forgot password</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-lg">Forgot password</CardTitle></CardHeader>
           <CardContent>
             {sent ? (
               <p className="text-sm text-text-muted">If that email exists, a reset link has been issued.</p>
             ) : (
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
                 <div>
                   <Label>Email</Label>
-                  <Input type="email" {...register("email")} className="mt-1" />
+                  <Input type="email" {...register("email")} className="mt-2" />
                 </div>
                 <Button type="submit" className="w-full" disabled={isSubmitting}>Send reset link</Button>
               </form>
             )}
-            <Link href={`/${locale}/login`} className="mt-4 block text-center text-sm text-primary hover:underline">Back to login</Link>
+            <Link href={`/${locale}/login`} className="mt-6 block text-center text-sm text-primary hover:underline">Back to login</Link>
           </CardContent>
         </Card>
       </div>

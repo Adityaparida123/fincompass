@@ -34,23 +34,23 @@ export default function ResetPasswordPage() {
 
   return (
     <GuestGuard>
-      <div className="flex min-h-screen items-center justify-center p-4">
+      <div className="flex min-h-screen items-center justify-center p-4 bg-background-page">
         <Card className="w-full max-w-md">
-          <CardHeader><CardTitle>Reset password</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-lg">Reset password</CardTitle></CardHeader>
           <CardContent>
             {done ? (
               <p className="text-sm text-text-muted">Password updated. Redirecting to login...</p>
             ) : (
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
                 <div>
                   <Label>New password</Label>
-                  <Input type="password" {...register("new_password")} className="mt-1" />
-                  {errors.new_password && <p className="mt-1 text-xs text-destructive">{String(errors.new_password.message)}</p>}
+                  <Input type="password" {...register("new_password")} className="mt-2" />
+                  {errors.new_password && <p className="mt-1.5 text-xs text-destructive">{String(errors.new_password.message)}</p>}
                 </div>
                 <div>
                   <Label>Confirm password</Label>
-                  <Input type="password" {...register("confirm")} className="mt-1" />
-                  {errors.confirm && <p className="mt-1 text-xs text-destructive">{String(errors.confirm.message)}</p>}
+                  <Input type="password" {...register("confirm")} className="mt-2" />
+                  {errors.confirm && <p className="mt-1.5 text-xs text-destructive">{String(errors.confirm.message)}</p>}
                 </div>
                 <Button type="submit" className="w-full" disabled={isSubmitting || !token}>Update password</Button>
               </form>
