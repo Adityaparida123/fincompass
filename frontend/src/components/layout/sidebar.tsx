@@ -37,31 +37,24 @@ export function Sidebar() {
 
   return (
     <>
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-          aria-hidden
-        />
-      )}
+      {/* Desktop sidebar */}
       <aside
         className={cn(
-          "hidden lg:flex flex-col h-screen w-[260px] fixed left-0 top-0 bg-surface-card border-r border-border-subtle z-50 transition-transform duration-200",
-          sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
+          "hidden lg:flex flex-col w-[260px] shrink-0 h-screen sticky top-0 bg-surface-card border-r border-border-subtle z-30",
         )}
       >
-        <div className="px-5 pt-6 pb-5 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center border border-primary/20">
-            <Compass className="h-[18px] w-[18px] text-primary" />
+        <div className="px-4 pt-5 pb-3 flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center border border-primary/20 shrink-0">
+            <Compass className="h-4 w-4 text-primary" />
           </div>
-          <div>
-            <h1 className="text-[17px] leading-[22px] font-semibold text-primary tracking-tight">FinCompass</h1>
-            <p className="text-[10px] leading-[14px] font-medium uppercase tracking-[0.08em] text-text-muted mt-0.5">Wealth Management</p>
+          <div className="min-w-0">
+            <h1 className="text-sm font-semibold text-primary tracking-tight leading-tight">FinCompass</h1>
+            <p className="text-[10px] leading-[12px] font-medium uppercase tracking-[0.1em] text-text-muted mt-0.5">Wealth Management</p>
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-3 pb-4">
-          <div className="flex flex-col gap-0.5">
+        <div className="flex-1 overflow-y-auto px-2.5 pb-4">
+          <div className="flex flex-col gap-px">
             {navItems.map(({ key, href, icon: Icon }) => {
               const fullHref = `/${locale}${href}`;
               const active = pathname === fullHref || pathname.startsWith(fullHref + "/");
@@ -70,12 +63,11 @@ export function Sidebar() {
                   key={key}
                   href={fullHref}
                   className={cn(
-                    "flex items-center gap-3 px-3 py-2 text-[13px] leading-[18px] rounded-lg transition-all duration-150",
+                    "flex items-center gap-2.5 px-3 py-[7px] text-[13px] rounded-lg transition-all duration-150",
                     active
                       ? "text-primary bg-primary/10 font-medium"
-                      : "text-text-muted hover:text-foreground hover:bg-surface-container-high/60",
+                      : "text-text-muted hover:text-foreground hover:bg-surface-container-high",
                   )}
-                  onClick={() => setSidebarOpen(false)}
                 >
                   <Icon className="h-[18px] w-[18px] shrink-0" strokeWidth={active ? 2 : 1.5} />
                   <span className="truncate">{t(key)}</span>
@@ -84,56 +76,54 @@ export function Sidebar() {
             })}
           </div>
         </div>
-
-        <div className="mt-auto px-3 pb-4">
-          <div className="rounded-xl p-3.5 text-center bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/15">
-            <p className="text-[12px] leading-[16px] text-text-muted mb-2.5">Unlock advanced analytics.</p>
-            <button className="w-full bg-primary text-on-primary-container font-medium py-2 rounded-lg glow-hover transition-all text-[13px] hover:bg-primary/90">
-              Upgrade to Pro
-            </button>
-          </div>
-        </div>
       </aside>
 
-      {/* Mobile sidebar overlay */}
+      {/* Mobile sidebar */}
       {sidebarOpen && (
-        <div className="fixed inset-y-0 left-0 z-50 flex w-[280px] flex-col bg-surface-card border-r border-border-subtle lg:hidden">
-          <div className="px-5 py-5 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center border border-primary/20">
-                <Compass className="h-[18px] w-[18px] text-primary" />
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+            aria-hidden
+          />
+          <div className="fixed inset-y-0 left-0 z-50 flex w-[280px] flex-col bg-surface-card border-r border-border-subtle lg:hidden animate-slide-in-right">
+            <div className="px-5 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center border border-primary/20">
+                  <Compass className="h-4 w-4 text-primary" />
+                </div>
+                <span className="text-base font-semibold text-primary tracking-tight">FinCompass</span>
               </div>
-              <span className="text-[17px] leading-[22px] font-semibold text-primary tracking-tight">FinCompass</span>
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSidebarOpen(false)}>
+                <X className="h-4 w-4" />
+              </Button>
             </div>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSidebarOpen(false)}>
-              <X className="h-4 w-4" />
-            </Button>
+            <nav className="flex-1 overflow-y-auto px-3 pb-4">
+              <div className="flex flex-col gap-0.5">
+                {navItems.map(({ key, href, icon: Icon }) => {
+                  const fullHref = `/${locale}${href}`;
+                  const active = pathname === fullHref || pathname.startsWith(fullHref + "/");
+                  return (
+                    <Link
+                      key={key}
+                      href={fullHref}
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-2 text-[13px] rounded-lg transition-all duration-200",
+                        active
+                          ? "text-primary bg-primary/10 font-medium border border-primary/15"
+                          : "text-text-muted hover:text-foreground hover:bg-surface-container-high",
+                      )}
+                      onClick={() => setSidebarOpen(false)}
+                    >
+                      <Icon className="h-4 w-4 shrink-0" strokeWidth={active ? 2 : 1.5} />
+                      <span className="truncate">{t(key)}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </nav>
           </div>
-          <nav className="flex-1 overflow-y-auto px-3 pb-4">
-            <div className="flex flex-col gap-0.5">
-              {navItems.map(({ key, href, icon: Icon }) => {
-                const fullHref = `/${locale}${href}`;
-                const active = pathname === fullHref || pathname.startsWith(fullHref + "/");
-                return (
-                  <Link
-                    key={key}
-                    href={fullHref}
-                    className={cn(
-                      "flex items-center gap-3 px-3 py-2.5 text-[13px] leading-[18px] rounded-lg transition-all duration-150",
-                      active
-                        ? "text-primary bg-primary/10 font-medium"
-                        : "text-text-muted hover:text-foreground hover:bg-surface-container-high/60",
-                    )}
-                    onClick={() => setSidebarOpen(false)}
-                  >
-                    <Icon className="h-[18px] w-[18px] shrink-0" strokeWidth={active ? 2 : 1.5} />
-                    <span className="truncate">{t(key)}</span>
-                  </Link>
-                );
-              })}
-            </div>
-          </nav>
-        </div>
+        </>
       )}
     </>
   );
@@ -155,7 +145,7 @@ export function MobileNav() {
             key={key}
             href={fullHref}
             className={cn(
-              "flex flex-col items-center justify-center rounded-xl px-3 py-1.5 transition-all w-16",
+              "flex flex-col items-center justify-center rounded-lg px-3 py-1.5 transition-all w-16",
               active ? "text-primary bg-primary/10" : "text-text-muted active:bg-surface-container-high",
             )}
           >
@@ -171,7 +161,7 @@ export function MobileNav() {
 export function SidebarToggle() {
   const { setSidebarOpen } = useUIStore();
   return (
-    <Button variant="ghost" size="icon" className="h-8 w-8 lg:hidden" onClick={() => setSidebarOpen(true)}>
+    <Button variant="ghost" size="icon" className="h-9 w-9 lg:hidden" onClick={() => setSidebarOpen(true)}>
       <Menu className="h-4 w-4" />
     </Button>
   );
