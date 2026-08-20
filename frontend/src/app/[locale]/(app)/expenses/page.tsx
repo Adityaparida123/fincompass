@@ -6,7 +6,7 @@ import { format, getISOWeek, getYear } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Skeleton, Badge } from "@/components/ui/input";
-import { ResponsiveLineChart, CategoryDonut, ChartCard, ChartSkeleton, PageError } from "@/components/charts/responsive-charts";
+import { WeeklyExpensesChart, CategoryDonut, ChartCard, ChartSkeleton, PageError } from "@/components/charts/responsive-charts";
 import { StatCard, PageHeader, EmptyState } from "@/components/common/shared";
 import {
   useExpensesWeekly, useExpensesMonthly, useExpenseCategories,
@@ -146,7 +146,7 @@ export default function ExpensesPage() {
           {weekly.isLoading ? <ChartSkeleton variant="area" /> : weekly.isError ? (
             <PageError message="Unable to load weekly breakdown." onRetry={() => weekly.refetch()} />
           ) : weeklyData.length ? (
-            <ResponsiveLineChart data={weeklyData} xKey="day" lines={[{ key: "amount", name: t("expense"), color: "#818cf8" }]} showArea valueFormatter={(v) => formatCurrency(v)} />
+            <WeeklyExpensesChart data={weeklyData} valueFormatter={(v) => formatCurrency(v)} />
           ) : (
             <div className="flex h-64 items-center justify-center text-sm text-text-muted">
               No weekly data yet. Add transactions for this week.

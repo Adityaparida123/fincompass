@@ -44,6 +44,7 @@ export default function CashflowPage() {
     expected: f.expected_cashflow,
     lower: f.lower_range ?? f.expected_cashflow,
     upper: f.upper_range ?? f.expected_cashflow,
+    range: (f.upper_range ?? f.expected_cashflow) - (f.lower_range ?? f.expected_cashflow),
   })) ?? [];
 
   const isInsufficientData = forecast.data?.status === "insufficient_data";

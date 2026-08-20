@@ -172,6 +172,54 @@ export function fillWeeklyDays(
   return bucket.map((amount, i) => ({ day: SHORT_DAYS[i], amount }));
 }
 
+// ─── Weekly Y-Axis Domain ───────────────────────────────────────
+
+/**
+ * Compute adaptive Y-axis domain for weekly expense data.
+ * Uses tighter padding for small values to avoid large empty ranges.
+ */
+export function computeWeeklyYDomain(
+  data: Record<string, unknown>[],
+  key: string,
+): [number, number] {
+  let max = 0;
+  for (const point of data) {
+    const v = Number(point[key]);
+    if (Number.isFinite(v) && v > max) max = v;
+  }
+  if (max === 0) return [0, 1000];
+  const pad = max < 1000 ? max * 0.3 : max * 0.2;
+  return [0, Math.ceil((max + pad) / 100) * 100];
+}
+
+// ─── Forecast Y-Axis Domain ─────────────────────────────────────
+
+/**
+ * Compute adaptive Y-axis domain for forecast data that handles
+ * large upper/lower bounds without making the expected line unreadable.
+ * Always includes 0 and full lower/upper range.
+ */
+export function computeForecastYDomain(
+  data: Record<string, unknown>[],
+  expectedKey: string,
+  lowerKey: string,
+  upperKey: string,
+): [number, number] {
+  let min = 0;
+  let max = 0;
+  for (const point of data) {
+    const e = Number(point[expectedKey]);
+    const l = Number(point[lowerKey]);
+    const u = Number(point[upperKey]);
+    if (Number.isFinite(e)) { min = Math.min(min, e); max = Math.max(max, e); }
+    if (Number.isFinite(l)) { min = Math.min(min, l); max = Math.max(max, l); }
+    if (Number.isFinite(u)) { min = Math.min(min, u); max = Math.max(max, u); }
+  }
+  const range = max - min;
+  const pad = range * 0.15;
+  return [Math.floor(min - pad), Math.ceil(max + pad)];
+}
+
 // ─── Series Keys Helper ─────────────────────────────────────────
 
 /**
