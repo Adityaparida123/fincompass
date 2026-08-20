@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton, Badge } from "@/components/ui/input";
-import { ResponsiveLineChart, ChartSkeleton, PageError } from "@/components/charts/responsive-charts";
+import { CashFlowTrendChart, ForecastChart, ChartCard, ChartSkeleton, PageError } from "@/components/charts/responsive-charts";
 import { StatCard, PageHeader, EmptyState } from "@/components/common/shared";
 import { useExpensesMonthly, useExpenseTrends, useMLForecast } from "@/hooks/use-api";
 import { formatCurrency, toNumber } from "@/lib/utils";
@@ -65,26 +65,17 @@ export default function CashflowPage() {
         <StatCard label={t("net")} value={formatCurrency(net)} icon={Wallet} loading={monthly.isLoading} subtitle={net >= 0 ? "Positive cash flow" : "Negative cash flow"} trend={net >= 0 ? "up" : "down"} />
       </div>
 
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">{t("trends")}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {trends.isLoading ? <ChartSkeleton /> : trends.isError ? (
-            <PageError message={tc("error")} onRetry={() => trends.refetch()} />
-          ) : trendData.length ? (
-            <ResponsiveLineChart data={trendData} xKey="period" valueFormatter={(v) => formatCurrency(v)} lines={[
-              { key: "income", name: t("income"), color: "#14b8a6" },
-              { key: "expenses", name: t("expenses"), color: "#818cf8" },
-              { key: "net", name: t("net"), color: "#f59e0b" },
-            ]} />
-          ) : (
-            <div className="flex h-64 items-center justify-center text-sm text-text-muted">
-              No trend data yet. Add transactions across multiple months to see trends.
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <ChartCard title={t("trends")} subtitle="Income, expenses, and net cash flow">
+        {trends.isLoading ? <ChartSkeleton variant="area" /> : trends.isError ? (
+          <PageError message={tc("error")} onRetry={() => trends.refetch()} />
+        ) : trendData.length ? (
+          <CashFlowTrendChart data={trendData} valueFormatter={(v) => formatCurrency(v)} />
+        ) : (
+          <div className="flex h-64 items-center justify-center text-sm text-text-muted">
+            No trend data yet. Add transactions across multiple months to see trends.
+          </div>
+        )}
+      </ChartCard>
 
       <Card>
         <CardHeader className="pb-3">
@@ -156,11 +147,7 @@ export default function CashflowPage() {
                 )}
               </div>
 
-              <ResponsiveLineChart data={forecastData} xKey="period" valueFormatter={(v) => formatCurrency(v)} lines={[
-                { key: "expected", name: t("net"), color: "#14b8a6" },
-                { key: "lower", name: "Lower", color: "#94a3b8", dashed: true },
-                { key: "upper", name: "Upper", color: "#94a3b8", dashed: true },
-              ]} showArea />
+              <ForecastChart data={forecastData} valueFormatter={(v) => formatCurrency(v)} />
 
               {categoryForecasts.length > 0 && (
                 <div className="mt-6">

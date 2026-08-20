@@ -696,6 +696,69 @@ body {
 }
 
 /* ================================================================
+   CHART CARD — premium container
+   ================================================================ */
+.chart-card {
+  transition: box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 200ms cubic-bezier(0.4, 0, 0.2, 1),
+              transform 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.chart-card:hover {
+  box-shadow: var(--shadow-card-hover);
+  border-color: var(--border-strong);
+}
+
+/* ================================================================
+   CHART ANIMATIONS
+   ================================================================ */
+@keyframes chart-fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.chart-animate {
+  animation: chart-fade-in 400ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Chart tooltip */
+.chart-tooltip {
+  pointer-events: none;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Recharts customizations */
+.recharts-cartesian-grid-horizontal line,
+.recharts-cartesian-grid-vertical line {
+  stroke-opacity: 0.4;
+}
+.recharts-legend-item {
+  cursor: default;
+}
+.recharts-active-dot {
+  filter: drop-shadow(0 0 4px rgba(45, 212, 191, 0.3));
+}
+.recharts-tooltip-wrapper {
+  outline: none;
+}
+
+/* ================================================================
+   BUDGET ROW — interactive
+   ================================================================ */
+.budget-row {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 200ms cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.budget-row:hover {
+  background-color: var(--surface-container);
+  border-color: var(--border-subtle);
+  box-shadow: var(--shadow-xs);
+}
+
+/* ================================================================
    ACCESSIBILITY — prefers-reduced-motion
    ================================================================ */
 @media (prefers-reduced-motion: reduce) {

@@ -4,7 +4,7 @@ import { useTranslations, useLocale } from "next-intl";
 import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton, Badge } from "@/components/ui/input";
-import { ResponsiveBarChart, ResponsiveLineChart, ChartSkeleton, PageError } from "@/components/charts/responsive-charts";
+import { FinancialTrendChart, ChartCard, BudgetProgressList, ChartSkeleton, PageError } from "@/components/charts/responsive-charts";
 import {
   useExpensesMonthly, useExpenseTrends, useReadiness,
   useRecommendations, useBudgetStatus, useSavingsGoals,
@@ -213,78 +213,47 @@ export default function DashboardPage() {
 
       {/* Charts Row */}
       <div className="grid gap-4 lg:grid-cols-2 section-reveal section-reveal-delay-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">{t("incomeVsExpenses")}</CardTitle>
-              <Badge variant="outline">6 months</Badge>
+        <ChartCard title={t("incomeVsExpenses")} subtitle="Monthly income vs expenses trend" badge={<Badge variant="outline">6 months</Badge>}>
+          {trends.isLoading ? <ChartSkeleton variant="area" /> : trends.isError ? (
+            <PageError message="Unable to load spending trends." onRetry={() => trends.refetch()} />
+          ) : trendData.length ? (
+            <FinancialTrendChart data={trendData} valueFormatter={(v) => formatCurrency(v)} />
+          ) : (
+            <div className="flex h-56 items-center justify-center text-xs text-text-muted">
+              <p>No trend data yet.</p>
             </div>
-          </CardHeader>
-          <CardContent>
-            {trends.isLoading ? <ChartSkeleton /> : trends.isError ? (
-              <PageError message="Unable to load spending trends." onRetry={() => trends.refetch()} />
-            ) : trendData.length ? (
-              <ResponsiveBarChart data={trendData} xKey="period" valueFormatter={(v) => formatCurrency(v)} bars={[
-                { key: "income", name: "Income", color: "#2dd4bf" },
-                { key: "expenses", name: "Expenses", color: "#818cf8" },
-              ]} />
-            ) : (
-              <div className="flex h-56 items-center justify-center text-xs text-text-muted">
-                <p>No trend data yet.</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+          )}
+        </ChartCard>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">{t("budgetStatus")}</CardTitle>
-              <Link href={`/${locale}/budget`} className="flex items-center gap-1 text-[11px] text-primary hover:underline">
-                View all <ArrowRight className="h-3 w-3 icon-hover" />
-              </Link>
+        <ChartCard 
+          title={t("budgetStatus")} 
+          action={<Link href={`/${locale}/budget`} className="flex items-center gap-1 text-[11px] text-primary hover:underline">View all <ArrowRight className="h-3 w-3 icon-hover" /></Link>}
+        >
+          {budget.isLoading ? (
+            <div className="space-y-2">
+              {[1, 2, 3].map((i) => <Skeleton key={i} className="h-9 w-full" />)}
             </div>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {budget.isLoading ? (
-              <div className="space-y-2">
-                {[1, 2, 3].map((i) => <Skeleton key={i} className="h-9 w-full" />)}
-              </div>
-            ) : budget.isError ? (
-              <PageError message="Unable to load budget status." onRetry={() => budget.refetch()} />
-            ) : budget.data?.length ? (
-              budget.data.slice(0, 4).map((b) => {
-                const pctUsed = toNumber(b.percent_used);
-                const over = pctUsed > 100;
-                const nearing = pctUsed > 80 && !over;
-                return (
-                  <div key={b.id} className="space-y-1">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="capitalize font-medium text-text-primary">{b.category}</span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-text-muted text-[11px]">{formatCurrency(toNumber(b.spent))} / {formatCurrency(toNumber(b.limit_amount))}</span>
-                        {over && <Badge variant="destructive">Over</Badge>}
-                        {nearing && <Badge variant="warning">Near</Badge>}
-                      </div>
-                    </div>
-                    <div className="h-1.5 rounded-full bg-surface-container-high overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all duration-500 progress-animate ${over ? "bg-destructive" : nearing ? "bg-warning" : "bg-primary"}`}
-                        style={{ width: `${Math.min(100, pctUsed)}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="flex flex-col items-center justify-center py-6 text-center">
-                <Target className="mb-2 h-6 w-6 text-text-muted/40" />
-                <p className="text-xs text-text-muted">{t("noBudgets")}</p>
-                <Link href={`/${locale}/budget`} className="mt-1 text-[11px] text-primary hover:underline">Create a budget</Link>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+          ) : budget.isError ? (
+            <PageError message="Unable to load budget status." onRetry={() => budget.refetch()} />
+          ) : budget.data?.length ? (
+            <BudgetProgressList
+              budgets={budget.data.slice(0, 4).map((b) => ({
+                id: b.id,
+                category: b.category,
+                spent: toNumber(b.spent),
+                limit: toNumber(b.limit_amount),
+                percentUsed: toNumber(b.percent_used),
+                remaining: toNumber(b.remaining),
+              }))}
+            />
+          ) : (
+            <div className="flex flex-col items-center justify-center py-6 text-center">
+              <Target className="mb-2 h-6 w-6 text-text-muted/40" />
+              <p className="text-xs text-text-muted">{t("noBudgets")}</p>
+              <Link href={`/${locale}/budget`} className="mt-1 text-[11px] text-primary hover:underline">Create a budget</Link>
+            </div>
+          )}
+        </ChartCard>
       </div>
 
       {/* Insights Row */}

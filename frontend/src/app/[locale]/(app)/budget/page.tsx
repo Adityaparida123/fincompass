@@ -6,6 +6,7 @@ import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Skeleton, Badge } from "@/components/ui/input";
+import { BudgetProgressList, ChartCard, ChartSkeleton, PageError } from "@/components/charts/responsive-charts";
 import { EmptyState, PageHeader } from "@/components/common/shared";
 import { useBudgetStatus, useCreateBudget, useDeleteBudget, useMLForecast } from "@/hooks/use-api";
 import { formatCurrency, toNumber } from "@/lib/utils";
@@ -96,80 +97,45 @@ export default function BudgetPage() {
         </div>
       ) : null}
 
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">{t("title")}</CardTitle>
-            {overBudgetCount > 0 && (
-              <Badge variant="destructive" className="text-[10px]">
-                <AlertTriangle className="mr-1 h-3 w-3" />{overBudgetCount} over budget
-              </Badge>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {budget.isLoading ? (
-            <div className="space-y-3">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 w-full" />)}</div>
-          ) : budget.isError ? (
-            <div className="flex flex-col items-center justify-center py-8 text-center">
-              <p className="text-sm text-destructive">{t("error")}</p>
-            </div>
-          ) : budget.data?.length ? budget.data.map((b) => {
-            const pctUsed = toNumber(b.percent_used);
-            const over = pctUsed > 100;
-            const nearing = pctUsed > 80 && !over;
-            const catForecast = getForecastForCategory(b.category);
-            const limit = toNumber(b.limit_amount);
-            const forecastDiff = catForecast ? catForecast.predicted - limit : null;
-
-            return (
-              <div key={b.id} className="space-y-2">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="capitalize font-medium text-sm">{b.category}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-text-muted font-[family-name:var(--font-jetbrains-mono)]">{formatCurrency(toNumber(b.spent))} / {formatCurrency(limit)}</span>
-                    {over && <Badge variant="destructive" className="text-[10px]">Over budget</Badge>}
-                    {nearing && <Badge variant="secondary" className="text-[10px]">Nearing limit</Badge>}
-                    <Button variant="ghost" size="sm" className="h-6 px-2 text-xs text-destructive hover:text-destructive" onClick={() => { if (window.confirm(t("confirmDelete"))) deleteBudget.mutate(b.id); }}>
-                      {tc("delete")}
-                    </Button>
-                  </div>
-                </div>
-                <div className="h-2 rounded-full bg-surface-container overflow-hidden">
-                  <div
-                    className={`h-full rounded-full transition-all duration-500 ${over ? "bg-destructive" : nearing ? "bg-warning" : "bg-primary"}`}
-                    style={{ width: `${Math.min(100, pctUsed)}%` }}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <p className="text-xs text-text-muted font-[family-name:var(--font-jetbrains-mono)]">{pctUsed.toFixed(1)}% used · {formatCurrency(toNumber(b.remaining))} remaining</p>
-                  {forecastDiff !== null && (
-                    <p className={`text-xs font-medium ${forecastDiff > 0 ? "text-destructive" : "text-income"}`}>
-                      {forecastDiff > 0
-                        ? `Forecast ${formatCurrency(forecastDiff)} over`
-                        : `Forecast ${formatCurrency(Math.abs(forecastDiff))} under`}
-                    </p>
-                  )}
-                </div>
-              </div>
-            );
-          }) : (
-            <EmptyState
-              title="No budgets set yet"
-              description="Create a monthly budget to track spending and receive alerts when you're approaching a category limit."
-              icon={Target}
-              action={
-                <Button size="sm" onClick={() => setShowForm(true)}>
-                  <Plus className="mr-1.5 h-3.5 w-3.5" />Create Budget
-                </Button>
-              }
-            />
-          )}
-          {!budget.isLoading && !hasForecastData && budget.data?.length ? (
-            <p className="text-xs text-text-muted text-center pt-2">{t("noForecastData")}</p>
-          ) : null}
-        </CardContent>
-      </Card>
+      <ChartCard 
+        title={t("title")}
+        action={overBudgetCount > 0 ? (
+          <Badge variant="destructive" className="text-[10px]">
+            <AlertTriangle className="mr-1 h-3 w-3" />{overBudgetCount} over budget
+          </Badge>
+        ) : undefined}
+      >
+        {budget.isLoading ? (
+          <div className="space-y-3">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 w-full" />)}</div>
+        ) : budget.isError ? (
+          <PageError message={t("error")} />
+        ) : budget.data?.length ? (
+          <BudgetProgressList
+            budgets={budget.data.map((b) => ({
+              id: b.id,
+              category: b.category,
+              spent: toNumber(b.spent),
+              limit: toNumber(b.limit_amount),
+              percentUsed: toNumber(b.percent_used),
+              remaining: toNumber(b.remaining),
+            }))}
+          />
+        ) : (
+          <EmptyState
+            title="No budgets set yet"
+            description="Create a monthly budget to track spending and receive alerts when you're approaching a category limit."
+            icon={Target}
+            action={
+              <Button size="sm" onClick={() => setShowForm(true)}>
+                <Plus className="mr-1.5 h-3.5 w-3.5" />Create Budget
+              </Button>
+            }
+          />
+        )}
+        {!budget.isLoading && !hasForecastData && budget.data?.length ? (
+          <p className="text-xs text-text-muted text-center pt-2 mt-3">{t("noForecastData")}</p>
+        ) : null}
+      </ChartCard>
     </div>
   );
 }

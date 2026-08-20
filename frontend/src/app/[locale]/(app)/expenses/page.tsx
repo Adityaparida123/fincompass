@@ -6,7 +6,7 @@ import { format, getISOWeek, getYear } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Skeleton, Badge } from "@/components/ui/input";
-import { ResponsiveBarChart, ResponsivePieChart, ChartSkeleton, PageError } from "@/components/charts/responsive-charts";
+import { ResponsiveBarChart, CategoryDonut, ChartCard, ChartSkeleton, PageError } from "@/components/charts/responsive-charts";
 import { StatCard, PageHeader, EmptyState } from "@/components/common/shared";
 import {
   useExpensesWeekly, useExpensesMonthly, useExpenseCategories,
@@ -135,38 +135,28 @@ export default function ExpensesPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">{t("weeklyChart")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {weekly.isLoading ? <ChartSkeleton /> : weekly.isError ? (
-              <PageError message="Unable to load weekly breakdown." onRetry={() => weekly.refetch()} />
-            ) : weeklyData.length ? (
-              <ResponsiveBarChart data={weeklyData} xKey="day" bars={[{ key: "amount", name: t("expense"), color: "#818cf8" }]} valueFormatter={(v) => formatCurrency(v)} />
-            ) : (
-              <div className="flex h-64 items-center justify-center text-sm text-text-muted">
-                No weekly data yet. Add transactions for this week.
-              </div>
-            )}
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">{t("monthlyChart")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {monthly.isLoading ? <ChartSkeleton /> : monthly.isError ? (
-              <PageError message={monthly.error instanceof Error ? monthly.error.message : tc("error")} onRetry={() => monthly.refetch()} />
-            ) : monthlyData.length ? (
-              <ResponsivePieChart data={monthlyData} valueFormatter={(v) => formatCurrency(v)} />
-            ) : (
-              <div className="flex h-64 items-center justify-center text-sm text-text-muted">
-                No category data yet.
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <ChartCard title={t("weeklyChart")} subtitle="Daily expense breakdown">
+          {weekly.isLoading ? <ChartSkeleton /> : weekly.isError ? (
+            <PageError message="Unable to load weekly breakdown." onRetry={() => weekly.refetch()} />
+          ) : weeklyData.length ? (
+            <ResponsiveBarChart data={weeklyData} xKey="day" bars={[{ key: "amount", name: t("expense"), color: "#818cf8" }]} valueFormatter={(v) => formatCurrency(v)} />
+          ) : (
+            <div className="flex h-64 items-center justify-center text-sm text-text-muted">
+              No weekly data yet. Add transactions for this week.
+            </div>
+          )}
+        </ChartCard>
+        <ChartCard title={t("monthlyChart")} subtitle="Spending by category">
+          {monthly.isLoading ? <ChartSkeleton variant="donut" /> : monthly.isError ? (
+            <PageError message={monthly.error instanceof Error ? monthly.error.message : tc("error")} onRetry={() => monthly.refetch()} />
+          ) : monthlyData.length ? (
+            <CategoryDonut data={monthlyData} valueFormatter={(v) => formatCurrency(v)} centerLabel="Total" centerValue={formatCurrency(toNumber(monthly.data?.total_expenses))} />
+          ) : (
+            <div className="flex h-64 items-center justify-center text-sm text-text-muted">
+              No category data yet.
+            </div>
+          )}
+        </ChartCard>
       </div>
 
       <Card>
