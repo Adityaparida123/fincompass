@@ -37,11 +37,16 @@ export default function DashboardPage() {
 
   const changePercent = monthly.data?.change_percent != null ? toNumber(monthly.data.change_percent) : null;
 
-  const trendData = trends.data?.points?.map((p) => ({
-    period: p.period,
-    income: toNumber(p.income ?? 0),
-    expenses: toNumber(p.total),
-  })) ?? [];
+  const trendData = trends.data?.points?.map((p) => {
+    const income = toNumber(p.income ?? 0);
+    const expenses = toNumber(p.total);
+    return {
+      period: p.period,
+      income,
+      expenses,
+      net: income - expenses,
+    };
+  }) ?? [];
 
   const forecastData = forecast.data?.forecasts?.map((f) => ({
     period: f.forecast_month,

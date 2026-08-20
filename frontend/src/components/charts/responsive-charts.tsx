@@ -7,6 +7,7 @@ import {
 } from "recharts";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/utils";
+import { computeYDomain, formatCompactINR, formatPeriodLabel } from "@/lib/chart-utils";
 
 // ─── Design Tokens ──────────────────────────────────────────────
 const CHART_COLORS = {
@@ -123,7 +124,7 @@ const gridProps = {
   vertical: false,
 };
 
-// ─── Financial Trend Chart (Income vs Expenses) ─────────────────
+// ─── Financial Trend Chart (Income vs Expenses vs Net) ──────────
 export function FinancialTrendChart({
   data,
   valueFormatter,
@@ -140,23 +141,36 @@ export function FinancialTrendChart({
   showGrid?: boolean;
 }) {
   const fmt = valueFormatter ?? ((v: number) => formatCurrency(v));
+  const yDomain = computeYDomain(data, ["income", "expenses", "net"]);
   return (
     <div className={cn("w-full min-w-0 chart-animate", height ?? "h-56 sm:h-64 lg:h-72", className)}>
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
           <defs>
-            <linearGradient id="gradientIncome" x1="0" y1="0" x2="0" y2="1">
+            <linearGradient id="finGradIncome" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor={CHART_COLORS.teal} stopOpacity={0.2} />
               <stop offset="95%" stopColor={CHART_COLORS.teal} stopOpacity={0} />
             </linearGradient>
-            <linearGradient id="gradientExpense" x1="0" y1="0" x2="0" y2="1">
+            <linearGradient id="finGradExpense" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor={CHART_COLORS.indigo} stopOpacity={0.15} />
               <stop offset="95%" stopColor={CHART_COLORS.indigo} stopOpacity={0} />
             </linearGradient>
+            <linearGradient id="finGradNet" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={CHART_COLORS.amber} stopOpacity={0.12} />
+              <stop offset="95%" stopColor={CHART_COLORS.amber} stopOpacity={0} />
+            </linearGradient>
           </defs>
           {showGrid && <CartesianGrid {...gridProps} />}
-          <XAxis dataKey="period" {...axisProps} />
-          <YAxis {...axisProps} tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} />
+          <XAxis
+            dataKey="period"
+            tickFormatter={formatPeriodLabel}
+            {...axisProps}
+          />
+          <YAxis
+            domain={yDomain}
+            tickFormatter={formatCompactINR}
+            {...axisProps}
+          />
           <Tooltip content={<ChartTooltipContent formatter={fmt} />} cursor={{ stroke: "var(--border)", strokeDasharray: "4 4" }} />
           {showLegend && <Legend wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />}
           <Area
@@ -165,7 +179,7 @@ export function FinancialTrendChart({
             name="Income"
             stroke={CHART_COLORS.teal}
             strokeWidth={2.5}
-            fill="url(#gradientIncome)"
+            fill="url(#finGradIncome)"
             dot={false}
             activeDot={{ r: 5, strokeWidth: 2, stroke: CHART_COLORS.teal, fill: "var(--surface-card)" }}
             animationDuration={800}
@@ -176,13 +190,26 @@ export function FinancialTrendChart({
             dataKey="expenses"
             name="Expenses"
             stroke={CHART_COLORS.indigo}
-            strokeWidth={2.5}
-            fill="url(#gradientExpense)"
+            strokeWidth={2}
+            fill="url(#finGradExpense)"
             dot={false}
             activeDot={{ r: 5, strokeWidth: 2, stroke: CHART_COLORS.indigo, fill: "var(--surface-card)" }}
             animationDuration={800}
             animationEasing="ease-out"
             animationBegin={200}
+          />
+          <Area
+            type="monotone"
+            dataKey="net"
+            name="Net Cash Flow"
+            stroke={CHART_COLORS.amber}
+            strokeWidth={1.5}
+            fill="url(#finGradNet)"
+            dot={false}
+            activeDot={{ r: 4, strokeWidth: 2, stroke: CHART_COLORS.amber, fill: "var(--surface-card)" }}
+            animationDuration={800}
+            animationEasing="ease-out"
+            animationBegin={400}
           />
         </AreaChart>
       </ResponsiveContainer>
@@ -205,32 +232,33 @@ export function CashFlowTrendChart({
   showGrid?: boolean;
 }) {
   const fmt = valueFormatter ?? ((v: number) => formatCurrency(v));
+  const yDomain = computeYDomain(data, ["income", "expenses", "net"]);
   return (
     <div className={cn("w-full min-w-0 chart-animate", height ?? "h-56 sm:h-64 lg:h-72", className)}>
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
           <defs>
-            <linearGradient id="gradientIncomeCF" x1="0" y1="0" x2="0" y2="1">
+            <linearGradient id="cfGradIncome" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor={CHART_COLORS.teal} stopOpacity={0.2} />
               <stop offset="95%" stopColor={CHART_COLORS.teal} stopOpacity={0} />
             </linearGradient>
-            <linearGradient id="gradientExpenseCF" x1="0" y1="0" x2="0" y2="1">
+            <linearGradient id="cfGradExpense" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor={CHART_COLORS.indigo} stopOpacity={0.15} />
               <stop offset="95%" stopColor={CHART_COLORS.indigo} stopOpacity={0} />
             </linearGradient>
-            <linearGradient id="gradientNetCF" x1="0" y1="0" x2="0" y2="1">
+            <linearGradient id="cfGradNet" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor={CHART_COLORS.amber} stopOpacity={0.15} />
               <stop offset="95%" stopColor={CHART_COLORS.amber} stopOpacity={0} />
             </linearGradient>
           </defs>
           {showGrid && <CartesianGrid {...gridProps} />}
-          <XAxis dataKey="period" {...axisProps} />
-          <YAxis {...axisProps} tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} />
+          <XAxis dataKey="period" tickFormatter={formatPeriodLabel} {...axisProps} />
+          <YAxis domain={yDomain} tickFormatter={formatCompactINR} {...axisProps} />
           <Tooltip content={<ChartTooltipContent formatter={fmt} />} cursor={{ stroke: "var(--border)", strokeDasharray: "4 4" }} />
           <Legend wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />
-          <Area type="monotone" dataKey="income" name="Income" stroke={CHART_COLORS.teal} strokeWidth={2} fill="url(#gradientIncomeCF)" dot={false} activeDot={{ r: 5, strokeWidth: 2, stroke: CHART_COLORS.teal, fill: "var(--surface-card)" }} animationDuration={800} animationEasing="ease-out" />
-          <Area type="monotone" dataKey="expenses" name="Expenses" stroke={CHART_COLORS.indigo} strokeWidth={2} fill="url(#gradientExpenseCF)" dot={false} activeDot={{ r: 5, strokeWidth: 2, stroke: CHART_COLORS.indigo, fill: "var(--surface-card)" }} animationDuration={800} animationEasing="ease-out" animationBegin={200} />
-          <Area type="monotone" dataKey="net" name="Net" stroke={CHART_COLORS.amber} strokeWidth={2} fill="url(#gradientNetCF)" dot={false} activeDot={{ r: 5, strokeWidth: 2, stroke: CHART_COLORS.amber, fill: "var(--surface-card)" }} animationDuration={800} animationEasing="ease-out" animationBegin={400} />
+          <Area type="monotone" dataKey="income" name="Income" stroke={CHART_COLORS.teal} strokeWidth={2} fill="url(#cfGradIncome)" dot={false} activeDot={{ r: 5, strokeWidth: 2, stroke: CHART_COLORS.teal, fill: "var(--surface-card)" }} animationDuration={800} animationEasing="ease-out" />
+          <Area type="monotone" dataKey="expenses" name="Expenses" stroke={CHART_COLORS.indigo} strokeWidth={2} fill="url(#cfGradExpense)" dot={false} activeDot={{ r: 5, strokeWidth: 2, stroke: CHART_COLORS.indigo, fill: "var(--surface-card)" }} animationDuration={800} animationEasing="ease-out" animationBegin={200} />
+          <Area type="monotone" dataKey="net" name="Net" stroke={CHART_COLORS.amber} strokeWidth={2} fill="url(#cfGradNet)" dot={false} activeDot={{ r: 5, strokeWidth: 2, stroke: CHART_COLORS.amber, fill: "var(--surface-card)" }} animationDuration={800} animationEasing="ease-out" animationBegin={400} />
         </AreaChart>
       </ResponsiveContainer>
     </div>
@@ -252,28 +280,29 @@ export function ForecastChart({
   showGrid?: boolean;
 }) {
   const fmt = valueFormatter ?? ((v: number) => formatCurrency(v));
+  const yDomain = computeYDomain(data, ["expected", "upper", "lower"]);
   return (
     <div className={cn("w-full min-w-0 chart-animate", height ?? "h-52 sm:h-60 lg:h-64", className)}>
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
           <defs>
-            <linearGradient id="gradientForecast" x1="0" y1="0" x2="0" y2="1">
+            <linearGradient id="fcGradForecast" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor={CHART_COLORS.teal} stopOpacity={0.15} />
               <stop offset="95%" stopColor={CHART_COLORS.teal} stopOpacity={0} />
             </linearGradient>
-            <linearGradient id="gradientConfidence" x1="0" y1="0" x2="0" y2="1">
+            <linearGradient id="fcGradConfidence" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor={CHART_COLORS.amber} stopOpacity={0.08} />
               <stop offset="100%" stopColor={CHART_COLORS.amber} stopOpacity={0.02} />
             </linearGradient>
           </defs>
           {showGrid && <CartesianGrid {...gridProps} />}
-          <XAxis dataKey="period" {...axisProps} />
-          <YAxis {...axisProps} tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} />
+          <XAxis dataKey="period" tickFormatter={formatPeriodLabel} {...axisProps} />
+          <YAxis domain={yDomain} tickFormatter={formatCompactINR} {...axisProps} />
           <Tooltip content={<ChartTooltipContent formatter={fmt} />} cursor={{ stroke: "var(--border)", strokeDasharray: "4 4" }} />
           <Legend wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />
-          <Area type="monotone" dataKey="upper" name="Upper Bound" stroke="none" fill="url(#gradientConfidence)" strokeDasharray="0" animationDuration={600} />
+          <Area type="monotone" dataKey="upper" name="Upper Bound" stroke="none" fill="url(#fcGradConfidence)" strokeDasharray="0" animationDuration={600} />
           <Area type="monotone" dataKey="lower" name="Lower Bound" stroke="none" fill="var(--surface-card)" animationDuration={600} />
-          <Area type="monotone" dataKey="expected" name="Expected" stroke={CHART_COLORS.teal} strokeWidth={2.5} fill="url(#gradientForecast)" dot={false} activeDot={{ r: 5, strokeWidth: 2, stroke: CHART_COLORS.teal, fill: "var(--surface-card)" }} animationDuration={800} animationEasing="ease-out" />
+          <Area type="monotone" dataKey="expected" name="Expected" stroke={CHART_COLORS.teal} strokeWidth={2.5} fill="url(#fcGradForecast)" dot={false} activeDot={{ r: 5, strokeWidth: 2, stroke: CHART_COLORS.teal, fill: "var(--surface-card)" }} animationDuration={800} animationEasing="ease-out" />
           <Line type="monotone" dataKey="lower" name="Lower" stroke={CHART_COLORS.amber} strokeWidth={1} strokeDasharray="4 4" dot={false} opacity={0.5} />
           <Line type="monotone" dataKey="upper" name="Upper" stroke={CHART_COLORS.amber} strokeWidth={1} strokeDasharray="4 4" dot={false} opacity={0.5} />
         </AreaChart>
@@ -349,7 +378,7 @@ export function CategoryDonut({
   );
 }
 
-// ─── Weekly Bar Chart ───────────────────────────────────────────
+// ─── Bar Chart (legacy, adaptive Y-axis) ────────────────────────
 export function ResponsiveBarChart({
   data,
   xKey,
@@ -368,13 +397,14 @@ export function ResponsiveBarChart({
   height?: string;
 }) {
   const fmt = valueFormatter ?? ((v: number) => formatCurrency(v));
+  const yDomain = computeYDomain(data, bars.map((b) => b.key));
   return (
     <div className={cn("w-full min-w-0 chart-animate", height ?? "h-52 sm:h-60 lg:h-64", className)}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
           {showGrid && <CartesianGrid {...gridProps} />}
-          <XAxis dataKey={xKey} {...axisProps} />
-          <YAxis {...axisProps} tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} />
+          <XAxis dataKey={xKey} tickFormatter={formatPeriodLabel} {...axisProps} />
+          <YAxis domain={yDomain} tickFormatter={formatCompactINR} {...axisProps} />
           <Tooltip content={<ChartTooltipContent formatter={fmt} />} cursor={{ fill: "var(--surface-container-high)", opacity: 0.3 }} />
           {bars.length > 1 && <Legend wrapperStyle={{ fontSize: 11, paddingTop: 6 }} />}
           {bars.map((b, i) => (
@@ -386,7 +416,7 @@ export function ResponsiveBarChart({
   );
 }
 
-// ─── Generic Line/Area Chart (backward compat) ──────────────────
+// ─── Generic Line/Area Chart (backward compat, adaptive Y-axis) ─
 export function ResponsiveLineChart({
   data,
   xKey,
@@ -407,13 +437,14 @@ export function ResponsiveLineChart({
   height?: string;
 }) {
   const fmt = valueFormatter ?? ((v: number) => formatCurrency(v));
+  const yDomain = computeYDomain(data, lines.map((l) => l.key));
   return (
     <div className={cn("w-full min-w-0 chart-animate", height ?? "h-52 sm:h-60 lg:h-64", className)}>
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
           {showGrid && <CartesianGrid {...gridProps} />}
-          <XAxis dataKey={xKey} {...axisProps} />
-          <YAxis {...axisProps} tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} />
+          <XAxis dataKey={xKey} tickFormatter={formatPeriodLabel} {...axisProps} />
+          <YAxis domain={yDomain} tickFormatter={formatCompactINR} {...axisProps} />
           <Tooltip content={<ChartTooltipContent formatter={fmt} />} />
           <Legend wrapperStyle={{ fontSize: 11, paddingTop: 6 }} />
           {lines.map((l, i) => {

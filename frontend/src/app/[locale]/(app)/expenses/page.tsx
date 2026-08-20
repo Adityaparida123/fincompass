@@ -14,6 +14,7 @@ import {
 } from "@/hooks/use-api";
 import { ImportStatementDialog } from "@/components/expenses/import-statement";
 import { formatCurrency, toNumber } from "@/lib/utils";
+import { fillWeeklyDays } from "@/lib/chart-utils";
 import { CATEGORIES } from "@/lib/constants";
 import { ApiRequestError } from "@/lib/api";
 import { Receipt, TrendingUp, FileText, Plus, Upload } from "lucide-react";
@@ -41,9 +42,7 @@ export default function ExpensesPage() {
   const createTx = useCreateTransaction();
   const deleteTx = useDeleteTransaction();
 
-  const weeklyData = Object.entries(weekly.data?.daily_breakdown ?? {}).map(([day, val]) => ({
-    day, amount: toNumber(val),
-  }));
+  const weeklyData = fillWeeklyDays(weekly.data?.daily_breakdown ?? {});
   const monthlyData = Object.entries(monthly.data?.categories ?? {}).map(([name, val]) => ({
     name, value: toNumber(val),
   }));
