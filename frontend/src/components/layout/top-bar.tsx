@@ -32,6 +32,8 @@ export function TopBar() {
     ? user.full_name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)
     : "U";
 
+  const goToProfile = () => router.push(`/${locale}/profile`);
+
   return (
     <header className="flex justify-between items-center h-12 px-4 md:px-6 w-full z-40 bg-background-page/80 backdrop-blur-xl border-b border-border sticky top-0">
       <div className="flex items-center gap-3 min-w-0">
@@ -50,7 +52,7 @@ export function TopBar() {
       <div className="flex items-center gap-1">
         <ISTClock className="hidden sm:block" />
         <button
-          className="topbar-icon hidden sm:flex items-center gap-1 h-8 px-2 rounded-lg text-xs text-on-surface-variant hover:text-primary"
+          className="topbar-icon hidden sm:flex items-center gap-1 h-8 px-2 rounded-lg text-xs text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
           onClick={toggleLocale}
           aria-label="Switch language"
         >
@@ -58,21 +60,30 @@ export function TopBar() {
           <span className="ml-1">{locale === "en" ? "हिंदी" : "EN"}</span>
         </button>
         <button
-          className="topbar-icon h-8 w-8 flex items-center justify-center rounded-lg text-on-surface-variant hover:text-primary"
+          className="topbar-icon h-8 w-8 flex items-center justify-center rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
           onClick={() => setTheme(theme === "dark" ? "light" : theme === "light" ? "system" : "dark")}
           aria-label="Toggle theme"
         >
           {theme === "dark" ? <Sun className="h-4 w-4" /> : theme === "light" ? <Moon className="h-4 w-4" /> : <Monitor className="h-4 w-4" />}
         </button>
         <NotificationBell />
-        <button className="topbar-icon h-8 w-8 flex items-center justify-center rounded-lg text-on-surface-variant hover:text-primary" aria-label={t("settings")}>
-          <Settings className="h-4 w-4 icon-rotate-subtle" />
-        </button>
-        <div className="w-7 h-7 rounded-full bg-primary/15 border border-primary/25 cursor-pointer flex items-center justify-center text-[10px] font-semibold text-primary hover:bg-primary/20 hover:border-primary/35 transition-all" title={user?.full_name}>
-          {initials}
-        </div>
         <button
-          className="topbar-icon h-8 w-8 hidden sm:flex items-center justify-center rounded-lg text-on-surface-variant hover:text-destructive"
+          className="topbar-icon h-8 w-8 flex items-center justify-center rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+          onClick={goToProfile}
+          aria-label={t("settings")}
+        >
+          <Settings className="h-4 w-4" />
+        </button>
+        <button
+          className="h-7 w-7 rounded-full bg-primary/15 border border-primary/25 flex items-center justify-center text-[10px] font-semibold text-primary hover:bg-primary/25 hover:border-primary/40 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 cursor-pointer"
+          onClick={goToProfile}
+          title={user?.full_name ?? "Profile"}
+          aria-label="Profile"
+        >
+          {initials}
+        </button>
+        <button
+          className="topbar-icon h-8 w-8 hidden sm:flex items-center justify-center rounded-lg text-on-surface-variant hover:text-destructive hover:bg-surface-container transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
           onClick={handleLogout}
           aria-label={t("logout")}
         >

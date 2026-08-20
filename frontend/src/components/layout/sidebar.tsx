@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useTranslations, useLocale } from "next-intl";
 import {
   LayoutDashboard, Receipt, TrendingUp, PiggyBank, Wallet,
-  CreditCard, HandCoins, Gauge, Lightbulb, Landmark, Bell,
+  CreditCard, HandCoins, Gauge, Lightbulb, Landmark,
   Trash2, Shield, User, Menu, X, Compass,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -46,7 +46,6 @@ const navGroups = [
   {
     label: "System",
     items: [
-      { key: "notifications", href: "/notifications", icon: Bell },
       { key: "recycleBin", href: "/recycle-bin", icon: Trash2 },
       { key: "consent", href: "/consent", icon: Shield },
       { key: "profile", href: "/profile", icon: User },
