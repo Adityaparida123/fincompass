@@ -266,7 +266,7 @@ export function CashFlowTrendChart({
   );
 }
 
-// ─── Forecast Chart (redesigned with confidence band) ───────────
+// ─── Forecast Chart (single-point range + multi-point trend) ────
 export function ForecastChart({
   data,
   valueFormatter,
@@ -281,7 +281,6 @@ export function ForecastChart({
   showGrid?: boolean;
 }) {
   const fmt = valueFormatter ?? ((v: number) => formatCurrency(v));
-  const yDomain = computeForecastYDomain(data, "expected", "lower", "upper");
 
   if (!data.length) {
     return (
@@ -291,7 +290,166 @@ export function ForecastChart({
     );
   }
 
-  const singlePoint = data.length === 1;
+  if (data.length === 1) {
+    return <SinglePointForecast data={data[0]!} formatter={fmt} className={className} height={height} />;
+  }
+
+  return <MultiPointForecast data={data} formatter={fmt} className={className} height={height} showGrid={showGrid} />;
+}
+
+// ─── Single-Point Forecast (horizontal range visualization) ─────
+function SinglePointForecast({
+  data,
+  formatter,
+  className,
+  height,
+}: {
+  data: Record<string, unknown>;
+  formatter: (value: number, name: string) => string;
+  className?: string;
+  height?: string;
+}) {
+  const period = String(data.period ?? "");
+  const expected = Number(data.expected) || 0;
+  const lower = Number(data.lower) || 0;
+  const upper = Number(data.upper) || 0;
+
+  const range = upper - lower;
+  const clamp = (pct: number) => Math.max(3, Math.min(97, pct));
+
+  const expectedPct = range === 0 ? 50 : clamp(((expected - lower) / range) * 100);
+  const zeroInRange = lower < 0 && upper > 0;
+  const zeroPct = zeroInRange ? clamp(((-lower) / range) * 100) : null;
+
+  return (
+    <div className={cn("w-full chart-animate", height ?? "h-52 sm:h-60 lg:h-64", className)}>
+      <div className="flex h-full flex-col justify-center gap-4 px-3 sm:px-5">
+
+        {/* Period label */}
+        <p className="text-center text-[11px] font-semibold uppercase tracking-[0.08em] text-text-muted/70">
+          {formatPeriodLabel(period)}
+        </p>
+
+        {/* Range bar visualization */}
+        <div className="relative h-16 sm:h-20 w-full">
+          {/* Background track */}
+          <div className="absolute top-1/2 left-0 right-0 h-2 -translate-y-1/2 rounded-full bg-surface-container-high/60" />
+
+          {/* Confidence band */}
+          <div
+            className="absolute top-1/2 h-2 -translate-y-1/2 rounded-full"
+            style={{
+              left: 0,
+              right: 0,
+              background: `linear-gradient(90deg, ${CHART_COLORS.cyan}10, ${CHART_COLORS.cyan}18, ${CHART_COLORS.cyan}10)`,
+            }}
+          />
+
+          {/* Zero line */}
+          {zeroPct !== null && (
+            <div
+              className="absolute top-0 bottom-0 w-px"
+              style={{ left: `${zeroPct}%`, backgroundColor: "var(--text-muted)", opacity: 0.3 }}
+            />
+          )}
+
+          {/* Lower marker */}
+          <div
+            className="absolute top-1/2 flex -translate-y-1/2 items-center"
+            style={{ left: "3%", transform: "translate(-50%, -50%)" }}
+          >
+            <div className="h-1.5 w-1.5 rounded-full bg-text-muted/30" />
+          </div>
+
+          {/* Upper marker */}
+          <div
+            className="absolute top-1/2 flex -translate-y-1/2 items-center"
+            style={{ right: "3%", transform: "translate(50%, -50%)" }}
+          >
+            <div className="h-1.5 w-1.5 rounded-full bg-text-muted/30" />
+          </div>
+
+          {/* Expected marker */}
+          <div
+            className="absolute top-1/2 flex -translate-y-1/2 flex-col items-center gap-1.5"
+            style={{ left: `${expectedPct}%`, transform: "translate(-50%, -50%)" }}
+          >
+            {/* Dot */}
+            <div
+              className="h-4 w-4 rounded-full border-[2.5px] border-solid transition-shadow duration-200 hover:h-5 hover:w-5"
+              style={{
+                borderColor: CHART_COLORS.cyan,
+                backgroundColor: "var(--surface-card)",
+                boxShadow: `0 0 10px ${CHART_COLORS.cyan}50, 0 0 20px ${CHART_COLORS.cyan}20`,
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Value labels row */}
+        <div className="relative flex w-full items-start">
+          {/* Lower */}
+          <div className="flex w-0 flex-1 flex-col items-start pl-1">
+            <span className="text-[10px] font-medium text-text-muted/50 uppercase tracking-wider">Lower</span>
+            <span className="mt-0.5 text-xs font-semibold font-[family-name:var(--font-jetbrains-mono)] text-text-muted tabular-nums">
+              {formatter(lower, "Lower")}
+            </span>
+          </div>
+
+          {/* Expected (centered on its position) */}
+          <div
+            className="absolute flex flex-col items-center"
+            style={{ left: `${expectedPct}%`, transform: "translateX(-50%)" }}
+          >
+            <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: CHART_COLORS.cyan }}>Expected</span>
+            <span
+              className="mt-0.5 text-sm font-bold font-[family-name:var(--font-jetbrains-mono)] tabular-nums"
+              style={{ color: CHART_COLORS.cyan, textShadow: `0 0 12px ${CHART_COLORS.cyan}30` }}
+            >
+              {formatter(expected, "Expected")}
+            </span>
+          </div>
+
+          {/* Upper */}
+          <div className="flex w-0 flex-1 flex-col items-end pr-1">
+            <span className="text-[10px] font-medium text-text-muted/50 uppercase tracking-wider">Upper</span>
+            <span className="mt-0.5 text-xs font-semibold font-[family-name:var(--font-jetbrains-mono)] text-text-muted tabular-nums">
+              {formatter(upper, "Upper")}
+            </span>
+          </div>
+        </div>
+
+        {/* Zero reference (when range crosses zero) */}
+        {zeroInRange && zeroPct !== null && (
+          <div className="relative w-full h-0">
+            <div
+              className="absolute -top-3 flex flex-col items-center"
+              style={{ left: `${zeroPct}%`, transform: "translateX(-50%)" }}
+            >
+              <span className="text-[9px] font-medium text-text-muted/40">₹0</span>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Multi-Point Forecast (AreaChart with confidence band) ──────
+function MultiPointForecast({
+  data,
+  formatter,
+  className,
+  height,
+  showGrid,
+}: {
+  data: Record<string, unknown>[];
+  formatter: (value: number, name: string) => string;
+  className?: string;
+  height?: string;
+  showGrid?: boolean;
+}) {
+  const yDomain = computeForecastYDomain(data, "expected", "lower", "upper");
 
   return (
     <div className={cn("w-full min-w-0 chart-animate relative", height ?? "h-52 sm:h-60 lg:h-64", className)}>
@@ -324,38 +482,15 @@ export function ForecastChart({
             width={56}
           />
           <Tooltip
-            content={<ForecastTooltip formatter={fmt} />}
+            content={<ForecastMultiTooltip formatter={formatter} />}
             cursor={{ stroke: "var(--border)", strokeDasharray: "4 4" }}
           />
           <Legend wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />
 
           {/* Confidence band — lower area (transparent spacer) */}
-          <Area
-            type="monotone"
-            dataKey="lower"
-            stroke="none"
-            fill="transparent"
-            fillOpacity={0}
-            name="Lower Bound"
-            dot={false}
-            activeDot={false}
-            animationDuration={600}
-            isAnimationActive={true}
-          />
+          <Area type="monotone" dataKey="lower" stroke="none" fill="transparent" fillOpacity={0} name="Lower" dot={false} activeDot={false} animationDuration={600} isAnimationActive={true} />
           {/* Confidence band — range fill between lower and upper */}
-          <Area
-            type="monotone"
-            dataKey="range"
-            stroke="none"
-            fill="url(#fcGradBand)"
-            fillOpacity={1}
-            name="Confidence Range"
-            dot={false}
-            activeDot={false}
-            animationDuration={800}
-            animationEasing="ease-out"
-            isAnimationActive={true}
-          />
+          <Area type="monotone" dataKey="range" stroke="none" fill="url(#fcGradBand)" fillOpacity={1} name="Confidence Range" dot={false} activeDot={false} animationDuration={800} animationEasing="ease-out" isAnimationActive={true} />
           {/* Expected forecast line — primary visual element */}
           <Area
             type="monotone"
@@ -364,49 +499,24 @@ export function ForecastChart({
             strokeWidth={2.5}
             fill="url(#fcGradExpected)"
             name="Expected"
-            dot={singlePoint ? { r: 5, strokeWidth: 2, stroke: CHART_COLORS.cyan, fill: "var(--surface-card)", style: { filter: `drop-shadow(0 0 4px ${CHART_COLORS.cyan}50)` } } : false}
+            dot={false}
             activeDot={{ r: 6, strokeWidth: 2, stroke: CHART_COLORS.cyan, fill: "var(--surface-card)", style: { filter: `drop-shadow(0 0 8px ${CHART_COLORS.cyan}60)` } }}
             animationDuration={800}
             animationEasing="ease-out"
             isAnimationActive={true}
           />
-
-          {/* Thin dashed boundary lines for upper/lower */}
-          <Line
-            type="monotone"
-            dataKey="upper"
-            stroke={CHART_COLORS.cyan}
-            strokeWidth={1}
-            strokeDasharray="4 4"
-            strokeOpacity={0.35}
-            name="Upper"
-            dot={false}
-            activeDot={false}
-            animationDuration={600}
-            isAnimationActive={true}
-          />
-          <Line
-            type="monotone"
-            dataKey="lower"
-            stroke={CHART_COLORS.cyan}
-            strokeWidth={1}
-            strokeDasharray="4 4"
-            strokeOpacity={0.35}
-            name="Lower"
-            dot={false}
-            activeDot={false}
-            animationDuration={600}
-            isAnimationActive={true}
-          />
+          {/* Thin dashed boundary lines */}
+          <Line type="monotone" dataKey="upper" stroke={CHART_COLORS.cyan} strokeWidth={1} strokeDasharray="4 4" strokeOpacity={0.35} name="Upper" dot={false} activeDot={false} animationDuration={600} isAnimationActive={true} />
+          <Line type="monotone" dataKey="lower" stroke={CHART_COLORS.cyan} strokeWidth={1} strokeDasharray="4 4" strokeOpacity={0.35} name="Lower" dot={false} activeDot={false} animationDuration={600} isAnimationActive={true} />
         </AreaChart>
       </ResponsiveContainer>
     </div>
   );
 }
 
-function ForecastTooltip({ active, payload, label, formatter }: {
+function ForecastMultiTooltip({ active, payload, label, formatter }: {
   active?: boolean;
-  payload?: Array<{ name: string; value: number; color: string; dataKey: string }>;
+  payload?: Array<{ name: string; value: number; dataKey: string }>;
   label?: string;
   formatter?: (value: number, name: string) => string;
 }) {
@@ -436,7 +546,7 @@ function ForecastTooltip({ active, payload, label, formatter }: {
         {lower && (
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-1.5">
-              <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: CHART_COLORS.cyan, opacity: 0.4 }} />
+              <span className="h-1.5 w-1.5 rounded-full bg-text-muted/40" />
               <span className="text-xs text-text-muted">Lower</span>
             </div>
             <span className="text-xs font-[family-name:var(--font-jetbrains-mono)] text-text-muted tabular-nums">
@@ -447,7 +557,7 @@ function ForecastTooltip({ active, payload, label, formatter }: {
         {upper && (
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-1.5">
-              <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: CHART_COLORS.cyan, opacity: 0.4 }} />
+              <span className="h-1.5 w-1.5 rounded-full bg-text-muted/40" />
               <span className="text-xs text-text-muted">Upper</span>
             </div>
             <span className="text-xs font-[family-name:var(--font-jetbrains-mono)] text-text-muted tabular-nums">
