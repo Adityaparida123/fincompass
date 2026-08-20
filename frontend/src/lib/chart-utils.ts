@@ -131,19 +131,45 @@ export function formatPeriodLabel(period: string): string {
 
 // ─── Weekly Fill ────────────────────────────────────────────────
 
+const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] as const;
+
 /**
- * Ensure all 7 days of the current week are present in the data.
- * Uses the provided day breakdown and fills missing days with 0.
- * Returns array sorted by day order (Mon → Sun).
+ * Parse an ISO date string (e.g. "2026-08-17") and return its day-of-week name.
+ */
+function isoDateToDayName(iso: string): string | null {
+  const match = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return null;
+  const d = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  return DAY_NAMES[d.getDay()];
+}
+
+/**
+ * Ensure all 7 days (Mon → Sun) are present in the weekly data.
+ *
+ * The API returns daily_breakdown with ISO date keys (e.g. "2026-08-17"),
+ * NOT English day names. This function:
+ *   1. Parses each ISO key to determine its day-of-week
+ *   2. Maps Mon–Sun to indices 0–6
+ *   3. Fills missing days with amount = 0
+ *   4. Returns exactly 7 entries sorted Mon → Sun
  */
 export function fillWeeklyDays(
   dailyBreakdown: Record<string, string | number>,
 ): { day: string; amount: number }[] {
-  const dayOrder = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-  return dayOrder.map((day) => ({
-    day: day.slice(0, 3),
-    amount: Number(dailyBreakdown[day]) || 0,
-  }));
+  const SHORT_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const bucket = [0, 0, 0, 0, 0, 0, 0]; // Mon=0 ... Sun=6
+
+  for (const [key, val] of Object.entries(dailyBreakdown)) {
+    const dayName = isoDateToDayName(key);
+    if (!dayName) continue;
+    // Map full day name to Mon=0..Sun=6 index
+    // JS: Sun=0, Mon=1, ..., Sat=6  →  We want: Mon=0, ..., Sun=6
+    const jsDay = DAY_NAMES.indexOf(dayName as typeof DAY_NAMES[number]);
+    const monBasedIndex = jsDay === 0 ? 6 : jsDay - 1;
+    bucket[monBasedIndex] = Number(val) || 0;
+  }
+
+  return bucket.map((amount, i) => ({ day: SHORT_DAYS[i], amount }));
 }
 
 // ─── Series Keys Helper ─────────────────────────────────────────

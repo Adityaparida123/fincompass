@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -55,6 +56,15 @@ export default function DashboardPage() {
     upper: f.upper_range ?? f.expected_cashflow,
   })) ?? [];
   const isInsufficientData = forecast.data?.status === "insufficient_data";
+
+  useEffect(() => {
+    if (process.env.NODE_ENV === "development") {
+      console.log("[Dashboard] trendData count:", trendData.length);
+      console.log("[Dashboard] trendData:", trendData);
+      console.log("[Dashboard] raw API points:", trends.data?.points);
+      console.log("[Dashboard] forecastData count:", forecastData.length);
+    }
+  }, [trendData, forecastData, trends.data?.points]);
 
   const scoreProgress = Math.min(100, Math.max(0, score));
   const dashOffset = 283 - (283 * scoreProgress) / 100;

@@ -142,6 +142,29 @@ export function FinancialTrendChart({
 }) {
   const fmt = valueFormatter ?? ((v: number) => formatCurrency(v));
   const yDomain = computeYDomain(data, ["income", "expenses", "net"]);
+  const isSingle = data.length <= 1;
+
+  // Single data point: render as BarChart (AreaChart can't draw a line from 1 point)
+  if (isSingle) {
+    return (
+      <div className={cn("w-full min-w-0 chart-animate", height ?? "h-56 sm:h-64 lg:h-72", className)}>
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+            {showGrid && <CartesianGrid {...gridProps} />}
+            <XAxis dataKey="period" tickFormatter={formatPeriodLabel} {...axisProps} />
+            <YAxis domain={yDomain} tickFormatter={formatCompactINR} {...axisProps} />
+            <Tooltip content={<ChartTooltipContent formatter={fmt} />} cursor={{ fill: "var(--surface-container-high)", opacity: 0.3 }} />
+            {showLegend && <Legend wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />}
+            <Bar dataKey="income" name="Income" fill={CHART_COLORS.teal} radius={[4, 4, 0, 0]} animationDuration={600} />
+            <Bar dataKey="expenses" name="Expenses" fill={CHART_COLORS.indigo} radius={[4, 4, 0, 0]} animationDuration={600} animationBegin={100} />
+            <Bar dataKey="net" name="Net Cash Flow" fill={CHART_COLORS.amber} radius={[4, 4, 0, 0]} animationDuration={600} animationBegin={200} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    );
+  }
+
+  // Multiple data points: render as AreaChart with lines
   return (
     <div className={cn("w-full min-w-0 chart-animate", height ?? "h-56 sm:h-64 lg:h-72", className)}>
       <ResponsiveContainer width="100%" height="100%">
@@ -161,56 +184,13 @@ export function FinancialTrendChart({
             </linearGradient>
           </defs>
           {showGrid && <CartesianGrid {...gridProps} />}
-          <XAxis
-            dataKey="period"
-            tickFormatter={formatPeriodLabel}
-            {...axisProps}
-          />
-          <YAxis
-            domain={yDomain}
-            tickFormatter={formatCompactINR}
-            {...axisProps}
-          />
+          <XAxis dataKey="period" tickFormatter={formatPeriodLabel} {...axisProps} />
+          <YAxis domain={yDomain} tickFormatter={formatCompactINR} {...axisProps} />
           <Tooltip content={<ChartTooltipContent formatter={fmt} />} cursor={{ stroke: "var(--border)", strokeDasharray: "4 4" }} />
           {showLegend && <Legend wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />}
-          <Area
-            type="monotone"
-            dataKey="income"
-            name="Income"
-            stroke={CHART_COLORS.teal}
-            strokeWidth={2.5}
-            fill="url(#finGradIncome)"
-            dot={false}
-            activeDot={{ r: 5, strokeWidth: 2, stroke: CHART_COLORS.teal, fill: "var(--surface-card)" }}
-            animationDuration={800}
-            animationEasing="ease-out"
-          />
-          <Area
-            type="monotone"
-            dataKey="expenses"
-            name="Expenses"
-            stroke={CHART_COLORS.indigo}
-            strokeWidth={2}
-            fill="url(#finGradExpense)"
-            dot={false}
-            activeDot={{ r: 5, strokeWidth: 2, stroke: CHART_COLORS.indigo, fill: "var(--surface-card)" }}
-            animationDuration={800}
-            animationEasing="ease-out"
-            animationBegin={200}
-          />
-          <Area
-            type="monotone"
-            dataKey="net"
-            name="Net Cash Flow"
-            stroke={CHART_COLORS.amber}
-            strokeWidth={1.5}
-            fill="url(#finGradNet)"
-            dot={false}
-            activeDot={{ r: 4, strokeWidth: 2, stroke: CHART_COLORS.amber, fill: "var(--surface-card)" }}
-            animationDuration={800}
-            animationEasing="ease-out"
-            animationBegin={400}
-          />
+          <Area type="monotone" dataKey="income" name="Income" stroke={CHART_COLORS.teal} strokeWidth={2.5} fill="url(#finGradIncome)" dot={false} activeDot={{ r: 5, strokeWidth: 2, stroke: CHART_COLORS.teal, fill: "var(--surface-card)" }} animationDuration={800} animationEasing="ease-out" />
+          <Area type="monotone" dataKey="expenses" name="Expenses" stroke={CHART_COLORS.indigo} strokeWidth={2} fill="url(#finGradExpense)" dot={false} activeDot={{ r: 5, strokeWidth: 2, stroke: CHART_COLORS.indigo, fill: "var(--surface-card)" }} animationDuration={800} animationEasing="ease-out" animationBegin={200} />
+          <Area type="monotone" dataKey="net" name="Net Cash Flow" stroke={CHART_COLORS.amber} strokeWidth={1.5} fill="url(#finGradNet)" dot={false} activeDot={{ r: 4, strokeWidth: 2, stroke: CHART_COLORS.amber, fill: "var(--surface-card)" }} animationDuration={800} animationEasing="ease-out" animationBegin={400} />
         </AreaChart>
       </ResponsiveContainer>
     </div>
@@ -233,6 +213,27 @@ export function CashFlowTrendChart({
 }) {
   const fmt = valueFormatter ?? ((v: number) => formatCurrency(v));
   const yDomain = computeYDomain(data, ["income", "expenses", "net"]);
+  const isSingle = data.length <= 1;
+
+  if (isSingle) {
+    return (
+      <div className={cn("w-full min-w-0 chart-animate", height ?? "h-56 sm:h-64 lg:h-72", className)}>
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+            {showGrid && <CartesianGrid {...gridProps} />}
+            <XAxis dataKey="period" tickFormatter={formatPeriodLabel} {...axisProps} />
+            <YAxis domain={yDomain} tickFormatter={formatCompactINR} {...axisProps} />
+            <Tooltip content={<ChartTooltipContent formatter={fmt} />} cursor={{ fill: "var(--surface-container-high)", opacity: 0.3 }} />
+            <Legend wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />
+            <Bar dataKey="income" name="Income" fill={CHART_COLORS.teal} radius={[4, 4, 0, 0]} animationDuration={600} />
+            <Bar dataKey="expenses" name="Expenses" fill={CHART_COLORS.indigo} radius={[4, 4, 0, 0]} animationDuration={600} animationBegin={100} />
+            <Bar dataKey="net" name="Net" fill={CHART_COLORS.amber} radius={[4, 4, 0, 0]} animationDuration={600} animationBegin={200} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    );
+  }
+
   return (
     <div className={cn("w-full min-w-0 chart-animate", height ?? "h-56 sm:h-64 lg:h-72", className)}>
       <ResponsiveContainer width="100%" height="100%">

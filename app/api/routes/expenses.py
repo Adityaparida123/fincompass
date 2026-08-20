@@ -197,11 +197,11 @@ async def trends(
         start = prev.replace(day=1)
     series = await expense_series(db, user.id, start, end, granularity)
     inc = await income_series(db, user.id, start, end, granularity)
-    ordered_keys = sorted(series.keys())
+    ordered_keys = sorted(set(series.keys()) | set(inc.keys()))
     points: list[ExpenseTrendPoint] = []
     prev_total: Decimal | None = None
     for key in ordered_keys:
-        total = series[key]
+        total = series.get(key, Decimal("0"))
         change = None
         if prev_total is not None and prev_total != 0:
             change = ((total - prev_total) / prev_total * Decimal("100")).quantize(Decimal("0.01"))

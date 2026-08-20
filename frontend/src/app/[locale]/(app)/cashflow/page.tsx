@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -46,6 +47,14 @@ export default function CashflowPage() {
   })) ?? [];
 
   const isInsufficientData = forecast.data?.status === "insufficient_data";
+
+  useEffect(() => {
+    if (process.env.NODE_ENV === "development") {
+      console.log("[Cashflow] trendData count:", trendData.length);
+      console.log("[Cashflow] trendData:", trendData);
+      console.log("[Cashflow] forecastData count:", forecastData.length);
+    }
+  }, [trendData, forecastData]);
   const isNoTransactions = forecast.data?.status === "insufficient_data" && (forecast.data?.available_months ?? 0) === 0;
   const forecastMethod = forecast.data?.method;
   const quality = forecast.data?.forecast_quality ?? "none";
