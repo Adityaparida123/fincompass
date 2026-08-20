@@ -41,7 +41,7 @@ export function TopBar() {
       <div className="flex-1 max-w-sm mx-4 hidden md:block relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted h-3.5 w-3.5" />
         <input
-          className="w-full bg-surface-container-low border border-border rounded-lg pl-9 pr-3 py-1.5 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all text-text-primary placeholder:text-text-muted"
+          className="w-full bg-surface-container-low border border-border rounded-lg pl-9 pr-3 py-1.5 text-sm text-text-primary placeholder:text-text-muted input-premium focus:outline-none"
           placeholder="Search..."
           type="text"
           readOnly
@@ -49,29 +49,35 @@ export function TopBar() {
       </div>
       <div className="flex items-center gap-1">
         <ISTClock className="hidden sm:block" />
-        <Button variant="ghost" size="sm" className="h-8 px-2 text-xs hidden sm:flex" onClick={toggleLocale} aria-label="Switch language">
+        <button
+          className="topbar-icon hidden sm:flex items-center gap-1 h-8 px-2 rounded-lg text-xs text-on-surface-variant hover:text-primary"
+          onClick={toggleLocale}
+          aria-label="Switch language"
+        >
           <Globe className="h-3.5 w-3.5" />
           <span className="ml-1">{locale === "en" ? "हिंदी" : "EN"}</span>
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 text-on-surface-variant hover:text-primary"
+        </button>
+        <button
+          className="topbar-icon h-8 w-8 flex items-center justify-center rounded-lg text-on-surface-variant hover:text-primary"
           onClick={() => setTheme(theme === "dark" ? "light" : theme === "light" ? "system" : "dark")}
           aria-label="Toggle theme"
         >
           {theme === "dark" ? <Sun className="h-4 w-4" /> : theme === "light" ? <Moon className="h-4 w-4" /> : <Monitor className="h-4 w-4" />}
-        </Button>
+        </button>
         <NotificationBell />
-        <Button variant="ghost" size="icon" className="h-8 w-8 text-on-surface-variant hover:text-primary" aria-label={t("settings")}>
-          <Settings className="h-4 w-4" />
-        </Button>
-        <div className="w-7 h-7 rounded-full bg-primary/15 border border-primary/25 cursor-pointer flex items-center justify-center text-[10px] font-semibold text-primary hover:bg-primary/20 transition-colors" title={user?.full_name}>
+        <button className="topbar-icon h-8 w-8 flex items-center justify-center rounded-lg text-on-surface-variant hover:text-primary" aria-label={t("settings")}>
+          <Settings className="h-4 w-4 icon-rotate-subtle" />
+        </button>
+        <div className="w-7 h-7 rounded-full bg-primary/15 border border-primary/25 cursor-pointer flex items-center justify-center text-[10px] font-semibold text-primary hover:bg-primary/20 hover:border-primary/35 transition-all" title={user?.full_name}>
           {initials}
         </div>
-        <Button variant="ghost" size="icon" className="h-8 w-8 hidden sm:flex text-on-surface-variant hover:text-destructive" onClick={handleLogout} aria-label={t("logout")}>
+        <button
+          className="topbar-icon h-8 w-8 hidden sm:flex items-center justify-center rounded-lg text-on-surface-variant hover:text-destructive"
+          onClick={handleLogout}
+          aria-label={t("logout")}
+        >
           <LogOut className="h-4 w-4" />
-        </Button>
+        </button>
       </div>
     </header>
   );

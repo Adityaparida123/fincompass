@@ -78,10 +78,10 @@ function NavGroup({ group, locale, pathname, t, onClick }: {
               key={item.key}
               href={fullHref}
               className={cn(
-                "flex items-center gap-2.5 px-2.5 py-[6px] text-[13px] rounded-md transition-all duration-150",
+                "nav-item flex items-center gap-2.5 px-2.5 py-[6px] text-[13px] rounded-md border-l-2 border-transparent",
                 active
-                  ? "bg-primary/10 text-primary font-medium"
-                  : "text-text-secondary hover:text-text-primary hover:bg-surface-container-high",
+                  ? "nav-item-active font-medium"
+                  : "text-text-secondary",
               )}
               onClick={onClick}
             >
@@ -128,7 +128,7 @@ export function Sidebar() {
       {sidebarOpen && (
         <>
           <div
-            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
+            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden animate-fade-in"
             onClick={() => setSidebarOpen(false)}
             aria-hidden
           />
@@ -174,8 +174,8 @@ export function MobileNav() {
             key={key}
             href={fullHref}
             className={cn(
-              "flex flex-col items-center justify-center rounded-lg px-3 py-1.5 transition-all w-16",
-              active ? "text-primary bg-primary/10" : "text-text-muted active:bg-surface-container-high",
+              "mobile-nav-item flex flex-col items-center justify-center rounded-lg px-3 py-1.5 w-16",
+              active ? "text-primary bg-primary/10" : "text-text-muted",
             )}
           >
             <Icon className="h-5 w-5 mb-0.5" strokeWidth={active ? 2 : 1.5} />

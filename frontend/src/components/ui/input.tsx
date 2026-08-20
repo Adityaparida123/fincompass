@@ -6,7 +6,7 @@ export const Input = React.forwardRef<HTMLInputElement, React.InputHTMLAttribute
     <input
       type={type}
       className={cn(
-        "flex h-9 w-full rounded-lg border border-border bg-surface-container-low px-3 py-2 text-sm text-foreground ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-text-muted focus-visible:outline-none focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary/30 transition-all disabled:cursor-not-allowed disabled:opacity-50",
+        "input-premium flex h-9 w-full rounded-lg border border-border bg-surface-container-low px-3 py-2 text-sm text-foreground ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-text-muted focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50",
         className,
       )}
       ref={ref}
@@ -31,7 +31,7 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, React.TextareaHTML
   ({ className, ...props }, ref) => (
     <textarea
       className={cn(
-        "flex min-h-[80px] w-full rounded-lg border border-border bg-surface-container-low px-3 py-2 text-sm text-foreground ring-offset-background placeholder:text-text-muted focus-visible:outline-none focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary/30 transition-all disabled:cursor-not-allowed disabled:opacity-50 resize-none",
+        "input-premium flex min-h-[80px] w-full rounded-lg border border-border bg-surface-container-low px-3 py-2 text-sm text-foreground ring-offset-background placeholder:text-text-muted focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 resize-none",
         className,
       )}
       ref={ref}
@@ -60,15 +60,41 @@ export function Badge({ className, variant = "default", ...props }: React.HTMLAt
   );
 }
 
-export function Progress({ value, className }: { value: number | string; className?: string }) {
+export function Progress({ value, className, animate = false }: { value: number | string; className?: string; animate?: boolean }) {
   const n = typeof value === "string" ? Number(value) : value;
   const pct = Number.isFinite(n) ? Math.min(100, Math.max(0, n)) : 0;
   return (
     <div className={cn("relative h-1.5 w-full overflow-hidden rounded-full bg-surface-container-high", className)}>
       <div
-        className="h-full bg-primary rounded-full transition-all duration-500 ease-out"
+        className={cn("h-full bg-primary rounded-full", animate ? "progress-animate" : "transition-all duration-500 ease-out")}
         style={{ width: `${pct}%` }}
       />
+    </div>
+  );
+}
+
+export function Select({ className, ...props }: React.SelectHTMLAttributes<HTMLSelectElement>) {
+  return (
+    <select
+      className={cn(
+        "select-premium flex h-9 w-full rounded-lg border border-border bg-surface-container-low px-3 py-2 text-sm text-foreground ring-offset-background focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
+export function Tooltip({ children, content }: { children: React.ReactNode; content: string }) {
+  const [show, setShow] = React.useState(false);
+  return (
+    <div className="relative inline-flex" onMouseEnter={() => setShow(true)} onMouseLeave={() => setShow(false)}>
+      {children}
+      {show && (
+        <div className="tooltip-content absolute bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap z-50">
+          {content}
+        </div>
+      )}
     </div>
   );
 }

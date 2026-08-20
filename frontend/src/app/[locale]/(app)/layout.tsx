@@ -13,7 +13,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="flex flex-1 flex-col min-w-0">
           <TopBar />
           <main className="flex-1 overflow-y-auto pt-6 px-4 md:px-6 pb-24 lg:pb-6 min-h-screen">
-            {children}
+            <div className="page-transition">{children}</div>
           </main>
         </div>
         <MobileNav />

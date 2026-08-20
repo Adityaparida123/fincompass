@@ -193,29 +193,106 @@ body {
   color-scheme: dark;
 }
 
+/* ================================================================
+   ELEVATED CARD — base + hover
+   ================================================================ */
 .elevated-card {
   background: var(--surface-card);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-card);
-  transition: box-shadow var(--transition-base), border-color var(--transition-base);
+  transition: box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 200ms cubic-bezier(0.4, 0, 0.2, 1),
+              transform 200ms cubic-bezier(0.4, 0, 0.2, 1),
+              background-color 200ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .dark .elevated-card {
   border-color: var(--border);
 }
 
-.elevated-card:hover {
+/* ================================================================
+   INTERACTIVE CARD — rises on hover
+   ================================================================ */
+.interactive-card {
+  cursor: default;
+}
+.interactive-card:hover {
   box-shadow: var(--shadow-card-hover);
+  transform: translateY(-2px);
 }
 
+/* ================================================================
+   FINANCIAL STAT CARD
+   ================================================================ */
+.stat-card {
+  transition: box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1),
+              transform 200ms cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.stat-card:hover {
+  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-2px);
+  border-color: var(--border-strong);
+}
+
+/* ================================================================
+   PORTFOLIO CARD — premium hover with teal glow
+   ================================================================ */
+.portfolio-card {
+  transition: box-shadow 250ms cubic-bezier(0.4, 0, 0.2, 1),
+              transform 200ms cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 250ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.portfolio-card:hover {
+  box-shadow: 0 0 0 1px rgba(45, 212, 191, 0.15), 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+  border-color: rgba(45, 212, 191, 0.25);
+}
+.portfolio-card:hover .portfolio-value {
+  color: var(--primary);
+}
+.portfolio-card:hover .portfolio-meta {
+  opacity: 1;
+}
+
+/* ================================================================
+   QUICK ACTION CARDS
+   ================================================================ */
+.quick-action {
+  transition: box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1),
+              transform 200ms cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 200ms cubic-bezier(0.4, 0, 0.2, 1),
+              background-color 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+.quick-action:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-card-hover);
+  border-color: rgba(45, 212, 191, 0.3);
+}
+.quick-action:hover .quick-action-icon {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+}
+.quick-action:hover .quick-action-icon svg {
+  transform: translateX(2px);
+}
+.quick-action:active {
+  transform: scale(0.98) translateY(-1px);
+  transition-duration: 80ms;
+}
+
+/* ================================================================
+   GLASS PANEL (chat, modals)
+   ================================================================ */
 .glass-panel {
   background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--border-subtle);
   box-shadow: var(--shadow-card);
-  transition: all var(--transition-base);
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .dark .glass-panel {
@@ -224,19 +301,355 @@ body {
   box-shadow: var(--shadow-floating);
 }
 
+/* ================================================================
+   GLOW HOVER (portfolio/hero elements)
+   ================================================================ */
 .glow-hover {
-  transition: box-shadow var(--transition-base), transform var(--transition-fast);
+  transition: box-shadow 250ms cubic-bezier(0.4, 0, 0.2, 1), transform 200ms cubic-bezier(0.4, 0, 0.2, 1);
 }
-
 .glow-hover:hover {
   box-shadow: 0 0 24px rgba(10, 133, 122, 0.12);
   transform: translateY(-1px);
 }
-
 .dark .glow-hover:hover {
   box-shadow: 0 0 24px rgba(45, 212, 191, 0.15);
 }
 
+/* ================================================================
+   SIDEBAR NAV ITEM interactions
+   ================================================================ */
+.nav-item {
+  transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1),
+              color 150ms cubic-bezier(0.4, 0, 0.2, 1),
+              transform 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.nav-item:hover {
+  background-color: var(--surface-container-high);
+  color: var(--text-primary);
+  transform: translateX(2px);
+}
+.nav-item:hover svg {
+  color: var(--primary);
+}
+.nav-item-active {
+  background-color: rgba(45, 212, 191, 0.1);
+  color: var(--primary);
+  border-left: 2px solid var(--primary);
+}
+.nav-item-active svg {
+  color: var(--primary);
+}
+
+/* ================================================================
+   TOP BAR ICON BUTTONS
+   ================================================================ */
+.topbar-icon {
+  transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1),
+              color 150ms cubic-bezier(0.4, 0, 0.2, 1),
+              transform 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.topbar-icon:hover {
+  background-color: var(--surface-container-high);
+  color: var(--primary);
+  transform: scale(1.05);
+}
+.topbar-icon:active {
+  transform: scale(0.97);
+  transition-duration: 80ms;
+}
+
+/* ================================================================
+   NOTIFICATION BELL
+   ================================================================ */
+.notification-bell {
+  transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1),
+              transform 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.notification-bell:hover {
+  background-color: var(--surface-container-high);
+  transform: scale(1.05);
+}
+.notification-bell:active {
+  transform: scale(0.97);
+  transition-duration: 80ms;
+}
+
+@keyframes bell-ring {
+  0%, 100% { transform: rotate(0deg); }
+  15% { transform: rotate(14deg); }
+  30% { transform: rotate(-12deg); }
+  45% { transform: rotate(8deg); }
+  60% { transform: rotate(-6deg); }
+  75% { transform: rotate(2deg); }
+}
+.bell-animate {
+  animation: bell-ring 600ms cubic-bezier(0.36, 0.07, 0.19, 0.97) 1;
+}
+
+@keyframes badge-pop {
+  0% { transform: scale(0); opacity: 0; }
+  50% { transform: scale(1.3); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.badge-animate {
+  animation: badge-pop 300ms cubic-bezier(0.34, 1.56, 0.64, 1) 1;
+}
+
+/* ================================================================
+   BUTTONS — active/press states
+   ================================================================ */
+.btn-press {
+  transition: transform 100ms cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1),
+              background-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.btn-press:active {
+  transform: scale(0.98);
+  transition-duration: 80ms;
+}
+
+/* ================================================================
+   INPUTS — focus state
+   ================================================================ */
+.input-premium {
+  transition: border-color 200ms cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1),
+              background-color 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.input-premium:hover:not(:focus-visible) {
+  border-color: var(--border-strong);
+}
+.input-premium:focus-visible {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.12);
+  background-color: var(--surface-container-low);
+}
+
+/* ================================================================
+   TABLE ROWS
+   ================================================================ */
+.table-row-hover {
+  transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.table-row-hover:hover {
+  background-color: var(--surface-container);
+}
+.table-row-hover:hover .table-row-amount {
+  color: var(--text-primary);
+}
+
+/* ================================================================
+   SELECT / DROPDOWN
+   ================================================================ */
+.select-premium {
+  transition: border-color 200ms cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.select-premium:hover {
+  border-color: var(--border-strong);
+}
+.select-premium:focus-visible {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.12);
+}
+
+/* ================================================================
+   BUDGET PROGRESS BAR — entrance animation
+   ================================================================ */
+@keyframes progress-fill {
+  from { width: 0%; }
+}
+.progress-animate {
+  animation: progress-fill 600ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* ================================================================
+   READINESS RING — entrance animation
+   ================================================================ */
+@keyframes ring-fill {
+  from { stroke-dashoffset: 283; }
+}
+.ring-animate {
+  animation: ring-fill 800ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* ================================================================
+   PAGE TRANSITION — fade in up
+   ================================================================ */
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.page-transition {
+  animation: page-enter 200ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* ================================================================
+   SECTION REVEAL — staggered entrance
+   ================================================================ */
+@keyframes section-reveal {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.section-reveal {
+  animation: section-reveal 300ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  opacity: 0;
+}
+.section-reveal-delay-1 { animation-delay: 60ms; }
+.section-reveal-delay-2 { animation-delay: 120ms; }
+.section-reveal-delay-3 { animation-delay: 180ms; }
+.section-reveal-delay-4 { animation-delay: 240ms; }
+.section-reveal-delay-5 { animation-delay: 300ms; }
+
+/* ================================================================
+   SHIMMER SKELETON — improved
+   ================================================================ */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.animate-shimmer {
+  background: linear-gradient(90deg, var(--surface-container) 25%, var(--surface-container-high) 50%, var(--surface-container) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 2s ease-in-out infinite;
+}
+
+/* ================================================================
+   EMPTY STATE — entrance
+   ================================================================ */
+@keyframes empty-enter {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+.empty-state-animate {
+  animation: empty-enter 300ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+.empty-state-animate .empty-icon {
+  animation: empty-enter 300ms cubic-bezier(0.4, 0, 0.2, 1) 100ms forwards;
+  opacity: 0;
+}
+.empty-state-animate .empty-text {
+  animation: empty-enter 300ms cubic-bezier(0.4, 0, 0.2, 1) 180ms forwards;
+  opacity: 0;
+}
+.empty-state-animate .empty-action {
+  animation: empty-enter 300ms cubic-bezier(0.4, 0, 0.2, 1) 260ms forwards;
+  opacity: 0;
+}
+
+/* ================================================================
+   POPOVER / MODAL — entrance/exit
+   ================================================================ */
+@keyframes popover-in {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes popover-out {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to { opacity: 0; transform: translateY(-4px) scale(0.98); }
+}
+.popover-enter {
+  animation: popover-in 200ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* ================================================================
+   TOOLTIP
+   ================================================================ */
+.tooltip-content {
+  background: var(--surface-card);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-md);
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+  font-size: 11px;
+  color: var(--text-primary);
+  pointer-events: none;
+  animation: popover-in 150ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* ================================================================
+   ICON INTERACTIONS
+   ================================================================ */
+.icon-hover {
+  transition: transform 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.icon-hover:hover {
+  transform: translateX(2px);
+}
+.icon-hover-right:hover {
+  transform: translateX(3px);
+}
+.icon-hover-diagonal:hover {
+  transform: translate(2px, -2px);
+}
+.icon-rotate-subtle:hover {
+  transform: rotate(15deg);
+}
+
+/* ================================================================
+   FLOATING ACTION BUTTON (chat)
+   ================================================================ */
+.fab-chat {
+  transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1),
+              background-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.fab-chat:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(45, 212, 191, 0.3);
+}
+.fab-chat:active {
+  transform: scale(0.97);
+  transition-duration: 80ms;
+}
+
+/* ================================================================
+   MOBILE NAV — tap state
+   ================================================================ */
+.mobile-nav-item {
+  transition: background-color 100ms cubic-bezier(0.4, 0, 0.2, 1),
+              color 100ms cubic-bezier(0.4, 0, 0.2, 1),
+              transform 100ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.mobile-nav-item:active {
+  transform: scale(0.95);
+  transition-duration: 60ms;
+}
+
+/* ================================================================
+   RECOMMENDATION CARD — interactive
+   ================================================================ */
+.recommendation-card {
+  transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 200ms cubic-bezier(0.4, 0, 0.2, 1),
+              transform 200ms cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.recommendation-card:hover {
+  background-color: var(--surface-container-high);
+  border-color: var(--border-strong);
+}
+
+/* ================================================================
+   CATEGORY TILE — interactive
+   ================================================================ */
+.category-tile {
+  transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 200ms cubic-bezier(0.4, 0, 0.2, 1),
+              transform 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.category-tile:hover {
+  border-color: var(--primary);
+  background-color: rgba(45, 212, 191, 0.05);
+}
+.category-tile:active {
+  transform: scale(0.98);
+  transition-duration: 80ms;
+}
+
+/* ================================================================
+   STANDARD ANIMATIONS
+   ================================================================ */
 @keyframes fade-in-up {
   from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
@@ -255,11 +668,6 @@ body {
 @keyframes scale-in {
   from { opacity: 0; transform: scale(0.95); }
   to { opacity: 1; transform: scale(1); }
-}
-
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
 }
 
 @keyframes pulse-soft {
@@ -283,20 +691,41 @@ body {
   animation: scale-in 0.25s ease-out forwards;
 }
 
-.animate-shimmer {
-  background: linear-gradient(90deg, var(--surface-container) 25%, var(--surface-container-high) 50%, var(--surface-container) 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.8s infinite;
-}
-
 .animate-pulse-soft {
   animation: pulse-soft 2s ease-in-out infinite;
 }
 
+/* ================================================================
+   ACCESSIBILITY — prefers-reduced-motion
+   ================================================================ */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .nav-item:hover {
+    transform: none;
+  }
+  .interactive-card:hover,
+  .stat-card:hover,
+  .portfolio-card:hover,
+  .quick-action:hover {
+    transform: none;
+  }
+  .quick-action:active {
+    transform: none;
+  }
+  .btn-press:active {
+    transform: none;
+  }
+  .fab-chat:hover,
+  .fab-chat:active {
+    transform: none;
+  }
+  .badge-animate,
+  .bell-animate {
+    animation: none;
   }
 }

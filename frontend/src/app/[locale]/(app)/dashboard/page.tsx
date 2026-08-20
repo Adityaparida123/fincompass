@@ -62,25 +62,25 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 page-transition">
       {/* Header */}
-      <div>
+      <div className="section-reveal">
         <h1 className="text-2xl font-semibold tracking-tight text-text-primary">{t("greeting")}</h1>
         <p className="text-sm text-text-muted mt-0.5">{format(new Date(), "EEEE, MMMM d, yyyy")}</p>
       </div>
 
       {/* Portfolio Value — Primary metric */}
-      <div className="rounded-xl border border-border bg-surface-card p-5 relative overflow-hidden">
+      <div className="rounded-xl border border-border bg-surface-card p-5 relative overflow-hidden portfolio-card section-reveal section-reveal-delay-1">
         <div className="absolute -right-10 -top-10 w-32 h-32 bg-primary/5 rounded-full blur-3xl" />
         <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted mb-1">Total Portfolio Value</p>
-        <h2 className="text-3xl font-bold tracking-tight font-[family-name:var(--font-jetbrains-mono)] text-text-primary">
+        <h2 className="text-3xl font-bold tracking-tight font-[family-name:var(--font-jetbrains-mono)] text-text-primary transition-colors duration-250 portfolio-value">
           {monthly.isLoading ? (
             <Skeleton className="h-8 w-40 inline-block" />
           ) : (
             formatCurrency(totalIncome + totalSavings)
           )}
         </h2>
-        <div className="flex items-center gap-3 mt-2">
+        <div className="flex items-center gap-3 mt-2 portfolio-meta transition-opacity duration-200" style={{ opacity: 0.85 }}>
           {changePercent != null && (
             <span className="flex items-center gap-1 text-xs font-semibold text-primary">
               <TrendingUp className="h-3 w-3" />
@@ -92,22 +92,22 @@ export default function DashboardPage() {
       </div>
 
       {/* Financial Summary — Clean row */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-px rounded-xl border border-border overflow-hidden bg-border">
-        <div className="bg-surface-card p-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-px rounded-xl border border-border overflow-hidden bg-border section-reveal section-reveal-delay-2">
+        <div className="bg-surface-card p-4 stat-card">
           <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted mb-1">Income</p>
           <p className="text-xl font-bold font-[family-name:var(--font-jetbrains-mono)] text-text-primary tabular-nums">
             {monthly.isLoading ? <Skeleton className="h-6 w-24 inline-block" /> : formatCurrency(totalIncome)}
           </p>
           <p className="text-[11px] text-text-muted mt-1">This month</p>
         </div>
-        <div className="bg-surface-card p-4">
+        <div className="bg-surface-card p-4 stat-card">
           <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted mb-1">Expenses</p>
           <p className="text-xl font-bold font-[family-name:var(--font-jetbrains-mono)] text-text-primary tabular-nums">
             {monthly.isLoading ? <Skeleton className="h-6 w-24 inline-block" /> : formatCurrency(totalExpenses)}
           </p>
           <p className="text-[11px] text-text-muted mt-1">This month</p>
         </div>
-        <div className="bg-surface-card p-4">
+        <div className="bg-surface-card p-4 stat-card">
           <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted mb-1">Net Cash Flow</p>
           <p className={`text-xl font-bold font-[family-name:var(--font-jetbrains-mono)] tabular-nums ${netCashFlow < 0 ? "text-destructive" : "text-primary"}`}>
             {monthly.isLoading ? <Skeleton className="h-6 w-24 inline-block" /> : formatCurrency(netCashFlow)}
@@ -117,9 +117,9 @@ export default function DashboardPage() {
       </div>
 
       {/* Bento Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 section-reveal section-reveal-delay-3">
         {/* Credit Readiness */}
-        <div className="lg:col-span-4 rounded-xl border border-border bg-surface-card p-5 flex flex-col">
+        <div className="lg:col-span-4 rounded-xl border border-border bg-surface-card p-5 flex flex-col interactive-card">
           <div className="flex justify-between items-center mb-3">
             <h4 className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">Credit Readiness</h4>
             <Info className="h-3.5 w-3.5 text-text-muted/50" />
@@ -148,12 +148,12 @@ export default function DashboardPage() {
             </div>
           </div>
           <Link href={`/${locale}/readiness`} className="w-full mt-3 bg-surface-container-high border border-border text-text-primary font-medium py-1.5 rounded-lg hover:bg-surface-container-highest transition-colors flex items-center justify-center gap-2 text-xs">
-            View Analysis <ArrowRight className="h-3.5 w-3.5" />
+            View Analysis <ArrowRight className="h-3.5 w-3.5 icon-hover" />
           </Link>
         </div>
 
         {/* Recent Activity */}
-        <div className="lg:col-span-5 rounded-xl border border-border bg-surface-card p-5 flex flex-col">
+        <div className="lg:col-span-5 rounded-xl border border-border bg-surface-card p-5 flex flex-col interactive-card">
           <div className="flex justify-between items-center mb-3">
             <h4 className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">Recent Activity</h4>
             <Link href={`/${locale}/expenses`} className="text-primary text-[11px] font-medium hover:underline">View All</Link>
@@ -197,9 +197,9 @@ export default function DashboardPage() {
             <Link
               key={action.label}
               href={action.href}
-              className="w-full rounded-xl border border-border bg-surface-card p-3 flex items-center gap-3 hover:border-primary/30 hover:bg-surface-container-high transition-all group text-left"
+              className="w-full rounded-xl border border-border bg-surface-card p-3 flex items-center gap-3 hover:border-primary/30 hover:bg-surface-container-high transition-all group text-left quick-action"
             >
-              <div className="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-text-muted group-hover:bg-primary group-hover:text-primary-foreground transition-colors shrink-0">
+              <div className="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-text-muted group-hover:bg-primary group-hover:text-primary-foreground transition-colors shrink-0 quick-action-icon">
                 <action.icon className="h-4 w-4" />
               </div>
               <div className="min-w-0">
@@ -212,7 +212,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Charts Row */}
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-2 section-reveal section-reveal-delay-4">
         <Card>
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
@@ -241,7 +241,7 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between">
               <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">{t("budgetStatus")}</CardTitle>
               <Link href={`/${locale}/budget`} className="flex items-center gap-1 text-[11px] text-primary hover:underline">
-                View all <ArrowRight className="h-3 w-3" />
+                View all <ArrowRight className="h-3 w-3 icon-hover" />
               </Link>
             </div>
           </CardHeader>
@@ -269,7 +269,7 @@ export default function DashboardPage() {
                     </div>
                     <div className="h-1.5 rounded-full bg-surface-container-high overflow-hidden">
                       <div
-                        className={`h-full rounded-full transition-all duration-500 ${over ? "bg-destructive" : nearing ? "bg-warning" : "bg-primary"}`}
+                        className={`h-full rounded-full transition-all duration-500 progress-animate ${over ? "bg-destructive" : nearing ? "bg-warning" : "bg-primary"}`}
                         style={{ width: `${Math.min(100, pctUsed)}%` }}
                       />
                     </div>
@@ -288,7 +288,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Insights Row */}
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-3 section-reveal section-reveal-delay-5">
         <Card>
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
@@ -350,7 +350,7 @@ export default function DashboardPage() {
                   <p key={i} className="text-[11px] text-text-muted leading-relaxed">{e.description}</p>
                 ))}
                 <Link href={`/${locale}/cashflow`} className="flex items-center gap-1 text-[11px] font-medium text-primary hover:underline">
-                  View forecast <ArrowRight className="h-3 w-3" />
+                  View forecast <ArrowRight className="h-3 w-3 icon-hover" />
                 </Link>
               </div>
             ) : forecastData.length ? (
@@ -406,7 +406,7 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between">
               <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">Recommendations</CardTitle>
               <Link href={`/${locale}/recommendations`} className="flex items-center gap-1 text-[11px] text-primary hover:underline">
-                View all <ArrowRight className="h-3 w-3" />
+                View all <ArrowRight className="h-3 w-3 icon-hover" />
               </Link>
             </div>
           </CardHeader>
@@ -418,7 +418,7 @@ export default function DashboardPage() {
             ) : recommendations.data?.recommendations?.length ? (
               <div className="space-y-1.5">
                 {recommendations.data.recommendations.slice(0, 3).map((r, i) => (
-                  <div key={i} className="rounded-lg border border-border p-2.5 transition-colors hover:bg-surface-container-high">
+                  <div key={i} className="rounded-lg border border-border p-2.5 transition-colors hover:bg-surface-container-high recommendation-card">
                     <p className="text-xs font-medium leading-snug text-text-primary">{r.title}</p>
                     <p className="mt-0.5 text-[11px] text-text-muted line-clamp-2">{r.reason}</p>
                   </div>

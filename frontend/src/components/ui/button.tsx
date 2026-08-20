@@ -4,13 +4,13 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "btn-press inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary-dark shadow-sm",
-        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-sm",
-        outline: "border border-border bg-transparent hover:bg-surface-container-high hover:text-foreground",
+        default: "bg-primary text-primary-foreground hover:bg-primary-dark hover:shadow-md shadow-sm",
+        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90 hover:shadow-md shadow-sm",
+        outline: "border border-border bg-transparent hover:bg-surface-container-high hover:text-foreground hover:border-border-strong",
         secondary: "bg-surface-container-high text-text-primary hover:bg-surface-container-highest",
         ghost: "hover:bg-surface-container-high/60 hover:text-foreground",
         link: "text-primary underline-offset-4 hover:underline",

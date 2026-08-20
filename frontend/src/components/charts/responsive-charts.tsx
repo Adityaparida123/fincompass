@@ -17,7 +17,7 @@ function ChartTooltipContent({ active, payload, label, formatter }: {
 }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-lg border border-border bg-surface-card px-3 py-2 shadow-lg">
+    <div className="popover-enter rounded-lg border border-border bg-surface-card px-3 py-2 shadow-lg">
       {label && <p className="mb-1 text-[11px] font-medium text-text-muted">{label}</p>}
       {payload.map((entry, i) => (
         <div key={i} className="flex items-center gap-2 text-[13px]">
@@ -38,7 +38,7 @@ function PieTooltipContent({ active, payload, formatter }: {
   if (!active || !payload?.length) return null;
   const entry = payload[0];
   return (
-    <div className="rounded-lg border border-border bg-surface-card px-3 py-2 shadow-lg">
+    <div className="popover-enter rounded-lg border border-border bg-surface-card px-3 py-2 shadow-lg">
       <p className="text-[13px] font-medium text-text-primary">{entry.name}</p>
       <p className="text-[13px] text-text-muted">{formatter ? formatter(entry.value) : entry.value.toLocaleString()}</p>
     </div>

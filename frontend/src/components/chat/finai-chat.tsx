@@ -126,14 +126,13 @@ export function FinAIChat() {
   return (
     <>
       {!isOpen && (
-        <Button
-          className="fixed bottom-16 right-4 z-50 h-12 w-12 rounded-full shadow-lg lg:bottom-5"
-          size="icon"
+        <button
+          className="fab-chat fixed bottom-16 right-4 z-50 h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-lg lg:bottom-5 flex items-center justify-center"
           onClick={() => setOpen(true)}
           aria-label={t("title")}
         >
           <MessageCircle className="h-5 w-5" />
-        </Button>
+        </button>
       )}
 
       <AnimatePresence>
