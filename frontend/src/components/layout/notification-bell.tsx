@@ -47,7 +47,7 @@ export function NotificationBell() {
   return (
     <div className="relative" ref={ref}>
       <button
-        className="relative hover:text-primary transition-colors text-on-surface-variant p-1 rounded-lg hover:bg-surface-container-high/60"
+        className="relative hover:text-primary transition-colors text-on-surface-variant p-1.5 rounded-lg hover:bg-surface-container-high"
         onClick={() => setOpen((v) => !v)}
         aria-label="Notifications"
       >
@@ -57,9 +57,9 @@ export function NotificationBell() {
         )}
       </button>
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-2 w-80 rounded-xl border border-border-subtle bg-surface-card p-1.5 shadow-lg">
-          <div className="flex items-center justify-between px-3 py-1.5">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-text-muted">Notifications</p>
+        <div className="absolute right-0 top-full z-50 mt-2 w-80 rounded-xl border border-border bg-surface-card p-1.5 shadow-floating animate-scale-in">
+          <div className="flex items-center justify-between px-3 py-2">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">Notifications</p>
             <div className="flex items-center gap-2">
               {unread > 0 && (
                 <button
@@ -79,13 +79,13 @@ export function NotificationBell() {
             </div>
           </div>
           {items.length === 0 ? (
-            <p className="p-3 text-[13px] text-text-muted">No notifications</p>
+            <p className="p-4 text-sm text-text-muted text-center">No notifications</p>
           ) : (
             items.map((n) => (
               <button
                 key={n.id}
                 className={cn(
-                  "w-full rounded-lg p-2.5 text-left text-[13px] hover:bg-surface-container-high/60 transition-colors",
+                  "w-full rounded-lg p-2.5 text-left text-sm hover:bg-surface-container-high transition-colors",
                   !n.is_read && "bg-primary/5",
                 )}
                 onClick={() => {
@@ -94,7 +94,7 @@ export function NotificationBell() {
                 }}
               >
                 <p className="font-medium text-text-primary">{n.title}</p>
-                <p className="text-text-muted line-clamp-2 text-[12px]">{n.message}</p>
+                <p className="text-text-muted line-clamp-2 text-xs mt-0.5">{n.message}</p>
               </button>
             ))
           )}

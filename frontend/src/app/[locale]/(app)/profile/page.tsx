@@ -63,7 +63,7 @@ export default function ProfilePage() {
       <PageHeader title={t("title")} />
 
       <Card>
-        <CardHeader className="pb-3"><CardTitle className="text-[12px] font-semibold uppercase tracking-[0.05em] text-text-muted">{t("title")}</CardTitle></CardHeader>
+        <CardHeader className="pb-3"><CardTitle className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">{t("title")}</CardTitle></CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2 max-w-2xl">
             <div><Label>{t("fullName")}</Label><Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} required /></div>

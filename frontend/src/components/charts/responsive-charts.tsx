@@ -7,7 +7,7 @@ import {
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/utils";
 
-const COLORS = ["#5fd4c6", "#818cf8", "#f59e0b", "#f87171", "#a78bfa", "#22d3ee", "#34d399", "#fb923c"];
+const COLORS = ["#2dd4bf", "#818cf8", "#f59e0b", "#f87171", "#a78bfa", "#22d3ee", "#34d399", "#fb923c"];
 
 function ChartTooltipContent({ active, payload, label, formatter }: {
   active?: boolean;
@@ -17,7 +17,7 @@ function ChartTooltipContent({ active, payload, label, formatter }: {
 }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="glass-panel rounded-lg px-3 py-2 shadow-lg">
+    <div className="rounded-lg border border-border bg-surface-card px-3 py-2 shadow-lg">
       {label && <p className="mb-1 text-[11px] font-medium text-text-muted">{label}</p>}
       {payload.map((entry, i) => (
         <div key={i} className="flex items-center gap-2 text-[13px]">
@@ -38,7 +38,7 @@ function PieTooltipContent({ active, payload, formatter }: {
   if (!active || !payload?.length) return null;
   const entry = payload[0];
   return (
-    <div className="glass-panel rounded-lg px-3 py-2 shadow-lg">
+    <div className="rounded-lg border border-border bg-surface-card px-3 py-2 shadow-lg">
       <p className="text-[13px] font-medium text-text-primary">{entry.name}</p>
       <p className="text-[13px] text-text-muted">{formatter ? formatter(entry.value) : entry.value.toLocaleString()}</p>
     </div>
@@ -64,7 +64,7 @@ export function ResponsiveBarChart({
 }) {
   const fmt = valueFormatter ?? ((v: number) => formatCurrency(v));
   return (
-    <div className={cn("w-full min-w-0", height ?? "h-56 sm:h-64 lg:h-72", className)}>
+    <div className={cn("w-full min-w-0", height ?? "h-52 sm:h-60 lg:h-64", className)}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
           {showGrid && <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" vertical={false} />}
@@ -102,7 +102,7 @@ export function ResponsiveLineChart({
 }) {
   const fmt = valueFormatter ?? ((v: number) => formatCurrency(v));
   return (
-    <div className={cn("w-full min-w-0", height ?? "h-56 sm:h-64 lg:h-72", className)}>
+    <div className={cn("w-full min-w-0", height ?? "h-52 sm:h-60 lg:h-64", className)}>
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
           {showGrid && <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" vertical={false} />}
@@ -113,9 +113,9 @@ export function ResponsiveLineChart({
           {lines.map((l, i) => {
             const color = l.color ?? COLORS[i % COLORS.length];
             return showArea ? (
-              <Area key={l.key} type="monotone" dataKey={l.key} stroke={color} fill={color} fillOpacity={0.1} name={l.name ?? l.key} strokeWidth={2} strokeDasharray={l.dashed ? "5 5" : undefined} dot={{ r: 2.5, fill: color }} activeDot={{ r: 4 }} />
+              <Area key={l.key} type="monotone" dataKey={l.key} stroke={color} fill={color} fillOpacity={0.08} name={l.name ?? l.key} strokeWidth={2} strokeDasharray={l.dashed ? "5 5" : undefined} dot={{ r: 2, fill: color }} activeDot={{ r: 4 }} />
             ) : (
-              <Line key={l.key} type="monotone" dataKey={l.key} stroke={color} name={l.name ?? l.key} strokeWidth={2} strokeDasharray={l.dashed ? "5 5" : undefined} dot={{ r: 2.5, fill: color }} activeDot={{ r: 4 }} />
+              <Line key={l.key} type="monotone" dataKey={l.key} stroke={color} name={l.name ?? l.key} strokeWidth={2} strokeDasharray={l.dashed ? "5 5" : undefined} dot={{ r: 2, fill: color }} activeDot={{ r: 4 }} />
             );
           })}
         </LineChart>
@@ -136,7 +136,7 @@ export function ResponsivePieChart({
   const fmt = valueFormatter ?? ((v: number) => formatCurrency(v));
   const total = data.reduce((s, d) => s + d.value, 0);
   return (
-    <div className={cn("w-full min-w-0 h-56 sm:h-64", className)}>
+    <div className={cn("w-full min-w-0 h-52 sm:h-60", className)}>
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           <Pie
@@ -146,7 +146,7 @@ export function ResponsivePieChart({
             cx="50%"
             cy="50%"
             outerRadius="72%"
-            innerRadius="45%"
+            innerRadius="50%"
             paddingAngle={2}
             stroke="none"
             label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
@@ -165,7 +165,7 @@ export function ResponsivePieChart({
 
 export function ChartSkeleton({ className }: { className?: string }) {
   return (
-    <div className={cn("w-full min-w-0 h-56 sm:h-64 lg:h-72 animate-shimmer rounded-xl", className)}>
+    <div className={cn("w-full min-w-0 h-52 sm:h-60 lg:h-64 animate-shimmer rounded-xl", className)}>
       <div className="flex h-full items-end gap-2 p-5">
         {[40, 70, 55, 80, 45, 65].map((h, i) => (
           <div key={i} className="flex-1 rounded-t bg-surface-container-high/60" style={{ height: `${h}%` }} />
@@ -178,9 +178,9 @@ export function ChartSkeleton({ className }: { className?: string }) {
 export function PageError({ message, onRetry }: { message: string; onRetry?: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center gap-2.5 rounded-xl border border-dashed border-destructive/20 bg-destructive/5 p-6 text-center">
-      <p className="text-[13px] text-text-muted">{message}</p>
+      <p className="text-sm text-text-muted">{message}</p>
       {onRetry && (
-        <button className="rounded-lg bg-primary/10 px-3.5 py-1.5 text-[12px] font-medium text-primary transition-colors hover:bg-primary/20" onClick={onRetry}>
+        <button className="rounded-lg bg-primary/10 px-3.5 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/20" onClick={onRetry}>
           Try again
         </button>
       )}

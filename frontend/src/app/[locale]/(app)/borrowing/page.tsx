@@ -85,7 +85,7 @@ export default function BorrowingPage() {
 
       {emiResult && (
         <Card>
-          <CardHeader className="pb-3">          <CardTitle className="text-[12px] font-semibold uppercase tracking-[0.05em] text-text-muted">{t("emi")}</CardTitle></CardHeader>
+          <CardHeader className="pb-3">          <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">{t("emi")}</CardTitle></CardHeader>
           <CardContent>
             <div className="grid gap-4 sm:grid-cols-3">
               <div className="rounded-lg bg-primary/5 px-4 py-3">
@@ -113,7 +113,7 @@ export default function BorrowingPage() {
             <CardHeader className="pb-3">
               <div className="flex items-center gap-2">
                 {toNumber(simResult.affordability_ratio) > 40 ? <XCircle className="h-4 w-4 text-destructive" /> : <CheckCircle className="h-4 w-4 text-income" />}
-                <CardTitle className="text-[12px] font-semibold uppercase tracking-[0.05em] text-text-muted">{t("recommendation")}</CardTitle>
+                <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">{t("recommendation")}</CardTitle>
               </div>
             </CardHeader>
             <CardContent className="space-y-4 text-sm">
@@ -155,12 +155,12 @@ export default function BorrowingPage() {
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-2">
                   <HandCoins className="h-4 w-4 text-primary" />
-                  <CardTitle className="text-[12px] font-semibold uppercase tracking-[0.05em] text-text-muted">{t("alternatives")}</CardTitle>
+                  <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">{t("alternatives")}</CardTitle>
                 </div>
               </CardHeader>
               <CardContent className="space-y-2">
                 {altItems.map((a, i) => (
-                  <div key={i} className="rounded-lg border border-border-subtle p-3 transition-colors hover:bg-surface-container">
+                  <div key={i} className="rounded-lg border border-border p-3 transition-colors hover:bg-surface-container">
                     <p className="text-sm font-medium">{a.title}</p>
                     {a.description && <p className="mt-1 text-xs text-text-muted">{a.description}</p>}
                   </div>

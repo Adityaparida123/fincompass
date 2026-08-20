@@ -77,19 +77,19 @@ export default function BudgetPage() {
         <div className="grid gap-4 sm:grid-cols-3">
           <Card>
             <CardContent className="pt-5">
-              <p className="text-[12px] font-semibold uppercase tracking-[0.05em] text-text-muted">Total Budget</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">Total Budget</p>
               <p className="mt-1 text-2xl font-bold font-[family-name:var(--font-jetbrains-mono)]">{formatCurrency(totalBudget)}</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-5">
-              <p className="text-[12px] font-semibold uppercase tracking-[0.05em] text-text-muted">Spent</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">Spent</p>
               <p className="mt-1 text-2xl font-bold font-[family-name:var(--font-jetbrains-mono)]">{formatCurrency(totalSpent)}</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-5">
-              <p className="text-[12px] font-semibold uppercase tracking-[0.05em] text-text-muted">Remaining</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">Remaining</p>
               <p className={`mt-1 text-2xl font-bold font-[family-name:var(--font-jetbrains-mono)] ${totalRemaining < 0 ? "text-destructive" : "text-income"}`}>{formatCurrency(totalRemaining)}</p>
             </CardContent>
           </Card>
@@ -99,7 +99,7 @@ export default function BudgetPage() {
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-[12px] font-semibold uppercase tracking-[0.05em] text-text-muted">{t("title")}</CardTitle>
+            <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">{t("title")}</CardTitle>
             {overBudgetCount > 0 && (
               <Badge variant="destructive" className="text-[10px]">
                 <AlertTriangle className="mr-1 h-3 w-3" />{overBudgetCount} over budget

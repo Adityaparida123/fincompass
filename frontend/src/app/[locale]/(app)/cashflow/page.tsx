@@ -67,7 +67,7 @@ export default function CashflowPage() {
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-[12px] font-semibold uppercase tracking-[0.05em] text-text-muted">{t("trends")}</CardTitle>
+          <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">{t("trends")}</CardTitle>
         </CardHeader>
         <CardContent>
           {trends.isLoading ? <ChartSkeleton /> : trends.isError ? (
@@ -89,7 +89,7 @@ export default function CashflowPage() {
       <Card>
         <CardHeader className="pb-3">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <CardTitle className="text-[12px] font-semibold uppercase tracking-[0.05em] text-text-muted">{t("forecast")}</CardTitle>
+            <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">{t("forecast")}</CardTitle>
             <div className="flex flex-wrap items-center gap-2">
               {forecastMethod === "rolling_baseline" && (
                 <Badge variant="secondary" className="text-[10px]">{t("baselineMethod")}</Badge>
@@ -113,7 +113,7 @@ export default function CashflowPage() {
               icon={Wallet}
             />
           ) : isInsufficientData ? (
-            <div className="rounded-xl border border-dashed border-warning/30 bg-warning/5 p-6 text-center">
+            <div className="rounded-xl border border-dashed border-warning/30 bg-warning/5 p-5 text-center">
               <p className="text-sm font-medium">{t("insufficientData")}</p>
               <p className="mt-1 text-xs text-text-muted">{t("insufficientDataDesc")}</p>
               <p className="mt-2 text-xs text-text-muted">
@@ -126,8 +126,8 @@ export default function CashflowPage() {
             <>
               <div className="grid gap-4 sm:grid-cols-3 mb-6">
                 {expenseForecast && (
-                  <div className="rounded-xl border border-border-subtle bg-surface-container-low p-4">
-                    <p className="text-[12px] font-semibold uppercase tracking-[0.05em] text-text-muted">{t("expectedExpenses")}</p>
+                  <div className="rounded-xl border border-border bg-surface-container-low p-4">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">{t("expectedExpenses")}</p>
                     <p className="mt-1 text-2xl font-bold tracking-tight font-[family-name:var(--font-jetbrains-mono)]">{formatCurrency(expenseForecast.predicted)}</p>
                     <p className="mt-0.5 text-xs text-text-muted">
                       Range: {formatCurrency(expenseForecast.lower)} – {formatCurrency(expenseForecast.upper)}
@@ -135,8 +135,8 @@ export default function CashflowPage() {
                   </div>
                 )}
                 {incomeForecast && (
-                  <div className="rounded-xl border border-border-subtle bg-surface-container-low p-4">
-                    <p className="text-[12px] font-semibold uppercase tracking-[0.05em] text-text-muted">{t("expectedIncome")}</p>
+                  <div className="rounded-xl border border-border bg-surface-container-low p-4">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">{t("expectedIncome")}</p>
                     <p className="mt-1 text-2xl font-bold tracking-tight font-[family-name:var(--font-jetbrains-mono)]">{formatCurrency(incomeForecast.predicted)}</p>
                     <p className="mt-0.5 text-xs text-text-muted">
                       Range: {formatCurrency(incomeForecast.lower)} – {formatCurrency(incomeForecast.upper)}
@@ -144,8 +144,8 @@ export default function CashflowPage() {
                   </div>
                 )}
                 {expenseForecast && incomeForecast && (
-                  <div className="rounded-xl border border-border-subtle bg-surface-container-low p-4">
-                    <p className="text-[12px] font-semibold uppercase tracking-[0.05em] text-text-muted">{t("expectedCashFlow")}</p>
+                  <div className="rounded-xl border border-border bg-surface-container-low p-4">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">{t("expectedCashFlow")}</p>
                     <p className={`mt-1 text-2xl font-bold tracking-tight font-[family-name:var(--font-jetbrains-mono)] ${(incomeForecast.predicted - expenseForecast.predicted) < 0 ? "text-destructive" : "text-income"}`}>
                       {formatCurrency(incomeForecast.predicted - expenseForecast.predicted)}
                     </p>
@@ -164,10 +164,10 @@ export default function CashflowPage() {
 
               {categoryForecasts.length > 0 && (
                 <div className="mt-6">
-                  <h3 className="text-[12px] font-semibold uppercase tracking-[0.05em] text-text-muted mb-3">{t("categoryForecasts")}</h3>
+                  <h3 className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted mb-3">{t("categoryForecasts")}</h3>
                   <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                     {categoryForecasts.map((cf) => (
-                      <div key={cf.category} className="flex items-center justify-between rounded-lg border border-border-subtle px-3 py-2.5 transition-colors hover:bg-surface-container">
+                      <div key={cf.category} className="flex items-center justify-between rounded-lg border border-border px-3 py-2.5 transition-colors hover:bg-surface-container">
                         <div>
                           <span className="text-sm capitalize font-medium">{cf.category}</span>
                           <span className="ml-2 text-[10px] text-text-muted">

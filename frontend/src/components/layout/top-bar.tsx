@@ -33,22 +33,22 @@ export function TopBar() {
     : "U";
 
   return (
-    <header className="flex justify-between items-center h-14 px-4 md:px-6 w-full z-40 bg-background-page/90 backdrop-blur-xl border-b border-border-subtle sticky top-0">
+    <header className="flex justify-between items-center h-12 px-4 md:px-6 w-full z-40 bg-background-page/80 backdrop-blur-xl border-b border-border sticky top-0">
       <div className="flex items-center gap-3 min-w-0">
         <SidebarToggle />
-        <div className="lg:hidden text-base font-semibold text-primary tracking-tight truncate">FinCompass</div>
+        <div className="lg:hidden text-sm font-semibold text-primary tracking-tight truncate">FinCompass</div>
       </div>
       <div className="flex-1 max-w-sm mx-4 hidden md:block relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted h-3.5 w-3.5" />
         <input
-          className="w-full bg-surface-container-low border border-border-subtle rounded-lg pl-9 pr-3 py-1.5 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all text-text-primary placeholder:text-text-muted"
+          className="w-full bg-surface-container-low border border-border rounded-lg pl-9 pr-3 py-1.5 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all text-text-primary placeholder:text-text-muted"
           placeholder="Search..."
           type="text"
           readOnly
         />
       </div>
-      <div className="flex items-center gap-1.5">
-        <ISTClock />
+      <div className="flex items-center gap-1">
+        <ISTClock className="hidden sm:block" />
         <Button variant="ghost" size="sm" className="h-8 px-2 text-xs hidden sm:flex" onClick={toggleLocale} aria-label="Switch language">
           <Globe className="h-3.5 w-3.5" />
           <span className="ml-1">{locale === "en" ? "हिंदी" : "EN"}</span>
@@ -66,7 +66,7 @@ export function TopBar() {
         <Button variant="ghost" size="icon" className="h-8 w-8 text-on-surface-variant hover:text-primary" aria-label={t("settings")}>
           <Settings className="h-4 w-4" />
         </Button>
-        <div className="w-8 h-8 rounded-full bg-primary/15 border border-primary/25 cursor-pointer flex items-center justify-center text-[11px] font-semibold text-primary hover:bg-primary/20 transition-colors" title={user?.full_name}>
+        <div className="w-7 h-7 rounded-full bg-primary/15 border border-primary/25 cursor-pointer flex items-center justify-center text-[10px] font-semibold text-primary hover:bg-primary/20 transition-colors" title={user?.full_name}>
           {initials}
         </div>
         <Button variant="ghost" size="icon" className="h-8 w-8 hidden sm:flex text-on-surface-variant hover:text-destructive" onClick={handleLogout} aria-label={t("logout")}>

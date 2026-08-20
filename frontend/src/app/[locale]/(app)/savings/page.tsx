@@ -117,7 +117,7 @@ export default function SavingsPage() {
         <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-[12px] font-semibold uppercase tracking-[0.05em] text-text-muted">{t("mlCapacity")}</CardTitle>
+              <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">{t("mlCapacity")}</CardTitle>
               <Badge variant="outline" className="text-[10px]">{tc("forecastDisclaimer")}</Badge>
             </div>
           </CardHeader>
@@ -135,7 +135,7 @@ export default function SavingsPage() {
         {projectedSurplus !== null && (
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-[12px] font-semibold uppercase tracking-[0.05em] text-text-muted">{t("forecastSurplus")}</CardTitle>
+              <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">{t("forecastSurplus")}</CardTitle>
             </CardHeader>
             <CardContent>
               <p className={`text-2xl font-bold tracking-tight font-[family-name:var(--font-jetbrains-mono)] ${projectedSurplus >= 0 ? "text-income" : "text-destructive"}`}>

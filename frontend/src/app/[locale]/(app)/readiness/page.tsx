@@ -140,7 +140,7 @@ export default function ReadinessPage() {
 
       {result && (
         <Card className="border-primary/30 bg-primary/5">
-          <CardHeader className="pb-3"><CardTitle className="text-[12px] font-semibold uppercase tracking-[0.05em] text-text-muted">{t("whatChanged")}</CardTitle></CardHeader>
+          <CardHeader className="pb-3"><CardTitle className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">{t("whatChanged")}</CardTitle></CardHeader>
           <CardContent className="space-y-3">
             <div className="flex flex-wrap gap-6 text-sm">
               <div>
@@ -153,7 +153,7 @@ export default function ReadinessPage() {
               </div>
             </div>
             {result.changed_factors.map((f, i) => (
-              <div key={i} className="rounded-lg border border-border-subtle p-3">
+              <div key={i} className="rounded-lg border border-border p-3">
                 <p className="font-medium text-sm">{factorLabel(f.name)}</p>
                 <p className="text-xs text-text-muted">{f.explanation}</p>
               </div>
@@ -164,7 +164,7 @@ export default function ReadinessPage() {
 
       {!hasInsufficientData && !readiness.isError && (
         <Card>
-          <CardHeader className="pb-3"><CardTitle className="text-[12px] font-semibold uppercase tracking-[0.05em] text-text-muted">{t("factors")}</CardTitle></CardHeader>
+          <CardHeader className="pb-3"><CardTitle className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">{t("factors")}</CardTitle></CardHeader>
           <CardContent className="space-y-2">
             {readiness.isLoading ? (
               <div className="space-y-2">{[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
@@ -173,7 +173,7 @@ export default function ReadinessPage() {
                 key={f.name}
                 type="button"
                 onClick={() => setSelectedFactor(selectedFactor?.name === f.name ? null : f)}
-                className="w-full rounded-lg border border-border-subtle p-3 text-left transition-colors hover:bg-surface-container"
+                className="w-full rounded-lg border border-border p-3 text-left transition-colors hover:bg-surface-container"
               >
                 <div className="flex items-center justify-between">
                   <span className="font-medium text-sm">{factorLabel(f.name)}</span>
@@ -200,7 +200,7 @@ export default function ReadinessPage() {
         <CardHeader className="pb-3">
           <div className="flex items-center gap-2">
             <Info className="h-4 w-4 text-text-muted" />
-            <CardTitle className="text-[12px] font-semibold uppercase tracking-[0.05em] text-text-muted">{t("transparency")}</CardTitle>
+            <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">{t("transparency")}</CardTitle>
           </div>
         </CardHeader>
         <CardContent><p className="text-xs text-text-muted leading-relaxed">{t("transparencyDesc")}</p></CardContent>
@@ -208,7 +208,7 @@ export default function ReadinessPage() {
 
       <Card>
         <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between pb-3">
-          <CardTitle className="text-[12px] font-semibold uppercase tracking-[0.05em] text-text-muted">{t("correctData")}</CardTitle>
+          <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">{t("correctData")}</CardTitle>
           <Button variant="outline" size="sm" onClick={() => setShowForm(!showForm)}>{t("somethingWrong")}</Button>
         </CardHeader>
         {showForm && (

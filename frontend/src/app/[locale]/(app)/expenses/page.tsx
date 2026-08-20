@@ -97,7 +97,7 @@ export default function ExpensesPage() {
 
       {showForm && (
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="p-5">
             <form onSubmit={handleAdd} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <div><Label>{t("date")}</Label><Input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} required /></div>
               <div><Label>{t("description")}</Label><Input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} required /></div>
@@ -137,7 +137,7 @@ export default function ExpensesPage() {
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-[12px] font-semibold uppercase tracking-[0.05em] text-text-muted">{t("weeklyChart")}</CardTitle>
+            <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">{t("weeklyChart")}</CardTitle>
           </CardHeader>
           <CardContent>
             {weekly.isLoading ? <ChartSkeleton /> : weekly.isError ? (
@@ -153,7 +153,7 @@ export default function ExpensesPage() {
         </Card>
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-[12px] font-semibold uppercase tracking-[0.05em] text-text-muted">{t("monthlyChart")}</CardTitle>
+            <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">{t("monthlyChart")}</CardTitle>
           </CardHeader>
           <CardContent>
             {monthly.isLoading ? <ChartSkeleton /> : monthly.isError ? (
@@ -171,7 +171,7 @@ export default function ExpensesPage() {
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-[12px] font-semibold uppercase tracking-[0.05em] text-text-muted">{t("categories")}</CardTitle>
+          <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">{t("categories")}</CardTitle>
         </CardHeader>
         <CardContent>
           {categories.isLoading ? (
@@ -183,7 +183,7 @@ export default function ExpensesPage() {
               {allCategories.map((cat) => (
                 <div
                   key={cat.category}
-                  className="flex items-center justify-between rounded-xl border border-border-subtle px-4 py-3 transition-colors hover:bg-surface-container"
+                  className="flex items-center justify-between rounded-xl border border-border px-4 py-3 transition-colors hover:bg-surface-container"
                 >
                   <div className="min-w-0">
                     <p className="text-sm font-medium capitalize">{cat.category.replace(/_/g, " ")}</p>
@@ -202,7 +202,7 @@ export default function ExpensesPage() {
 
       <Card>
         <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pb-3">
-          <CardTitle className="text-[12px] font-semibold uppercase tracking-[0.05em] text-text-muted">{t("title")}</CardTitle>
+          <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">{t("title")}</CardTitle>
           <div className="flex flex-wrap gap-2">
             <select className="h-8 rounded-lg border border-input bg-background px-2 text-xs" value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
               <option value="">{t("allCategories")}</option>
@@ -219,7 +219,7 @@ export default function ExpensesPage() {
           ) : transactions.isError ? (
             <PageError message={tc("error")} onRetry={() => transactions.refetch()} />
           ) : transactions.data?.items?.length ? transactions.data.items.map((tx) => (
-            <div key={tx.id} className="flex items-center gap-3 rounded-lg border border-border-subtle px-4 py-3 transition-colors hover:bg-surface-container">
+            <div key={tx.id} className="flex items-center gap-3 rounded-lg border border-border px-4 py-3 transition-colors hover:bg-surface-container">
               <div className={`h-8 w-1 rounded-full ${tx.transaction_type === "income" ? "bg-income" : "bg-expense"}`} />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">{tx.description}</p>
