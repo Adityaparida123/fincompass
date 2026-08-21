@@ -1,19 +1,19 @@
-const VIDEO_SRC = "/assets/login-background.mp4";
+import Image from "next/image";
+
+const GIF_SRC = "/assets/login-background.gif";
 
 export function LoginAnimatedBackground() {
   return (
     <div aria-hidden="true" className="login-bg">
-      <video
+      <Image
+        src={GIF_SRC}
+        alt=""
+        fill
+        unoptimized
+        priority
+        draggable={false}
         className="login-bg-media"
-        autoPlay
-        muted
-        loop
-        playsInline
-        preload="auto"
-        disablePictureInPicture
-      >
-        <source src={VIDEO_SRC} type="video/mp4" />
-      </video>
+      />
 
       <div className="login-bg-static" />
 

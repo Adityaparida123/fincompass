@@ -794,9 +794,9 @@ body {
 }
 
 /* ================================================================
-   LOGIN ANIMATED BACKGROUND — gradient-grid motion backdrop
+   LOGIN ANIMATED BACKGROUND — premium fintech atmosphere
    Decorative only; layered behind the login card.
-   Layers: video loop → dark overlay → center fade → grid
+   Layers: GIF loop → dark overlay → center fade → grid
            → teal glow → vignette (static fallback on reduce)
    ================================================================ */
 .login-bg {
@@ -808,7 +808,7 @@ body {
   background: #050c18;
 }
 
-/* --- looping gradient-grid animation (GIPHY rendition, local asset) --- */
+/* --- looping animated background (GIPHY gif, local asset) --- */
 .login-bg-media {
   position: absolute;
   inset: 0;
