@@ -38,14 +38,7 @@ export default function LandingPage() {
             <span className="text-xl font-semibold">FinCompass</span>
           </div>
           <div className="flex gap-2">
-            {isAuthenticated ? (
-              <Link href={`/${locale}/home`}>
-                <Button variant="ghost">
-                  <LayoutDashboard className="mr-1.5 h-4 w-4" />
-                  {t("home")}
-                </Button>
-              </Link>
-            ) : (
+            {!isAuthenticated && (
               <>
                 <Link href={`/${locale}/login`}>
                   <Button variant="ghost">{t("login")}</Button>
