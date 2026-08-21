@@ -121,7 +121,8 @@
       "loan": "Can I afford this loan?",
       "readiness": "How can I improve my readiness?",
       "biggest": "What are my biggest expenses?",
-      "alternatives": "What alternatives do I have to borrowing?"
+      "alternatives": "What alternatives do I have to borrowing?",
+      "title": "Suggested follow-ups"
     }
   },
   "consent": {

@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { MessageCircle, X, Send, Minimize2 } from "lucide-react";
 import { useChatStore } from "@/stores/chat-store";
 import { api } from "@/lib/api";
+import { generateFollowUps } from "@/lib/chat-followups";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -17,6 +18,7 @@ export function FinAIChat() {
   const locale = useLocale();
   const { isOpen, isFullscreen, setOpen, setFullscreen, messages, addMessage, isLoading, setLoading, sessionId, setSessionId } = useChatStore();
   const [input, setInput] = useState("");
+  const [followUps, setFollowUps] = useState<string[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const suggestions = [
@@ -37,7 +39,9 @@ export function FinAIChat() {
     const userMsg = { id: crypto.randomUUID(), role: "user" as const, content: text, timestamp: new Date() };
     addMessage(userMsg);
     setInput("");
+    setFollowUps([]);
     setLoading(true);
+    const assistantTurn = messages.filter((m) => m.role === "assistant").length;
 
     try {
       const res = await fetch(`${API_BASE}/chat/stream`, {
@@ -77,6 +81,7 @@ export function FinAIChat() {
           );
           setSessionId(fallback.session_id);
           addMessage({ id: crypto.randomUUID(), role: "assistant", content: fallback.reply, timestamp: new Date() });
+          setFollowUps(generateFollowUps(text, fallback.reply, assistantTurn));
         } catch {
           addMessage({ id: crypto.randomUUID(), role: "assistant", content: errorMsg, timestamp: new Date() });
         }
@@ -112,7 +117,9 @@ export function FinAIChat() {
         }
       }
 
-      addMessage({ id: assistantId, role: "assistant", content: assistantText || "I wasn't able to generate a response. Please try rephrasing your question.", timestamp: new Date() });
+      const finalReply = assistantText || "I wasn't able to generate a response. Please try rephrasing your question.";
+      addMessage({ id: assistantId, role: "assistant", content: finalReply, timestamp: new Date() });
+      setFollowUps(generateFollowUps(text, finalReply, assistantTurn));
     } catch (err) {
       const msg = err instanceof TypeError && err.message.includes("fetch")
         ? "Unable to connect to FinAI. Please check your connection."
@@ -182,8 +189,10 @@ export function FinAIChat() {
                 <div key={m.id} className={cn("flex", m.role === "user" ? "justify-end" : "justify-start")}>
                   <div
                     className={cn(
-                      "max-w-[85%] rounded-2xl px-3.5 py-2 text-[13px] leading-relaxed",
-                      m.role === "user" ? "bg-primary text-on-primary-container" : "bg-surface-container-high/60 text-text-primary",
+                      "max-w-[85%] rounded-2xl px-3.5 py-2 text-[13px] leading-relaxed break-words",
+                      m.role === "user"
+                        ? "bg-primary text-primary-foreground font-medium"
+                        : "bg-surface-container-high/60 text-text-primary whitespace-pre-wrap",
                     )}
                   >
                     {m.content}
@@ -196,6 +205,25 @@ export function FinAIChat() {
                     FinAI is thinking...
                   </div>
                 </div>
+              )}
+              {!isLoading && followUps.length > 0 && messages[messages.length - 1]?.role === "assistant" && (
+                <motion.div
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.25, ease: "easeOut" }}
+                  className="flex flex-wrap gap-1.5 pt-1"
+                  aria-label={t("suggestions.title")}
+                >
+                  {followUps.map((s) => (
+                    <button
+                      key={s}
+                      className="rounded-full border border-border-subtle px-3 py-1 text-[11px] text-text-muted hover:bg-surface-container-high/60 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
+                      onClick={() => sendMessage(s)}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </motion.div>
               )}
               <div ref={bottomRef} />
             </div>
