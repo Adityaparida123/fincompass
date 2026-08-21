@@ -792,3 +792,180 @@ body {
     animation: none;
   }
 }
+
+/* ================================================================
+   LOGIN ANIMATED BACKGROUND — premium fintech atmosphere
+   Decorative only; layered behind the login card.
+   ================================================================ */
+.login-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* --- 3. subtle financial grid --- */
+.login-bg-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--primary) 7%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--primary) 7%, transparent) 1px, transparent 1px);
+  background-size: 56px 56px;
+  -webkit-mask-image: radial-gradient(ellipse 75% 65% at 50% 45%, #000 25%, transparent 78%);
+  mask-image: radial-gradient(ellipse 75% 65% at 50% 45%, #000 25%, transparent 78%);
+}
+
+/* --- 6. large soft gradient glows --- */
+.login-glow {
+  position: absolute;
+  border-radius: 9999px;
+  will-change: transform;
+}
+.login-glow-a {
+  width: 65vmax;
+  height: 65vmax;
+  top: -28%;
+  left: -18%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--primary) 9%, transparent) 0%, transparent 62%);
+  animation: login-drift-a 26s ease-in-out infinite alternate;
+}
+.login-glow-b {
+  width: 55vmax;
+  height: 55vmax;
+  bottom: -30%;
+  right: -16%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--info) 7%, transparent) 0%, transparent 62%);
+  animation: login-drift-b 34s ease-in-out infinite alternate;
+}
+@keyframes login-drift-a {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(9vw, 7vh, 0) scale(1.12); }
+}
+@keyframes login-drift-b {
+  from { transform: translate3d(0, 0, 0) scale(1.05); }
+  to { transform: translate3d(-8vw, -6vh, 0) scale(1); }
+}
+
+/* --- 1. atmospheric trend lines --- */
+.login-trends {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.55;
+}
+.login-trends-drift {
+  animation: login-trends-drift 22s ease-in-out infinite alternate;
+  will-change: transform;
+}
+@keyframes login-trends-drift {
+  from { transform: translateX(-14px); }
+  to { transform: translateX(14px); }
+}
+.login-trend-breathe {
+  animation: login-breathe 9s ease-in-out infinite;
+}
+.login-trend-breathe-delay {
+  animation-delay: 2s;
+}
+@keyframes login-breathe {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+/* --- 5. glowing data nodes --- */
+.login-node {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border-radius: 9999px;
+  background: var(--primary);
+  opacity: 0.4;
+}
+.login-node::before,
+.login-node::after {
+  content: "";
+  position: absolute;
+  inset: -5px;
+  border-radius: inherit;
+  border: 1px solid var(--primary);
+  opacity: 0;
+  animation: login-node-pulse var(--node-dur, 5s) ease-out infinite;
+  animation-delay: var(--node-delay, 0s);
+}
+.login-node::after {
+  animation-delay: calc(var(--node-delay, 0s) + var(--node-dur, 5s) / 2);
+}
+@keyframes login-node-pulse {
+  0% { transform: scale(0.5); opacity: 0.45; }
+  70% { transform: scale(1.9); opacity: 0; }
+  100% { transform: scale(1.9); opacity: 0; }
+}
+
+/* --- 4. floating financial elements --- */
+.login-float {
+  position: absolute;
+  color: var(--primary);
+  animation: login-float 16s ease-in-out infinite;
+  will-change: transform;
+}
+@keyframes login-float {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(0, -14px, 0); }
+}
+
+/* --- 7/8. glass card treatment over animated backdrop --- */
+.login-card-glass {
+  background: color-mix(in srgb, var(--surface-card) 86%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+/* --- 9. logo glow accent --- */
+.login-logo-glow {
+  box-shadow: 0 0 22px color-mix(in srgb, var(--primary) 20%, transparent);
+}
+
+/* --- 10. submit button hover lift / press --- */
+.login-submit:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--primary) 28%, transparent);
+}
+.login-submit:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
+  transition-duration: 80ms;
+}
+
+/* --- 12. responsive simplification --- */
+@media (max-width: 1023px) {
+  .login-hide-tablet {
+    display: none;
+  }
+}
+@media (max-width: 767px) {
+  .login-hide-mobile {
+    display: none;
+  }
+  .login-bg-grid {
+    background-size: 44px 44px;
+  }
+}
+
+/* --- 13. reduced motion: keep static decoration only --- */
+@media (prefers-reduced-motion: reduce) {
+  .login-trends-drift,
+  .login-trend-breathe,
+  .login-glow-a,
+  .login-glow-b,
+  .login-float,
+  .login-node::before,
+  .login-node::after {
+    animation: none !important;
+  }
+  .login-submit:hover:not(:disabled),
+  .login-submit:active:not(:disabled) {
+    transform: none;
+  }
+}
