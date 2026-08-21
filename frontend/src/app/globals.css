@@ -1037,3 +1037,64 @@ body {
     animation: none !important;
   }
 }
+
+/* ================================================================
+   ANIMATED LOGO WATERMARK — barely-visible floating brand mark
+   Fixed behind all authenticated app content (z-0; main z-10,
+   sidebar/topbar/nav z-30+). Original Compass glyph in theme
+   primary at very low opacity; pure CSS transform animation.
+   ================================================================ */
+.watermark {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  pointer-events: none;
+  user-select: none;
+}
+
+.watermark-logo {
+  width: clamp(280px, 80vw, 450px);
+  height: auto;
+  aspect-ratio: 1 / 1;
+  margin-left: 16%;
+  margin-top: 14%;
+  color: var(--primary);
+  opacity: 0.03;
+  will-change: transform;
+  animation: watermark-float 24s ease-in-out infinite;
+}
+
+@media (min-width: 768px) {
+  .watermark-logo {
+    width: clamp(400px, 55vw, 600px);
+    opacity: 0.04;
+    margin-left: 12%;
+    margin-top: 10%;
+  }
+}
+
+@media (min-width: 1024px) {
+  .watermark-logo {
+    width: clamp(500px, 44vw, 800px);
+    opacity: 0.05;
+  }
+}
+
+@keyframes watermark-float {
+  0% { transform: translate3d(-3%, -2%, 0) rotate(-1deg) scale(1); }
+  25% { transform: translate3d(2%, 1%, 0) rotate(1deg) scale(1.02); }
+  50% { transform: translate3d(4%, -2%, 0) rotate(2deg) scale(1.04); }
+  75% { transform: translate3d(-1%, 2%, 0) rotate(-1deg) scale(1.02); }
+  100% { transform: translate3d(-3%, -2%, 0) rotate(-1deg) scale(1); }
+}
+
+/* --- reduced motion: static ultra-subtle watermark --- */
+@media (prefers-reduced-motion: reduce) {
+  .watermark-logo {
+    animation: none;
+  }
+}
