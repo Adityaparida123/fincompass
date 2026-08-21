@@ -6,24 +6,31 @@ const LOGO_SRC = "/assets/fincompass-logo.png";
 
 export function AnimatedLogoWatermark() {
   const [logoMissing, setLogoMissing] = useState(false);
+  const [logoReady, setLogoReady] = useState(false);
 
   return (
     <div aria-hidden="true" className="watermark">
       <div className="watermark-aura" />
       {logoMissing ? (
-        <Compass className="watermark-logo watermark-logo-glyph" />
+        <div className="watermark-figure">
+          <Compass className="watermark-glyph" />
+        </div>
       ) : (
-        <Image
-          src={LOGO_SRC}
-          alt=""
-          width={1024}
-          height={1024}
-          unoptimized
-          priority
-          draggable={false}
-          className="watermark-logo"
-          onError={() => setLogoMissing(true)}
-        />
+        <div className="watermark-figure">
+          <Image
+            src={LOGO_SRC}
+            alt=""
+            width={1024}
+            height={1024}
+            unoptimized
+            priority
+            draggable={false}
+            className="watermark-img"
+            onError={() => setLogoMissing(true)}
+            onLoad={() => setLogoReady(true)}
+          />
+          {logoReady && <div className="watermark-tint" />}
+        </div>
       )}
     </div>
   );

@@ -1062,7 +1062,7 @@ body {
 }
 
 /* ================================================================
-   ANIMATED LOGO WATERMARK — barely-visible floating brand mark
+   ANIMATED LOGO WATERMARK — recognizable floating brand mark
    Fixed behind all authenticated app content (z-0; main z-10,
    sidebar/topbar/nav z-30+). Uses the uploaded FinCompass logo
    asset (fallback: existing Compass glyph) at very low opacity.
@@ -1101,30 +1101,55 @@ body {
   50% { opacity: 0.55; }
 }
 
-.watermark-logo {
+/* --- animated figure: drift + tilt + opacity pulse --- */
+.watermark-figure {
   --wm-dx: 22px;
-  --wm-dy: 16px;
-  width: clamp(280px, 78vw, 420px);
-  height: auto;
-  aspect-ratio: 1 / 1;
-  object-fit: contain;
+  --wm-dy: 12px;
+  --wm-o-min: 0.08;
+  --wm-o-max: 0.13;
+  width: clamp(280px, 78vw, 400px);
+  height: clamp(280px, 78vw, 400px);
   margin-left: 16%;
   margin-top: 14%;
-  opacity: 0.04;
+  position: relative;
+  opacity: var(--wm-o-min);
   will-change: transform, opacity;
-  animation: watermark-float 24s ease-in-out infinite;
+  animation: watermark-float 26s ease-in-out infinite;
 }
 
-.watermark-logo-glyph {
+.watermark-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 0 48px color-mix(in srgb, var(--primary) 30%, transparent));
+}
+
+/* --- teal/blue gradient cast through the logo (keeps luminance detail) --- */
+.watermark-tint {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, var(--primary) 10%, var(--info) 90%);
+  -webkit-mask: url("/assets/fincompass-logo.png") center / contain no-repeat;
+  mask: url("/assets/fincompass-logo.png") center / contain no-repeat;
+  mix-blend-mode: color;
+  opacity: 0.6;
+}
+
+.watermark-glyph {
+  width: 100%;
+  height: 100%;
   color: var(--primary);
+  filter: drop-shadow(0 0 40px color-mix(in srgb, var(--primary) 30%, transparent));
 }
 
 @media (min-width: 768px) {
-  .watermark-logo {
-    --wm-dx: 34px;
-    --wm-dy: 24px;
-    width: clamp(400px, 52vw, 600px);
-    opacity: 0.05;
+  .watermark-figure {
+    --wm-dx: 28px;
+    --wm-dy: 16px;
+    --wm-o-min: 0.1;
+    --wm-o-max: 0.15;
+    width: clamp(400px, 52vw, 550px);
+    height: clamp(400px, 52vw, 550px);
     margin-left: 12%;
     margin-top: 10%;
   }
@@ -1135,11 +1160,13 @@ body {
 }
 
 @media (min-width: 1024px) {
-  .watermark-logo {
-    --wm-dx: 46px;
-    --wm-dy: 30px;
-    width: clamp(500px, 42vw, 750px);
-    opacity: 0.06;
+  .watermark-figure {
+    --wm-dx: 34px;
+    --wm-dy: 18px;
+    --wm-o-min: 0.11;
+    --wm-o-max: 0.16;
+    width: clamp(550px, 44vw, 750px);
+    height: clamp(550px, 44vw, 750px);
   }
   .watermark-aura {
     width: clamp(700px, 58vw, 1000px);
@@ -1148,16 +1175,31 @@ body {
 }
 
 @keyframes watermark-float {
-  0% { transform: translate3d(calc(var(--wm-dx) * -0.5), calc(var(--wm-dy) * -0.4), 0) rotate(-1deg) scale(0.99); }
-  25% { transform: translate3d(calc(var(--wm-dx) * 0.4), calc(var(--wm-dy) * 0.3), 0) rotate(0.5deg) scale(1.01); }
-  50% { transform: translate3d(calc(var(--wm-dx) * 0.8), calc(var(--wm-dy) * -0.4), 0) rotate(1deg) scale(1.03); }
-  75% { transform: translate3d(calc(var(--wm-dx) * -0.3), calc(var(--wm-dy) * 0.5), 0) rotate(-0.5deg) scale(1.01); }
-  100% { transform: translate3d(calc(var(--wm-dx) * -0.5), calc(var(--wm-dy) * -0.4), 0) rotate(-1deg) scale(0.99); }
+  0% {
+    transform: translate3d(calc(var(--wm-dx) * -0.5), calc(var(--wm-dy) * -0.4), 0) rotate(-2deg) scale(0.995);
+    opacity: var(--wm-o-min);
+  }
+  25% {
+    transform: translate3d(calc(var(--wm-dx) * 0.4), calc(var(--wm-dy) * 0.3), 0) rotate(0.7deg) scale(1.01);
+    opacity: calc((var(--wm-o-min) + var(--wm-o-max)) / 2);
+  }
+  50% {
+    transform: translate3d(calc(var(--wm-dx) * 0.8), calc(var(--wm-dy) * -0.4), 0) rotate(2deg) scale(1.02);
+    opacity: var(--wm-o-max);
+  }
+  75% {
+    transform: translate3d(calc(var(--wm-dx) * -0.3), calc(var(--wm-dy) * 0.5), 0) rotate(-0.8deg) scale(1.005);
+    opacity: calc((var(--wm-o-min) + var(--wm-o-max)) / 2);
+  }
+  100% {
+    transform: translate3d(calc(var(--wm-dx) * -0.5), calc(var(--wm-dy) * -0.4), 0) rotate(-2deg) scale(0.995);
+    opacity: var(--wm-o-min);
+  }
 }
 
-/* --- reduced motion: static ultra-subtle watermark --- */
+/* --- reduced motion: static subtle watermark at minimum opacity --- */
 @media (prefers-reduced-motion: reduce) {
-  .watermark-logo,
+  .watermark-figure,
   .watermark-aura {
     animation: none;
   }
