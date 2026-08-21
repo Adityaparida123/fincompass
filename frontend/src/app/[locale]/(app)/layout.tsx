@@ -9,7 +9,7 @@ import { AnimatedLogoWatermark } from "@/components/animated-logo-watermark";
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <AuthGuard>
-      <div className="flex min-h-screen bg-background-page">
+      <div className="relative isolate flex min-h-screen bg-background-page">
         <AnimatedLogoWatermark />
         <Sidebar />
         <div className="flex flex-1 flex-col min-w-0">
