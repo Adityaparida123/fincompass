@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AnimatedFinanceBackground } from "@/components/animated-finance-background";
 import { useAuthStore } from "@/stores/auth-store";
 
 const features = [
@@ -28,7 +29,8 @@ export default function LandingPage() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   return (
-    <div className="min-h-screen bg-background-page">
+    <div className="relative min-h-screen overflow-hidden bg-background-page">
+      <AnimatedFinanceBackground />
       <header className="sticky top-0 z-30 border-b bg-surface-card/80 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
           <div className="flex items-center gap-2">
@@ -57,7 +59,7 @@ export default function LandingPage() {
         </div>
       </header>
 
-      <main>
+      <main className="relative z-10">
         <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24 lg:py-32">
           <motion.div
             initial={{ opacity: 0, y: 20 }}

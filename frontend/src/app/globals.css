@@ -919,3 +919,121 @@ body {
     transform: none;
   }
 }
+
+/* ================================================================
+   LANDING ANIMATED BACKGROUND — premium fintech gradient grid
+   Decorative only; layered behind landing page content.
+   Layers: teal glow → blue glow → grid → light sweeps → center fade
+   All movement is GPU-friendly (transform/opacity only) and is
+   disabled under prefers-reduced-motion (static gradients remain).
+   ================================================================ */
+.landing-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* --- large soft teal glow, slow drift --- */
+.landing-bg-glow {
+  position: absolute;
+  border-radius: 9999px;
+  will-change: transform;
+}
+.landing-bg-glow-a {
+  width: 70vmax;
+  height: 70vmax;
+  top: -32%;
+  left: -22%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--primary) 20%, transparent) 0%, transparent 62%);
+  animation: landing-glow-a 26s ease-in-out infinite alternate;
+}
+.landing-bg-glow-b {
+  width: 60vmax;
+  height: 60vmax;
+  bottom: -38%;
+  right: -20%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--info) 16%, transparent) 0%, transparent 62%);
+  animation: landing-glow-b 34s ease-in-out infinite alternate;
+}
+@keyframes landing-glow-a {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(10vw, 8vh, 0) scale(1.15); }
+}
+@keyframes landing-glow-b {
+  from { transform: translate3d(0, 0, 0) scale(1.08); }
+  to { transform: translate3d(-9vw, -7vh, 0) scale(1); }
+}
+
+/* --- almost-invisible financial grid --- */
+.landing-bg-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--primary) 11%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--primary) 11%, transparent) 1px, transparent 1px);
+  background-size: 56px 56px;
+  -webkit-mask-image: radial-gradient(ellipse 85% 62% at 50% 36%, #000 30%, transparent 78%);
+  mask-image: radial-gradient(ellipse 85% 62% at 50% 36%, #000 30%, transparent 78%);
+}
+
+/* --- soft light traveling across the grid --- */
+.landing-bg-sweep {
+  position: absolute;
+  top: -25%;
+  left: -70%;
+  width: 240%;
+  height: 150%;
+  background: linear-gradient(
+    115deg,
+    transparent 40%,
+    color-mix(in srgb, var(--primary-light) 12%, transparent) 48%,
+    color-mix(in srgb, var(--info) 9%, transparent) 54%,
+    transparent 64%
+  );
+  transform: translate3d(-42%, 0, 0);
+  animation: landing-sweep 18s ease-in-out infinite;
+  will-change: transform;
+}
+.landing-bg-sweep-alt {
+  background: linear-gradient(
+    65deg,
+    transparent 42%,
+    color-mix(in srgb, var(--info) 8%, transparent) 52%,
+    color-mix(in srgb, var(--primary-light) 7%, transparent) 58%,
+    transparent 66%
+  );
+  animation-duration: 26s;
+  animation-delay: -13s;
+}
+@keyframes landing-sweep {
+  0% { transform: translate3d(-42%, 0, 0); }
+  55% { transform: translate3d(42%, 0, 0); }
+  100% { transform: translate3d(42%, 0, 0); }
+}
+
+/* --- center stays visually calm behind hero text --- */
+.landing-bg-fade {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 60% 50% at 50% 38%, color-mix(in srgb, var(--background-page) 55%, transparent) 0%, transparent 72%);
+}
+
+@media (max-width: 767px) {
+  .landing-bg-grid {
+    background-size: 44px 44px;
+  }
+  .landing-bg-sweep-alt {
+    display: none;
+  }
+}
+
+/* --- reduced motion: keep static gradients/grid, no movement --- */
+@media (prefers-reduced-motion: reduce) {
+  .landing-bg-glow-a,
+  .landing-bg-glow-b,
+  .landing-bg-sweep {
+    animation: none !important;
+  }
+}
