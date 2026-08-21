@@ -44,8 +44,7 @@ export default function RegisterPage() {
     setError("");
     try {
       await registerUser(data.fullName, data.email, data.password);
-      // Use window.location for more reliable redirect after authentication
-      window.location.href = `/${locale}/dashboard`;
+      router.push(`/${locale}/home`);
     } catch (e) {
       if (e instanceof ApiRequestError) {
         setError(e.message);

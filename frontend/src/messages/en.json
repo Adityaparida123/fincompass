@@ -19,7 +19,7 @@
     "forecastDisclaimer": "Forecast — not guaranteed"
   },
   "nav": {
-    "dashboard": "Dashboard",
+    "home": "Home",
     "expenses": "Expenses",
     "cashflow": "Cash Flow",
     "savings": "Savings",
@@ -40,7 +40,7 @@
     "heroSubtitle": "FinCompass helps you understand cash flow, savings, spending and responsible borrowing using only your consented financial data.",
     "getStarted": "Get Started",
     "login": "Login",
-    "dashboard": "Dashboard",
+    "home": "Home",
     "howItWorks": "How FinCompass works",
     "step1Title": "Give consent",
     "step1Desc": "You control what data is used. Revoke anytime.",
@@ -71,7 +71,9 @@
     "registerButton": "Create account"
   },
   "dashboard": {
-    "greeting": "Good morning",
+    "greeting_morning": "Good morning",
+    "greeting_afternoon": "Good afternoon",
+    "greeting_evening": "Good evening",
     "cashFlow": "Cash Flow",
     "savings": "Savings",
     "expenses": "Expenses",

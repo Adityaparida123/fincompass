@@ -19,7 +19,7 @@
     "forecastDisclaimer": "पूर्वानुमान — गारंटी नहीं"
   },
   "nav": {
-    "dashboard": "डैशबोर्ड",
+    "home": "होम",
     "expenses": "खर्च",
     "cashflow": "कैश फ्लो",
     "savings": "बचत",
@@ -40,7 +40,7 @@
     "heroSubtitle": "FinCompass आपकी सहमति वाले वित्तीय डेटा से कैश फ्लो, बचत, खर्च और जिम्मेदार उधार को समझने में मदद करता है।",
     "getStarted": "शुरू करें",
     "login": "लॉग इन",
-    "dashboard": "डैशबोर्ड",
+    "home": "होम",
     "howItWorks": "FinCompass कैसे काम करता है",
     "step1Title": "सहमति दें",
     "step1Desc": "आप नियंत्रित करते हैं कि कौन सा डेटा उपयोग हो।",
@@ -71,7 +71,9 @@
     "registerButton": "खाता बनाएं"
   },
   "dashboard": {
-    "greeting": "सुप्रभात",
+    "greeting_morning": "सुप्रभात",
+    "greeting_afternoon": "शुभ अपराह्न",
+    "greeting_evening": "शुभ संध्या",
     "cashFlow": "कैश फ्लो",
     "savings": "बचत",
     "expenses": "खर्च",

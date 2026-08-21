@@ -12,6 +12,7 @@ import {
   useMLPatterns, useMLForecast,
 } from "@/hooks/use-api";
 import { formatCurrency, toNumber, formatPercent } from "@/lib/utils";
+import { getTimeOfDay } from "@/lib/greeting";
 import Link from "next/link";
 import { TrendingUp, Receipt, ArrowRight, Lightbulb, Target, FileText, Flag, Calculator, Info } from "lucide-react";
 
@@ -70,6 +71,14 @@ export default function DashboardPage() {
   const dashOffset = 283 - (283 * scoreProgress) / 100;
   const scoreStatus = score >= 80 ? "Excellent" : score >= 60 ? "Good" : score >= 40 ? "Fair" : "Needs Work";
 
+  const greetingPeriod = getTimeOfDay();
+  const greeting =
+    greetingPeriod === "morning"
+      ? t("greeting_morning")
+      : greetingPeriod === "afternoon"
+        ? t("greeting_afternoon")
+        : t("greeting_evening");
+
   const quickActions = [
     { label: "Log Expense", desc: "Record a manual entry", icon: FileText, href: `/${locale}/expenses` },
     { label: "New Savings Goal", desc: "Set a target milestone", icon: Flag, href: `/${locale}/savings` },
@@ -80,7 +89,7 @@ export default function DashboardPage() {
     <div className="space-y-6 page-transition">
       {/* Header */}
       <div className="section-reveal">
-        <h1 className="text-2xl font-semibold tracking-tight text-text-primary">{t("greeting")}</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-text-primary" suppressHydrationWarning>{greeting}</h1>
         <p className="text-sm text-text-muted mt-0.5">{format(new Date(), "EEEE, MMMM d, yyyy")}</p>
       </div>
 

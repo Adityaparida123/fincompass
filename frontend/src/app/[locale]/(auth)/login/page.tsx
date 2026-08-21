@@ -41,7 +41,7 @@ export default function LoginPage() {
     setError("");
     try {
       await login(data.email, data.password, data.rememberMe);
-      router.push(`/${locale}/dashboard`);
+      router.push(`/${locale}/home`);
     } catch (e) {
       setError(e instanceof ApiRequestError ? e.message : "Login failed");
     }

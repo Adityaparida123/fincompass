@@ -39,10 +39,10 @@ export default function LandingPage() {
           </div>
           <div className="flex gap-2">
             {isAuthenticated ? (
-              <Link href={`/${locale}/dashboard`}>
+              <Link href={`/${locale}/home`}>
                 <Button variant="ghost">
                   <LayoutDashboard className="mr-1.5 h-4 w-4" />
-                  {t("dashboard")}
+                  {t("home")}
                 </Button>
               </Link>
             ) : (
@@ -74,10 +74,10 @@ export default function LandingPage() {
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
               {isAuthenticated ? (
-                <Link href={`/${locale}/dashboard`}>
+                <Link href={`/${locale}/home`}>
                   <Button size="lg" className="w-full sm:w-auto">
                     <LayoutDashboard className="mr-1.5 h-4 w-4" />
-                    {t("dashboard")} <ArrowRight className="h-4 w-4" />
+                    {t("home")} <ArrowRight className="h-4 w-4" />
                   </Button>
                 </Link>
               ) : (
@@ -145,10 +145,10 @@ export default function LandingPage() {
           <div className="mx-auto max-w-3xl px-4 text-center sm:px-6">
             <h2 className="text-2xl font-semibold sm:text-3xl">{t("cta")}</h2>
             {isAuthenticated ? (
-              <Link href={`/${locale}/dashboard`} className="mt-6 inline-block">
+              <Link href={`/${locale}/home`} className="mt-6 inline-block">
                 <Button size="lg">
                   <LayoutDashboard className="mr-1.5 h-4 w-4" />
-                  {t("dashboard")}
+                  {t("home")}
                 </Button>
               </Link>
             ) : (
