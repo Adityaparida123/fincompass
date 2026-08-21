@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { motion, AnimatePresence } from "framer-motion";
 import { MessageCircle, X, Send, Minimize2 } from "lucide-react";
 import { useChatStore } from "@/stores/chat-store";
+import { useUIStore } from "@/stores/ui-store";
 import { api } from "@/lib/api";
 import { generateFollowUps } from "@/lib/chat-followups";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,8 @@ export function FinAIChat() {
   const [input, setInput] = useState("");
   const [followUps, setFollowUps] = useState<string[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const finaiEnabled = useUIStore((s) => s.finaiEnabled);
+  const followUpsEnabled = useUIStore((s) => s.followUpsEnabled);
 
   const suggestions = [
     t("suggestions.save"),
@@ -81,7 +84,7 @@ export function FinAIChat() {
           );
           setSessionId(fallback.session_id);
           addMessage({ id: crypto.randomUUID(), role: "assistant", content: fallback.reply, timestamp: new Date() });
-          setFollowUps(generateFollowUps(text, fallback.reply, assistantTurn));
+          setFollowUps(followUpsEnabled ? generateFollowUps(text, fallback.reply, assistantTurn) : []);
         } catch {
           addMessage({ id: crypto.randomUUID(), role: "assistant", content: errorMsg, timestamp: new Date() });
         }
@@ -119,7 +122,7 @@ export function FinAIChat() {
 
       const finalReply = assistantText || "I wasn't able to generate a response. Please try rephrasing your question.";
       addMessage({ id: assistantId, role: "assistant", content: finalReply, timestamp: new Date() });
-      setFollowUps(generateFollowUps(text, finalReply, assistantTurn));
+      setFollowUps(followUpsEnabled ? generateFollowUps(text, finalReply, assistantTurn) : []);
     } catch (err) {
       const msg = err instanceof TypeError && err.message.includes("fetch")
         ? "Unable to connect to FinAI. Please check your connection."
@@ -129,6 +132,8 @@ export function FinAIChat() {
       setLoading(false);
     }
   };
+
+  if (!finaiEnabled) return null;
 
   return (
     <>
@@ -206,7 +211,7 @@ export function FinAIChat() {
                   </div>
                 </div>
               )}
-              {!isLoading && followUps.length > 0 && messages[messages.length - 1]?.role === "assistant" && (
+              {!isLoading && followUpsEnabled && followUps.length > 0 && messages[messages.length - 1]?.role === "assistant" && (
                 <motion.div
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}

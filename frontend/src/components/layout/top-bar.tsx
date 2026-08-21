@@ -7,7 +7,6 @@ import { useTheme } from "@/components/theme-provider";
 import { ISTClock } from "@/components/common/ist-clock";
 import { NotificationBell } from "@/components/layout/notification-bell";
 import { SidebarToggle } from "@/components/layout/sidebar";
-import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/stores/auth-store";
 
 export function TopBar() {
@@ -33,6 +32,7 @@ export function TopBar() {
     : "U";
 
   const goToProfile = () => router.push(`/${locale}/profile`);
+  const goToSettings = () => router.push(`/${locale}/settings`);
 
   return (
     <header className="flex justify-between items-center h-12 px-4 md:px-6 w-full z-40 bg-background-page/80 backdrop-blur-xl border-b border-border sticky top-0">
@@ -69,7 +69,7 @@ export function TopBar() {
         <NotificationBell />
         <button
           className="topbar-icon h-8 w-8 flex items-center justify-center rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-          onClick={goToProfile}
+          onClick={goToSettings}
           aria-label={t("settings")}
         >
           <Settings className="h-4 w-4" />
