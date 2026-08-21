@@ -41,8 +41,7 @@ export default function LoginPage() {
     setError("");
     try {
       await login(data.email, data.password, data.rememberMe);
-      // Use window.location for more reliable redirect after authentication
-      window.location.href = `/${locale}/dashboard`;
+      router.push(`/${locale}/dashboard`);
     } catch (e) {
       setError(e instanceof ApiRequestError ? e.message : "Login failed");
     }
