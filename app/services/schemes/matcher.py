@@ -22,6 +22,7 @@ def _to_read(scheme: Doc) -> SchemeRead:
         source_url=scheme.source_url,
         last_verified=scheme.last_verified,
         active=scheme.active,
+        category=getattr(scheme, "category", None),
     )
 
 

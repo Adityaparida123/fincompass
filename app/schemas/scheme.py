@@ -25,6 +25,7 @@ class SchemeRead(BaseModel):
     source_url: str | None
     last_verified: date | None
     active: bool
+    category: str | None = None
 
     model_config = {"from_attributes": True}
 

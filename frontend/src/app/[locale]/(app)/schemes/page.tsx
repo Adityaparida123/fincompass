@@ -1,12 +1,20 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton, Badge } from "@/components/ui/input";
 import { PageHeader, EmptyState, SectionHeader } from "@/components/common/shared";
 import { useSchemes, useBusinessProfile, useRecommendedSchemes } from "@/hooks/use-api";
 import { PageError } from "@/components/charts/responsive-charts";
 import { Landmark, ExternalLink, AlertTriangle, Sparkles } from "lucide-react";
+
+const SCHEME_CATEGORIES = ["banking", "agriculture", "pension", "business", "savings", "housing"] as const;
+type SchemeCategory = (typeof SCHEME_CATEGORIES)[number];
+
+function categoryKey(category: string | null | undefined): SchemeCategory | null {
+  return SCHEME_CATEGORIES.includes(category as SchemeCategory) ? (category as SchemeCategory) : null;
+}
 
 export default function SchemesPage() {
   const t = useTranslations("schemes");
@@ -58,6 +66,12 @@ export default function SchemesPage() {
                   </CardHeader>
                   <CardContent className="space-y-2 text-xs">
                     <p className="text-text-muted leading-relaxed">{scheme.description}</p>
+                    {categoryKey(scheme.category) && (
+                      <p className="text-[11px] text-text-secondary">
+                        <span className="font-medium uppercase tracking-wider text-text-muted">{t("targetUsers")}: </span>
+                        {t(`categoryTarget.${categoryKey(scheme.category)}`)}
+                      </p>
+                    )}
                     <div className="rounded-lg bg-surface-container/40 px-3 py-2">
                       <p className="font-medium text-[11px] uppercase tracking-wider text-text-muted">{t("whyThis")}</p>
                       <p className="mt-0.5 text-text-secondary">{match_reason}</p>
@@ -106,6 +120,12 @@ export default function SchemesPage() {
               </CardHeader>
               <CardContent className="space-y-2 text-xs">
                 <p className="text-text-muted leading-relaxed">{s.description}</p>
+                {categoryKey(s.category) && (
+                  <p className="text-[11px] text-text-secondary">
+                    <span className="font-medium uppercase tracking-wider text-text-muted">{t("targetUsers")}: </span>
+                    {t(`categoryTarget.${categoryKey(s.category)}`)}
+                  </p>
+                )}
                 <div className="rounded-lg bg-surface-container/30 px-3 py-2">
                   <p className="font-medium text-[11px] uppercase tracking-wider text-text-muted">{t("eligibility")}</p>
                   <p className="mt-0.5 text-text-muted">{s.eligibility}</p>
@@ -123,6 +143,9 @@ export default function SchemesPage() {
                   >
                     <ExternalLink className="h-3 w-3" />{t("learnMore")}
                   </a>
+                )}
+                {s.last_verified && (
+                  <p className="text-[10px] text-text-muted/70">{t("verifiedOn", { date: format(new Date(s.last_verified), "MMM yyyy") })}</p>
                 )}
               </CardContent>
             </Card>

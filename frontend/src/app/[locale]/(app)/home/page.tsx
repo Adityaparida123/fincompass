@@ -37,7 +37,12 @@ export default function HomePage() {
   const patterns = useMLPatterns();
   const forecast = useMLForecast();
   const debts = useDebts();
-  const { setOpen: setChatOpen } = useChatStore();
+  const { setOpen: setChatOpen, setDraft } = useChatStore();
+
+  const askFinai = (question: string) => {
+    setDraft(question);
+    setChatOpen(true);
+  };
 
   const totalIncome = monthly.data ? toNumber(monthly.data.total_income) : 0;
   const netCashFlow = monthly.data ? toNumber(monthly.data.net_cash_flow) : 0;
@@ -188,6 +193,14 @@ export default function HomePage() {
               <Lightbulb className="h-3.5 w-3.5 mt-0.5 shrink-0 text-warning" />
               {opportunity}
             </p>
+            <button
+              type="button"
+              onClick={() => askFinai(t("healthDraft", { status: healthLabel, amount: formatCurrency(netCashFlow) }))}
+              className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[11px] font-medium text-primary transition-colors hover:bg-primary/20"
+            >
+              <MessageCircle className="h-3 w-3" />
+              {t("askAboutHealth")}
+            </button>
           </>
         )}
         <p className="mt-3 text-[10px] uppercase tracking-[0.06em] text-text-muted/60">{t("healthBasis")}</p>
@@ -491,7 +504,16 @@ export default function HomePage() {
                 {(patterns.data as { patterns: Array<{ pattern: string; description: string }> }).patterns.slice(0, 4).map((p, i) => (
                   <div key={i} className="flex items-start gap-2 rounded-lg bg-surface-container px-3 py-2">
                     <Lightbulb className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning" />
-                    <p className="text-[11px] text-text-muted leading-relaxed">{p.description}</p>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[11px] text-text-muted leading-relaxed">{p.description}</p>
+                      <button
+                        type="button"
+                        onClick={() => askFinai(t("insightDraft", { insight: p.description }))}
+                        className="mt-1 inline-flex items-center gap-1 text-[10px] font-medium text-primary hover:underline"
+                      >
+                        <MessageCircle className="h-2.5 w-2.5" />{t("askInsight")}
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -500,7 +522,16 @@ export default function HomePage() {
                 {monthly.data.insights.slice(0, 4).map((ins, i) => (
                   <div key={i} className="flex items-start gap-2 rounded-lg bg-surface-container px-3 py-2">
                     <Lightbulb className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning" />
-                    <p className="text-[11px] text-text-muted leading-relaxed">{ins}</p>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[11px] text-text-muted leading-relaxed">{ins}</p>
+                      <button
+                        type="button"
+                        onClick={() => askFinai(t("insightDraft", { insight: ins }))}
+                        className="mt-1 inline-flex items-center gap-1 text-[10px] font-medium text-primary hover:underline"
+                      >
+                        <MessageCircle className="h-2.5 w-2.5" />{t("askInsight")}
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -530,6 +561,13 @@ export default function HomePage() {
                   <div key={i} className="rounded-lg border border-border p-2.5 transition-colors hover:bg-surface-container-high recommendation-card">
                     <p className="text-xs font-medium leading-snug text-text-primary">{r.title}</p>
                     <p className="mt-0.5 text-[11px] text-text-muted line-clamp-2">{r.reason}</p>
+                    <button
+                      type="button"
+                      onClick={() => askFinai(t("recommendationDraft", { title: r.title }))}
+                      className="mt-1.5 inline-flex items-center gap-1 text-[10px] font-medium text-primary hover:underline"
+                    >
+                      <MessageCircle className="h-2.5 w-2.5" />{t("askInsight")}
+                    </button>
                   </div>
                 ))}
               </div>

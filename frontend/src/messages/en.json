@@ -140,6 +140,11 @@
     "expectedSurplus": "Expected surplus",
     "viewForecast": "View forecast",
     "quickActions": "Quick Actions",
+    "askAboutHealth": "Ask FinAI why",
+    "askInsight": "Ask FinAI",
+    "healthDraft": "My business health on the dashboard shows \"{status}\" and net cash flow this month is {amount}. What does this mean for my business, and what should I focus on improving first?",
+    "insightDraft": "This insight appeared on my dashboard: \"{insight}\". Explain what it means for my business and what action you recommend.",
+    "recommendationDraft": "About this recommendation: \"{title}\". How do I act on it, and does it fit my situation?",
     "readinessExcellent": "Excellent",
     "readinessGood": "Good",
     "readinessFair": "Fair",
@@ -362,7 +367,17 @@
     "recommendedSubtitle": "Matched to your business profile and location.",
     "whyThis": "Why this matches",
     "noRecommended": "No matching schemes found yet. Check back soon.",
-    "addBusinessHint": "Add your business details in Business Profile to see schemes matched to you."
+    "addBusinessHint": "Add your business details in Business Profile to see schemes matched to you.",
+    "targetUsers": "Who it's for",
+    "verifiedOn": "Details last verified {date} — always confirm with the official source.",
+    "categoryTarget": {
+      "banking": "Anyone needing a basic bank account or financial inclusion",
+      "agriculture": "Farmer families with cultivable land",
+      "pension": "Workers planning retirement, especially in the unorganised sector",
+      "business": "Micro enterprises, shop owners and self-employed entrepreneurs",
+      "savings": "Savers and families building secure savings",
+      "housing": "Rural households without a pucca house"
+    }
   },
   "notifications": {
     "title": "Notifications",

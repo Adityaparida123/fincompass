@@ -33,6 +33,7 @@ async def get_schemes(
             source_url=s.source_url,
             last_verified=s.last_verified,
             active=s.active,
+            category=getattr(s, "category", None),
         )
         for s in schemes
     ]

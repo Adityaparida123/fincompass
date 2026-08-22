@@ -224,6 +224,7 @@ export interface Scheme {
   source_url: string;
   last_verified: string;
   active: boolean;
+  category?: string | null;
 }
 
 export interface SchemeMatch {

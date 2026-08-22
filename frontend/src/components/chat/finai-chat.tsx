@@ -18,7 +18,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v
 export function FinAIChat() {
   const t = useTranslations("chat");
   const locale = useLocale();
-  const { isOpen, isFullscreen, setOpen, setFullscreen, messages, addMessage, isLoading, setLoading, sessionId, setSessionId } = useChatStore();
+  const { isOpen, isFullscreen, setOpen, setFullscreen, messages, addMessage, isLoading, setLoading, sessionId, setSessionId, draft, setDraft } = useChatStore();
   const [input, setInput] = useState("");
   const [followUps, setFollowUps] = useState<string[]>([]);
   const lastFollowUpsRef = useRef<string[]>([]);
@@ -43,11 +43,15 @@ export function FinAIChat() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
 
+  const activeDraft = isOpen ? draft : null;
+  const value = activeDraft ?? input;
+
   const sendMessage = async (text: string) => {
     if (!text.trim() || isLoading) return;
     const userMsg = { id: crypto.randomUUID(), role: "user" as const, content: text, timestamp: new Date() };
     addMessage(userMsg);
     setInput("");
+    setDraft(null);
     setFollowUps([]);
     setLoading(true);
     const assistantTurn = messages.filter((m) => m.role === "assistant").length;
@@ -254,16 +258,19 @@ export function FinAIChat() {
 
             <form
               className="flex gap-2 border-t border-border-subtle p-3"
-              onSubmit={(e) => { e.preventDefault(); sendMessage(input); }}
+              onSubmit={(e) => { e.preventDefault(); sendMessage(value); }}
             >
               <Input
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
+                value={value}
+                onChange={(e) => {
+                  if (activeDraft != null) setDraft(null);
+                  setInput(e.target.value);
+                }}
                 placeholder={t("placeholder")}
                 disabled={isLoading}
                 className="h-9 text-[13px]"
               />
-              <Button type="submit" size="icon" className="h-9 w-9 shrink-0" disabled={isLoading || !input.trim()}>
+              <Button type="submit" size="icon" className="h-9 w-9 shrink-0" disabled={isLoading || !value.trim()}>
                 <Send className="h-4 w-4" />
               </Button>
             </form>
