@@ -10,6 +10,7 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import { Compass } from "lucide-react";
 import { GuestGuard } from "@/components/auth/auth-guard";
+import { LoginAnimatedBackground } from "@/components/auth/login-animated-background";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -58,8 +59,9 @@ export default function RegisterPage() {
 
   return (
     <GuestGuard>
-      <div className="flex min-h-screen items-center justify-center p-4 bg-background-page">
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
+      <div className="relative flex min-h-screen items-center justify-center p-4 bg-background-page">
+        <LoginAnimatedBackground />
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="relative z-10 w-full max-w-md">
           <div className="mb-8 flex items-center justify-center gap-3">
             <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
               <Compass className="h-6 w-6 text-primary" />
