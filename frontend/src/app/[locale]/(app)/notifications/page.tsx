@@ -2,9 +2,9 @@
 
 import { useTranslations } from "next-intl";
 import { format } from "date-fns";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Skeleton, Badge } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/input";
 import { PageHeader, EmptyState } from "@/components/common/shared";
 import { useNotifications, useMarkNotificationRead, useMarkAllNotificationsRead } from "@/hooks/use-api";
 import { PageError } from "@/components/charts/responsive-charts";

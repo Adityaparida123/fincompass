@@ -184,10 +184,10 @@ export function FinAIChat() {
             <div className="flex items-center justify-between border-b border-border-subtle px-4 py-2.5">
               <h2 className="font-semibold text-[14px] text-text-primary">{t("title")}</h2>
               <div className="flex gap-0.5">
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setFullscreen(!isFullscreen)}>
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setFullscreen(!isFullscreen)} aria-label={isFullscreen ? t("exitFullscreen") : t("fullscreen")}>
                   <Minimize2 className="h-3.5 w-3.5" />
                 </Button>
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setOpen(false)}>
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setOpen(false)} aria-label={t("close")}>
                   <X className="h-3.5 w-3.5" />
                 </Button>
               </div>
@@ -270,7 +270,7 @@ export function FinAIChat() {
                 disabled={isLoading}
                 className="h-9 text-[13px]"
               />
-              <Button type="submit" size="icon" className="h-9 w-9 shrink-0" disabled={isLoading || !value.trim()}>
+              <Button type="submit" size="icon" className="h-9 w-9 shrink-0" disabled={isLoading || !value.trim()} aria-label={t("send")}>
                 <Send className="h-4 w-4" />
               </Button>
             </form>

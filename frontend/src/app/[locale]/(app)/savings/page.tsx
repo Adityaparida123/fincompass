@@ -9,24 +9,52 @@ import { EmptyState, PageHeader } from "@/components/common/shared";
 import { useSavingsGoals, useCreateSavingsGoal, useMLSavingsCapacity, useMLForecast } from "@/hooks/use-api";
 import { formatCurrency, toNumber, clampPercent } from "@/lib/utils";
 import { ApiRequestError } from "@/lib/api";
-import type { SavingsGoal } from "@/types";
-import { PiggyBank, Plus, TrendingUp } from "lucide-react";
+import type { SavingsGoal, SavingsGoalType } from "@/types";
+import { PiggyBank, Plus } from "lucide-react";
+
+const GOAL_TYPES: SavingsGoalType[] = [
+  "emergency_fund",
+  "equipment",
+  "inventory",
+  "business_expansion",
+  "seasonal_expense",
+  "personal",
+];
+
+function estimatedMonthlyContribution(goal: SavingsGoal): number | null {
+  const remaining = toNumber(goal.target_amount) - toNumber(goal.current_amount);
+  if (remaining <= 0 || !goal.target_date) return null;
+  const months = Math.ceil(
+    (new Date(goal.target_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24 * 30),
+  );
+  if (months <= 0) return null;
+  return Math.ceil(remaining / months);
+}
 
 function SavingsGoalCard({ goal }: { goal: SavingsGoal }) {
+  const t = useTranslations("savings");
   const currentAmount = toNumber(goal.current_amount);
   const targetAmount = toNumber(goal.target_amount);
   const progress = clampPercent(goal.progress_percent);
+  const monthly = estimatedMonthlyContribution(goal);
 
   return (
     <Card className="relative overflow-hidden">
       <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
           <CardTitle className="text-base">{goal.name}</CardTitle>
-          {progress >= 100 ? (
-            <Badge variant="success" className="text-[10px]">Complete</Badge>
-          ) : progress >= 75 ? (
-            <Badge variant="secondary" className="text-[10px]">Almost there</Badge>
-          ) : null}
+          <div className="flex items-center gap-1.5 shrink-0">
+            {goal.goal_type && (
+              <Badge variant="outline" className={`text-[10px] ${goal.goal_type !== "personal" ? "border-primary/40 text-primary" : ""}`}>
+                {t(`goalTypes.${goal.goal_type}`)}
+              </Badge>
+            )}
+            {progress >= 100 ? (
+              <Badge variant="success" className="text-[10px]">Complete</Badge>
+            ) : progress >= 75 ? (
+              <Badge variant="secondary" className="text-[10px]">Almost there</Badge>
+            ) : null}
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -35,7 +63,7 @@ function SavingsGoalCard({ goal }: { goal: SavingsGoal }) {
           <span className="text-sm text-text-muted">of {formatCurrency(targetAmount)}</span>
         </div>
         <Progress value={progress} className="h-2" />
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-1">
           <p className="text-xs text-text-muted">
             {progress.toFixed(0)}% complete
           </p>
@@ -43,6 +71,11 @@ function SavingsGoalCard({ goal }: { goal: SavingsGoal }) {
             <p className="text-xs text-text-muted">Target: {goal.target_date}</p>
           )}
         </div>
+        {monthly !== null && (
+          <p className="text-xs text-text-secondary">
+            {t("estimatedContribution", { amount: formatCurrency(monthly) })}
+          </p>
+        )}
       </CardContent>
     </Card>
   );
@@ -52,7 +85,7 @@ export default function SavingsPage() {
   const t = useTranslations("savings");
   const tc = useTranslations("common");
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ name: "", target_amount: "", current_amount: "0", target_date: "" });
+  const [form, setForm] = useState({ name: "", target_amount: "", current_amount: "0", target_date: "", goal_type: "personal" });
   const [error, setError] = useState("");
 
   const goals = useSavingsGoals();
@@ -69,9 +102,10 @@ export default function SavingsPage() {
         target_amount: parseFloat(form.target_amount),
         current_amount: parseFloat(form.current_amount || "0"),
         target_date: form.target_date || null,
+        goal_type: form.goal_type,
       });
       setShowForm(false);
-      setForm({ name: "", target_amount: "", current_amount: "0", target_date: "" });
+      setForm({ name: "", target_amount: "", current_amount: "0", target_date: "", goal_type: "personal" });
     } catch (err) {
       setError(err instanceof ApiRequestError ? err.message : tc("error"));
     }
@@ -86,7 +120,6 @@ export default function SavingsPage() {
     : null;
 
   const totalCurrent = goals.data?.reduce((s, g) => s + toNumber(g.current_amount), 0) ?? 0;
-  const totalTarget = goals.data?.reduce((s, g) => s + toNumber(g.target_amount), 0) ?? 0;
 
   return (
     <div className="space-y-6">
@@ -107,6 +140,11 @@ export default function SavingsPage() {
             <div><Label>{t("targetAmount")}</Label><Input type="number" min="0" step="0.01" value={form.target_amount} onChange={(e) => setForm({ ...form, target_amount: e.target.value })} required /></div>
             <div><Label>{t("currentAmount")}</Label><Input type="number" min="0" step="0.01" value={form.current_amount} onChange={(e) => setForm({ ...form, current_amount: e.target.value })} /></div>
             <div><Label>{t("targetDate")}</Label><Input type="date" value={form.target_date} onChange={(e) => setForm({ ...form, target_date: e.target.value })} /></div>
+            <div><Label>{t("goalType")}</Label>
+              <select className="flex h-10 w-full rounded-lg border border-input bg-background px-3 text-sm" value={form.goal_type} onChange={(e) => setForm({ ...form, goal_type: e.target.value })}>
+                {GOAL_TYPES.map((gt) => <option key={gt} value={gt}>{t(`goalTypes.${gt}`)}</option>)}
+              </select>
+            </div>
             <div className="flex gap-2 sm:col-span-2"><Button type="submit" disabled={createGoal.isPending}>{tc("save")}</Button><Button type="button" variant="outline" onClick={() => setShowForm(false)}>{tc("cancel")}</Button></div>
           </form>
           {error && <p className="mt-2 text-sm text-destructive">{error}</p>}

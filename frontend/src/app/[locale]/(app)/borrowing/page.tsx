@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input, Label, Skeleton, Badge } from "@/components/ui/input";
+import { Input, Label, Skeleton } from "@/components/ui/input";
 import { PageHeader } from "@/components/common/shared";
 import { useCalculateEMI, useLoanSimulation } from "@/hooks/use-api";
 import { formatCurrency, toNumber } from "@/lib/utils";

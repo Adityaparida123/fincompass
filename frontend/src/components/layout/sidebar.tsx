@@ -147,7 +147,7 @@ export function Sidebar() {
                 </div>
                 <span className="text-sm font-semibold text-primary tracking-tight">FinCompass</span>
               </div>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSidebarOpen(false)}>
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSidebarOpen(false)} aria-label="Close menu">
                 <X className="h-4 w-4" />
               </Button>
             </div>
@@ -200,7 +200,7 @@ export function MobileNav() {
 export function SidebarToggle() {
   const { setSidebarOpen } = useUIStore();
   return (
-    <Button variant="ghost" size="icon" className="h-9 w-9 lg:hidden" onClick={() => setSidebarOpen(true)}>
+    <Button variant="ghost" size="icon" className="h-9 w-9 lg:hidden" onClick={() => setSidebarOpen(true)} aria-label="Open menu">
       <Menu className="h-4 w-4" />
     </Button>
   );

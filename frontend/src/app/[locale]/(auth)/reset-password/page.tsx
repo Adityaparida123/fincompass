@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useLocale } from "next-intl";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";

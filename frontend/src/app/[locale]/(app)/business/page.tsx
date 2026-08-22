@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -72,28 +72,29 @@ export default function BusinessProfilePage() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    if (profile.data && !loaded) {
-      setForm({
-        business_name: profile.data.business_name ?? "",
-        business_type: profile.data.business_type ?? "",
-        main_products: profile.data.main_products ?? "",
-        village: profile.data.village ?? "",
-        district: profile.data.district ?? "",
-        state: profile.data.state ?? "",
-        started_on: profile.data.started_on ?? "",
-        avg_monthly_sales:
-          profile.data.avg_monthly_sales != null ? String(profile.data.avg_monthly_sales) : "",
-        avg_monthly_expenses:
-          profile.data.avg_monthly_expenses != null ? String(profile.data.avg_monthly_expenses) : "",
-        workers_count: profile.data.workers_count != null ? String(profile.data.workers_count) : "",
-        typical_customers: profile.data.typical_customers ?? "",
-        seasonal: profile.data.seasonal ?? false,
-        season_note: profile.data.season_note ?? "",
-      });
-      setLoaded(true);
-    }
-  }, [profile.data, loaded]);
+  // One-time form hydration during render (React's "adjusting state when
+  // props change" pattern) — avoids an effect that calls setState.
+  if (profile.data && !loaded) {
+    const data = profile.data;
+    setForm({
+      business_name: data.business_name ?? "",
+      business_type: data.business_type ?? "",
+      main_products: data.main_products ?? "",
+      village: data.village ?? "",
+      district: data.district ?? "",
+      state: data.state ?? "",
+      started_on: data.started_on ?? "",
+      avg_monthly_sales:
+        data.avg_monthly_sales != null ? String(data.avg_monthly_sales) : "",
+      avg_monthly_expenses:
+        data.avg_monthly_expenses != null ? String(data.avg_monthly_expenses) : "",
+      workers_count: data.workers_count != null ? String(data.workers_count) : "",
+      typical_customers: data.typical_customers ?? "",
+      seasonal: data.seasonal ?? false,
+      season_note: data.season_note ?? "",
+    });
+    setLoaded(true);
+  }
 
   const set = <K extends keyof BusinessForm>(key: K, value: BusinessForm[K]) =>
     setForm((f) => ({ ...f, [key]: value }));

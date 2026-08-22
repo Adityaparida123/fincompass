@@ -146,6 +146,14 @@ export interface ExpenseTrends {
   top_categories: CategoryBreakdown[];
 }
 
+export type SavingsGoalType =
+  | "emergency_fund"
+  | "equipment"
+  | "inventory"
+  | "business_expansion"
+  | "seasonal_expense"
+  | "personal";
+
 export interface SavingsGoal {
   id: number;
   name: string;
@@ -154,6 +162,7 @@ export interface SavingsGoal {
   target_date: string | null;
   status: "active" | "completed" | "paused" | "abandoned";
   progress_percent: string;
+  goal_type: SavingsGoalType | null;
 }
 
 export interface BudgetItem {

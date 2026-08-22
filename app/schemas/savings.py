@@ -8,11 +8,22 @@ from pydantic import BaseModel, Field
 from app.db.enums import SavingsGoalStatus
 
 
+GOAL_TYPES = frozenset({
+    "emergency_fund",
+    "equipment",
+    "inventory",
+    "business_expansion",
+    "seasonal_expense",
+    "personal",
+})
+
+
 class SavingsGoalCreate(BaseModel):
     name: str = Field(min_length=1, max_length=200)
     target_amount: Decimal = Field(gt=0, max_digits=16, decimal_places=2)
     current_amount: Decimal = Field(default=0, ge=0, max_digits=16, decimal_places=2)
     target_date: date | None = None
+    goal_type: str = Field(default="personal", pattern="^(emergency_fund|equipment|inventory|business_expansion|seasonal_expense|personal)$")
 
 
 class SavingsGoalUpdate(BaseModel):
@@ -21,6 +32,7 @@ class SavingsGoalUpdate(BaseModel):
     current_amount: Decimal | None = Field(default=None, ge=0, max_digits=16, decimal_places=2)
     target_date: date | None = None
     status: SavingsGoalStatus | None = None
+    goal_type: str | None = Field(default=None, pattern="^(emergency_fund|equipment|inventory|business_expansion|seasonal_expense|personal)$")
 
 
 class SavingsGoalRead(BaseModel):
@@ -31,6 +43,7 @@ class SavingsGoalRead(BaseModel):
     target_date: date | None
     status: SavingsGoalStatus
     progress_percent: Decimal
+    goal_type: str | None = None
 
     model_config = {"from_attributes": True}
 

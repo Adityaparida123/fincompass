@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,11 @@ export default function ProfilePage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
+  // Hydrate the form from the auth store during render (React's
+  // "adjusting state when props change" pattern) to avoid an effect.
+  const [prevUser, setPrevUser] = useState<UserSummary | null>(user);
+  if (user !== prevUser) {
+    setPrevUser(user);
     if (user) {
       setForm({
         full_name: user.full_name,
@@ -31,7 +35,7 @@ export default function ProfilePage() {
         timezone: user.timezone,
       });
     }
-  }, [user]);
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

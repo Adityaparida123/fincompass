@@ -174,6 +174,10 @@
     "title": "FinAI व्यापार सलाहकार",
     "placeholder": "अपने व्यापार या पैसों के बारे में पूछें...",
     "disclaimer": "सलाह आपके उपलब्ध डेटा और सामान्य जानकारी पर आधारित है। यह मार्गदर्शन है, कोई गारंटी नहीं।",
+    "close": "चैट बंद करें",
+    "send": "संदेश भेजें",
+    "fullscreen": "चैट बड़ा करें",
+    "exitFullscreen": "फुल स्क्रीन बंद करें",
     "suggestions": {
       "save": "मुझे हर महीने कितना बचाना चाहिए?",
       "expenses": "मेरे खर्च क्यों बढ़े?",
@@ -250,6 +254,10 @@
       "colAmount": "राशि",
       "colType": "प्रकार",
       "colCategory": "श्रेणी",
+      "colScope": "दायरा",
+      "business": "व्यावसायिक",
+      "personal": "व्यक्तिगत",
+      "possiblyMixed": "संभवतः मिश्रित",
       "colConfidence": "विश्वास",
       "needsReview": "समीक्षा",
       "duplicate": "डुप्लिकेट",
@@ -301,7 +309,19 @@
     "currentAmount": "वर्तमान राशि",
     "targetDate": "लक्ष्य तिथि",
     "mlCapacity": "अनुमानित बचत क्षमता",
-    "noGoals": "अभी कोई बचत लक्ष्य नहीं।"
+    "noGoals": "अभी कोई बचत लक्ष्य नहीं।",
+    "forecastSurplus": "अनुमानित कैश फ्लो",
+    "forecastSurplusDesc": "आपके अनुमानित कैश फ्लो के आधार पर, आप लगभग {amount} अपनी बचत के लक्ष्य के लिए रख सकते हैं।",
+    "goalType": "लक्ष्य का प्रकार",
+    "estimatedContribution": "समय पर इस लक्ष्य तक पहुँचने के लिए अनुमानित {amount}/माह आवश्यक (अनुमान)।",
+    "goalTypes": {
+      "emergency_fund": "आपातकालीन फंड",
+      "equipment": "उपकरण खरीद",
+      "inventory": "इन्वेंटरी / माल",
+      "business_expansion": "व्यवसाय विस्तार",
+      "seasonal_expense": "मौसमी खर्च",
+      "personal": "व्यक्तिगत"
+    }
   },
   "budget": {
     "title": "बजट",

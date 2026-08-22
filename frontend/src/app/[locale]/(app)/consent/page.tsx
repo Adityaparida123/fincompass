@@ -1,14 +1,14 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton, Badge } from "@/components/ui/input";
 import { PageHeader } from "@/components/common/shared";
 import { useConsents, useGrantConsent, useRevokeConsent } from "@/hooks/use-api";
 import { PageError } from "@/components/charts/responsive-charts";
 import { ApiRequestError } from "@/lib/api";
-import { Shield, Lock, Unlock } from "lucide-react";
+import { Lock, Unlock } from "lucide-react";
 
 const CONSENT_LABELS: Record<string, string> = {
   financial_data_analysis: "financialAnalysis",

@@ -88,7 +88,6 @@ export function useTransactions(params?: Record<string, string | number>) {
 
 export function useCreateTransaction() {
   const qc = useQueryClient();
-  const user = useAuthStore((s) => s.user);
   return useMutation({
     mutationFn: (body: Record<string, unknown>) => api.post<Transaction>("/transactions", body),
     onSuccess: () => {

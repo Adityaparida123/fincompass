@@ -3,10 +3,10 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { format } from "date-fns";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Skeleton, Badge } from "@/components/ui/input";
-import { BudgetProgressList, ChartCard, ChartSkeleton, PageError } from "@/components/charts/responsive-charts";
+import { BudgetProgressList, ChartCard, PageError } from "@/components/charts/responsive-charts";
 import { EmptyState, PageHeader } from "@/components/common/shared";
 import { useBudgetStatus, useCreateBudget, useDeleteBudget, useMLForecast } from "@/hooks/use-api";
 import { formatCurrency, toNumber } from "@/lib/utils";
@@ -40,9 +40,6 @@ export default function BudgetPage() {
       setError(err instanceof ApiRequestError ? err.message : tc("error"));
     }
   };
-
-  const getForecastForCategory = (category: string) =>
-    categoryForecasts.find((cf) => cf.category === category);
 
   const totalBudget = budget.data?.reduce((s, b) => s + toNumber(b.limit_amount), 0) ?? 0;
   const totalSpent = budget.data?.reduce((s, b) => s + toNumber(b.spent), 0) ?? 0;
@@ -119,6 +116,10 @@ export default function BudgetPage() {
               percentUsed: toNumber(b.percent_used),
               remaining: toNumber(b.remaining),
             }))}
+            onDelete={(id) => {
+              if (!confirm(tc("confirm"))) return;
+              void deleteBudget.mutateAsync(id as number).catch(() => setError(t("error")));
+            }}
           />
         ) : (
           <EmptyState

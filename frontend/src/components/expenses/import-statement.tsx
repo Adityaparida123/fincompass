@@ -16,6 +16,7 @@ import {
 import { useAnalyzeStatement, useImportStatement } from "@/hooks/use-api";
 import { ApiRequestError } from "@/lib/api";
 import { CATEGORIES } from "@/lib/constants";
+import { resolveScope } from "@/lib/expense-scope";
 import type { StatementPreviewTransaction } from "@/types";
 
 const ACCEPT =
@@ -223,6 +224,7 @@ export function ImportStatementDialog({
                     <th className="w-28 p-2 text-left font-medium">{t("colAmount")}</th>
                     <th className="w-28 p-2 text-left font-medium">{t("colType")}</th>
                     <th className="w-40 p-2 text-left font-medium">{t("colCategory")}</th>
+                    <th className="w-24 p-2 text-left font-medium">{t("colScope")}</th>
                     <th className="w-32 p-2 text-left font-medium">{t("colConfidence")}</th>
                   </tr>
                 </thead>
@@ -286,6 +288,16 @@ export function ImportStatementDialog({
                             </option>
                           ))}
                         </select>
+                      </td>
+                      <td className="p-2">
+                        {(() => {
+                          const scope = resolveScope(row.category, null);
+                          return (
+                            <Badge variant="outline" className={`text-[10px] capitalize ${scope === "business" ? "border-primary/40 text-primary" : scope === "mixed" ? "border-warning/40 text-warning" : ""}`}>
+                              {scope === "mixed" ? t("possiblyMixed") : t(scope)}
+                            </Badge>
+                          );
+                        })()}
                       </td>
                       <td className="p-2">
                         <div className="flex flex-wrap gap-1">

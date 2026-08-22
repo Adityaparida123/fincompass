@@ -3,7 +3,8 @@
 import { type ReactNode } from "react";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend,
-  LineChart, Line, Area, AreaChart, PieChart, Pie, Cell, CartesianGrid, ReferenceLine,
+  Line, Area, AreaChart, PieChart, Pie, Cell, CartesianGrid,
+ReferenceLine,
 } from "recharts";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/utils";
@@ -61,12 +62,11 @@ export function ChartCard({
 }
 
 // ─── Premium Tooltip ────────────────────────────────────────────
-function ChartTooltipContent({ active, payload, label, formatter, compact }: {
+function ChartTooltipContent({ active, payload, label, formatter }: {
   active?: boolean;
   payload?: Array<{ name: string; value: number; color: string; dataKey: string }>;
   label?: string;
   formatter?: (value: number, name: string) => string;
-  compact?: boolean;
 }) {
   if (!active || !payload?.length) return null;
   return (
@@ -791,10 +791,12 @@ export function BudgetProgressList({
   budgets,
   valueFormatter,
   className,
+  onDelete,
 }: {
   budgets: Array<{ id: string | number; category: string; spent: number; limit: number; percentUsed: number; remaining: number }>;
   valueFormatter?: (value: number) => string;
   className?: string;
+  onDelete?: (id: string | number) => void;
 }) {
   const fmt = valueFormatter ?? ((v: number) => formatCurrency(v));
   return (
@@ -803,7 +805,6 @@ export function BudgetProgressList({
         const pct = Math.min(100, Math.max(0, b.percentUsed));
         const over = b.percentUsed > 100;
         const nearing = b.percentUsed > 80 && !over;
-        const healthy = !over && !nearing;
         return (
           <div key={b.id} className="budget-row group">
             <div className="flex items-center justify-between mb-1.5">
@@ -829,9 +830,21 @@ export function BudgetProgressList({
               <span className="text-[11px] text-text-muted font-[family-name:var(--font-jetbrains-mono)] tabular-nums">
                 {b.percentUsed.toFixed(1)}% used
               </span>
-              <span className={cn("text-[11px] font-medium font-[family-name:var(--font-jetbrains-mono)] tabular-nums", b.remaining < 0 ? "text-destructive" : "text-primary")}>
-                {b.remaining < 0 ? "-" : ""}{fmt(Math.abs(b.remaining))} remaining
-              </span>
+              <div className="flex items-center gap-2">
+                <span className={cn("text-[11px] font-medium font-[family-name:var(--font-jetbrains-mono)] tabular-nums", b.remaining < 0 ? "text-destructive" : "text-primary")}>
+                  {b.remaining < 0 ? "-" : ""}{fmt(Math.abs(b.remaining))} remaining
+                </span>
+                {onDelete && (
+                  <button
+                    type="button"
+                    onClick={() => onDelete(b.id)}
+                    aria-label={`Delete ${b.category} budget`}
+                    className="text-[10px] text-text-muted hover:text-destructive transition-colors"
+                  >
+                    Delete
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         );

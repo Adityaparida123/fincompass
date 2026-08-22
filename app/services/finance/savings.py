@@ -23,4 +23,5 @@ def goal_to_read(goal: Doc) -> dict:
         "target_date": goal.target_date,
         "status": goal.status,
         "progress_percent": progress_percent(goal),
+        "goal_type": getattr(goal, "goal_type", None),
     }
