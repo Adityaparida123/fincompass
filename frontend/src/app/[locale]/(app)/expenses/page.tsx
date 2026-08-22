@@ -16,6 +16,7 @@ import { ImportStatementDialog } from "@/components/expenses/import-statement";
 import { formatCurrency, toNumber } from "@/lib/utils";
 import { fillWeeklyDays } from "@/lib/chart-utils";
 import { CATEGORIES } from "@/lib/constants";
+import { resolveScope, BUSINESS_CATEGORIES_LIST, type ExpenseScope } from "@/lib/expense-scope";
 import { ApiRequestError } from "@/lib/api";
 import { Receipt, TrendingUp, FileText, Plus, Upload } from "lucide-react";
 
@@ -26,9 +27,10 @@ export default function ExpensesPage() {
   const period = format(now, "yyyy-MM");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
+  const [scopeFilter, setScopeFilter] = useState<"" | ExpenseScope>("");
   const [showForm, setShowForm] = useState(false);
   const [showImport, setShowImport] = useState(false);
-  const [form, setForm] = useState({ date: format(now, "yyyy-MM-dd"), description: "", amount: "", category: "", transaction_type: "expense" });
+  const [form, setForm] = useState({ date: format(now, "yyyy-MM-dd"), description: "", amount: "", category: "", transaction_type: "expense", expense_scope: "" });
   const [error, setError] = useState("");
 
   const params: Record<string, string> = {};
@@ -69,9 +71,10 @@ export default function ExpensesPage() {
     e.preventDefault();
     setError("");
     try {
-      await createTx.mutateAsync({ ...form, amount: parseFloat(form.amount) });
+      const { expense_scope, ...rest } = form;
+      await createTx.mutateAsync({ ...rest, ...(expense_scope ? { expense_scope } : {}), amount: parseFloat(form.amount) });
       setShowForm(false);
-      setForm({ date: format(now, "yyyy-MM-dd"), description: "", amount: "", category: "", transaction_type: "expense" });
+      setForm({ date: format(now, "yyyy-MM-dd"), description: "", amount: "", category: "", transaction_type: "expense", expense_scope: "" });
     } catch (err) {
       setError(err instanceof ApiRequestError ? err.message : tc("error"));
     }
@@ -112,7 +115,19 @@ export default function ExpensesPage() {
               <div><Label>{t("category")}</Label>
                 <select className="flex h-10 w-full rounded-lg border border-input bg-background px-3 text-sm" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} required>
                   <option value="" disabled>{t("selectCategory")}</option>
-                  {CATEGORIES.map((cat) => <option key={cat} value={cat}>{cat.replace(/_/g, " ")}</option>)}
+                  <optgroup label="Business">
+                    {BUSINESS_CATEGORIES_LIST.map((cat) => <option key={cat} value={cat}>{cat.replace(/_/g, " ")}</option>)}
+                  </optgroup>
+                  <optgroup label="Personal">
+                    {CATEGORIES.filter((c) => c !== "income").map((cat) => <option key={cat} value={cat}>{cat.replace(/_/g, " ")}</option>)}
+                  </optgroup>
+                </select>
+              </div>
+              <div><Label>{t("scope")}</Label>
+                <select className="flex h-10 w-full rounded-lg border border-input bg-background px-3 text-sm" value={form.expense_scope} onChange={(e) => setForm({ ...form, expense_scope: e.target.value })}>
+                  <option value="">{t("scopeAuto")}</option>
+                  <option value="business">{t("business")}</option>
+                  <option value="personal">{t("personal")}</option>
                 </select>
               </div>
               <div><Label>{t("type")}</Label>
@@ -200,7 +215,19 @@ export default function ExpensesPage() {
       <Card>
         <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pb-3">
           <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">{t("title")}</CardTitle>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex rounded-lg border border-input bg-background p-0.5" role="group" aria-label={t("scope")}>
+              {([["", t("scopeAll")], ["business", t("business")], ["personal", t("personal")], ["mixed", t("mixed")]] as const).map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setScopeFilter(value)}
+                  className={`rounded-md px-2.5 py-1 text-xs transition-colors ${scopeFilter === value ? "bg-primary text-primary-foreground" : "text-text-muted hover:bg-surface-container"}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
             <select className="h-8 rounded-lg border border-input bg-background px-2 text-xs" value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
               <option value="">{t("allCategories")}</option>
               {categories.data?.map((c) => <option key={c.category} value={c.category}>{c.category}</option>)}
@@ -211,49 +238,64 @@ export default function ExpensesPage() {
           </div>
         </CardHeader>
         <CardContent className="space-y-1.5">
-          {transactions.isLoading ? (
-            <div className="space-y-2">{[1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="h-14 w-full" />)}</div>
-          ) : transactions.isError ? (
-            <PageError message={tc("error")} onRetry={() => transactions.refetch()} />
-          ) : transactions.data?.items?.length ? transactions.data.items.map((tx) => (
-            <div key={tx.id} className="flex items-center gap-3 rounded-lg border border-border px-4 py-3 transition-colors hover:bg-surface-container">
-              <div className={`h-8 w-1 rounded-full ${tx.transaction_type === "income" ? "bg-income" : "bg-expense"}`} />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">{tx.description}</p>
-                <div className="flex items-center gap-2 text-xs text-text-muted">
-                  <span>{tx.date}</span>
-                  <span>·</span>
-                  <span className="capitalize">{tx.category}</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className={`text-sm font-semibold font-[family-name:var(--font-jetbrains-mono)] ${tx.transaction_type === "income" ? "text-income" : ""}`}>
-                  {tx.transaction_type === "income" ? "+" : "-"}{formatCurrency(toNumber(tx.amount))}
-                </span>
-                <Badge variant={tx.transaction_type === "income" ? "success" : "secondary"} className="text-[10px]">{tx.transaction_type}</Badge>
-                <Button size="sm" variant="ghost" className="h-7 px-2 text-xs text-destructive hover:text-destructive" onClick={() => handleDelete(tx.id)} disabled={deleteTx.isPending}>
-                  {tc("delete")}
-                </Button>
-              </div>
-            </div>
-          )) : (
-            <EmptyState
-              title={t("noTransactions")}
-              description="Add your first transaction or import a bank statement to start tracking."
-              icon={FileText}
-              action={
-                <div className="flex gap-2">
-                  <Button size="sm" variant="outline" onClick={() => setShowImport(true)}>Import statement</Button>
-                  <Button size="sm" onClick={() => setShowForm(true)}>Add transaction</Button>
-                </div>
-              }
-            />
-          )}
-          {transactions.data && transactions.data.total > 20 && (
-            <p className="text-center text-xs text-text-muted pt-2">
-              Showing {transactions.data.items.length} of {transactions.data.total} transactions
-            </p>
-          )}
+          {(() => {
+            const items = (transactions.data?.items ?? []).filter(
+              (tx) => !scopeFilter || resolveScope(tx.category, tx.expense_scope) === scopeFilter,
+            );
+            return (
+              <>
+                {transactions.isLoading ? (
+                  <div className="space-y-2">{[1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="h-14 w-full" />)}</div>
+                ) : transactions.isError ? (
+                  <PageError message={tc("error")} onRetry={() => transactions.refetch()} />
+                ) : items.length ? items.map((tx) => {
+                  const scope = resolveScope(tx.category, tx.expense_scope);
+                  return (
+                    <div key={tx.id} className="flex items-center gap-3 rounded-lg border border-border px-4 py-3 transition-colors hover:bg-surface-container">
+                      <div className={`h-8 w-1 rounded-full ${tx.transaction_type === "income" ? "bg-income" : "bg-expense"}`} />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium">{tx.description}</p>
+                        <div className="flex items-center gap-2 text-xs text-text-muted">
+                          <span>{tx.date}</span>
+                          <span>·</span>
+                          <span className="capitalize">{tx.category}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className={`text-sm font-semibold font-[family-name:var(--font-jetbrains-mono)] ${tx.transaction_type === "income" ? "text-income" : ""}`}>
+                          {tx.transaction_type === "income" ? "+" : "-"}{formatCurrency(toNumber(tx.amount))}
+                        </span>
+                        <Badge variant={tx.transaction_type === "income" ? "success" : "secondary"} className="text-[10px]">{tx.transaction_type}</Badge>
+                        <Badge variant="outline" className={`text-[10px] capitalize ${scope === "business" ? "border-primary/40 text-primary" : scope === "mixed" ? "border-warning/40 text-warning" : ""}`}>
+                          {scope === "mixed" ? t("possiblyMixed") : t(scope)}
+                        </Badge>
+                        <Button size="sm" variant="ghost" className="h-7 px-2 text-xs text-destructive hover:text-destructive" onClick={() => handleDelete(tx.id)} disabled={deleteTx.isPending}>
+                          {tc("delete")}
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                }) : (
+                  <EmptyState
+                    title={t("noTransactions")}
+                    description="Add your first transaction or import a bank statement to start tracking."
+                    icon={FileText}
+                    action={
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline" onClick={() => setShowImport(true)}>Import statement</Button>
+                        <Button size="sm" onClick={() => setShowForm(true)}>Add transaction</Button>
+                      </div>
+                    }
+                  />
+                )}
+                {transactions.data && transactions.data.total > 20 && (
+                  <p className="text-center text-xs text-text-muted pt-2">
+                    Showing {items.length} of {transactions.data.total} transactions
+                  </p>
+                )}
+              </>
+            );
+          })()}
         </CardContent>
       </Card>
     </div>

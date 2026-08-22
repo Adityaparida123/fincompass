@@ -1,16 +1,16 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton, Badge } from "@/components/ui/input";
+import { Badge } from "@/components/ui/input";
 import { CashFlowTrendChart, ForecastChart, ChartCard, ChartSkeleton, PageError } from "@/components/charts/responsive-charts";
 import { StatCard, PageHeader, EmptyState } from "@/components/common/shared";
 import { useExpensesMonthly, useExpenseTrends, useMLForecast } from "@/hooks/use-api";
 import { formatCurrency, toNumber } from "@/lib/utils";
-import { TrendingUp, TrendingDown, Wallet, Minus, ArrowRight } from "lucide-react";
-import Link from "next/link";
+import { classifyScope } from "@/lib/expense-scope";
+import { TrendingUp, TrendingDown, Wallet } from "lucide-react";
 
 const QUALITY_LABELS: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" | "success" }> = {
   good: { label: "Good", variant: "success" },
@@ -32,20 +32,20 @@ export default function CashflowPage() {
   const expenses = toNumber(monthly.data?.total_expenses);
   const net = toNumber(monthly.data?.net_cash_flow);
 
-  const trendData = trends.data?.points?.map((p) => ({
+  const trendData = useMemo(() => trends.data?.points?.map((p) => ({
     period: p.period,
     income: toNumber(p.income ?? 0),
     expenses: toNumber(p.total),
     net: toNumber(p.income ?? 0) - toNumber(p.total),
-  })) ?? [];
+  })) ?? [], [trends.data]);
 
-  const forecastData = forecast.data?.forecasts?.map((f) => ({
+  const forecastData = useMemo(() => forecast.data?.forecasts?.map((f) => ({
     period: f.forecast_month,
     expected: f.expected_cashflow,
     lower: f.lower_range ?? f.expected_cashflow,
     upper: f.upper_range ?? f.expected_cashflow,
     range: (f.upper_range ?? f.expected_cashflow) - (f.lower_range ?? f.expected_cashflow),
-  })) ?? [];
+  })) ?? [], [forecast.data]);
 
   const isInsufficientData = forecast.data?.status === "insufficient_data";
 
@@ -65,6 +65,15 @@ export default function CashflowPage() {
   const incomeForecast = forecast.data?.income_forecast;
   const categoryForecasts = forecast.data?.category_forecasts ?? [];
 
+  const scopeSplit = Object.entries(monthly.data?.categories ?? {}).reduce(
+    (acc, [name, val]) => {
+      acc[classifyScope(name)] += toNumber(val);
+      return acc;
+    },
+    { business: 0, personal: 0, mixed: 0 } as Record<"business" | "personal" | "mixed", number>,
+  );
+  const hasScopeData = scopeSplit.business + scopeSplit.personal + scopeSplit.mixed > 0;
+
   return (
     <div className="space-y-6">
       <PageHeader title={t("title")} subtitle="Track your income, expenses, and projected cash flow." />
@@ -74,6 +83,28 @@ export default function CashflowPage() {
         <StatCard label={t("expenses")} value={formatCurrency(expenses)} icon={TrendingDown} loading={monthly.isLoading} subtitle="This month" />
         <StatCard label={t("net")} value={formatCurrency(net)} icon={Wallet} loading={monthly.isLoading} subtitle={net >= 0 ? "Positive cash flow" : "Negative cash flow"} trend={net >= 0 ? "up" : "down"} />
       </div>
+
+      {hasScopeData && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">{t("scopeSplit")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 sm:grid-cols-3">
+              {([["business", scopeSplit.business, "text-primary"], ["personal", scopeSplit.personal, ""], ["mixed", scopeSplit.mixed, "text-warning"]] as const).map(([key, value, color]) => (
+                <div key={key} className="rounded-xl border border-border bg-surface-container-low p-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">{t(key)}</p>
+                  <p className={`mt-1 text-xl font-bold font-[family-name:var(--font-jetbrains-mono)] ${color}`}>{formatCurrency(value)}</p>
+                  {expenses > 0 && (
+                    <p className="mt-0.5 text-xs text-text-muted">{((value / expenses) * 100).toFixed(0)}% {t("ofExpenses")}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+            <p className="mt-3 text-xs text-text-muted">{t("scopeSplitHint")}</p>
+          </CardContent>
+        </Card>
+      )}
 
       <ChartCard title={t("trends")} subtitle="Income, expenses, and net cash flow">
         {trends.isLoading ? <ChartSkeleton variant="area" /> : trends.isError ? (

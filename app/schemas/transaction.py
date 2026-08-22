@@ -30,6 +30,11 @@ class TransactionCreate(BaseModel):
     merchant: str | None = Field(default=None, max_length=200)
     source: TransactionSource = TransactionSource.manual
     currency: str = Field(default="INR", min_length=3, max_length=10)
+    expense_scope: str | None = Field(
+        default=None,
+        pattern="^(business|personal)$",
+        description="User-set business/personal override; derived when unset.",
+    )
 
 
 class TransactionUpdate(BaseModel):
@@ -40,6 +45,11 @@ class TransactionUpdate(BaseModel):
     subcategory: str | None = Field(default=None, max_length=100)
     merchant: str | None = Field(default=None, max_length=200)
     currency: str | None = Field(default=None, min_length=3, max_length=10)
+    expense_scope: str | None = Field(
+        default=None,
+        pattern="^(business|personal)$",
+        description="User-set business/personal override; derived when unset.",
+    )
 
 
 class TransactionRead(BaseModel):
@@ -53,6 +63,7 @@ class TransactionRead(BaseModel):
     subcategory: str | None
     merchant: str | None = None
     source: TransactionSource
+    expense_scope: str | None = None
 
     model_config = {"from_attributes": True}
 

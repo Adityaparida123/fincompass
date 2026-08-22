@@ -95,16 +95,25 @@ async def build_context_for_intent(
                 ["category_expenses", "period"],
             )
         from app.services.finance.expenses import category_totals, expense_totals
+        from app.services.finance.scope import SCOPE_BUSINESS, SCOPE_PERSONAL, classify_scope
 
         total, count = await expense_totals(db, user_id, start, end)
         cats = await category_totals(db, user_id, start, end)
         top = ", ".join(f"{c}: ₹{v:,.0f}" for c, v, _ in sorted(cats, key=lambda r: -r[1])[:5])
+        scope_totals = {SCOPE_BUSINESS: 0.0, SCOPE_PERSONAL: 0.0}
+        for c, v, _ in cats:
+            scope_totals[classify_scope(c)] += float(v)
+        split = (
+            f"Business expenses ~₹{scope_totals[SCOPE_BUSINESS]:,.0f}; "
+            f"personal expenses ~₹{scope_totals[SCOPE_PERSONAL]:,.0f} "
+            "(category-based estimate; some categories may be mixed)."
+        )
         return _slice(
             (
                 f"Current month total expenses: ₹{total:,.2f} across {count} transactions. "
-                f"Top categories: {top or 'none recorded'}."
+                f"Top categories: {top or 'none recorded'}. {split}"
             ),
-            ["monthly_expenses", "categories"],
+            ["monthly_expenses", "categories", "expense_scope_split"],
         )
 
     if intent in ("business_pricing", "business_inventory"):

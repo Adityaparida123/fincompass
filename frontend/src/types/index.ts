@@ -63,6 +63,7 @@ export interface Transaction {
   category: string;
   subcategory: string | null;
   source: string;
+  expense_scope: "business" | "personal" | null;
 }
 
 export interface StatementPreviewTransaction {

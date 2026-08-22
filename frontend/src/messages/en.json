@@ -206,6 +206,13 @@
     "amount": "Amount",
     "category": "Category",
     "selectCategory": "Select category",
+    "scope": "Scope",
+    "scopeAuto": "Auto-detect",
+    "scopeAll": "All",
+    "business": "Business",
+    "personal": "Personal",
+    "mixed": "Mixed",
+    "possiblyMixed": "Possibly mixed",
     "date": "Date",
     "type": "Type",
     "noTransactions": "No transactions yet.",
@@ -273,7 +280,13 @@
     "availableMonths": "Available: {count} month(s)",
     "requiredMonths": "Recommended: {count}+ months",
     "categoryForecasts": "Category forecasts",
-    "monthsOfData": "{count} month(s) of data"
+    "monthsOfData": "{count} month(s) of data",
+    "scopeSplit": "Business vs personal spending",
+    "business": "Business expenses",
+    "personal": "Personal expenses",
+    "mixed": "Possibly mixed",
+    "ofExpenses": "of expenses",
+    "scopeSplitHint": "Estimated from categories — some costs (rent, utilities, transport) may serve both your business and household. You can mark them when adding transactions."
   },
   "savings": {
     "title": "Savings Goals",
