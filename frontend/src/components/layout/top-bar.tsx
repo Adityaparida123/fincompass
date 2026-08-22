@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { Moon, Sun, Monitor, LogOut, Globe, Settings, Search } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
@@ -12,14 +12,14 @@ import { useAuthStore } from "@/stores/auth-store";
 export function TopBar() {
   const t = useTranslations("common");
   const locale = useLocale();
+  const pathname = usePathname();
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const { user, logout } = useAuthStore();
 
   const toggleLocale = () => {
     const next = locale === "en" ? "hi" : "en";
-    const path = window.location.pathname.replace(`/${locale}`, `/${next}`);
-    router.push(path);
+    router.push(pathname.replace(`/${locale}`, `/${next}`));
   };
 
   const handleLogout = async () => {

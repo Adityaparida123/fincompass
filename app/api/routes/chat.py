@@ -58,7 +58,7 @@ async def post_chat(
     db: MongoDatabase = Depends(get_db),
     _: None = Depends(rate_limit_chat),
 ) -> ChatResponse:
-    return await chat(db, user.id, data.message, session_id=data.session_id, language=data.language)
+    return await chat(db, user.id, data.message, session_id=data.session_id, language=data.language, detail=data.detail, focus=data.focus)
 
 
 @router.post("/stream")
@@ -115,7 +115,13 @@ async def stream_chat(
         slice_ = await build_context_for_intent(db, user.id, intent=intent, message=data.message)
         context_text = slice_.text or None
 
-    messages = build_messages(llm_history, financial_context=context_text, language=session.language)
+    messages = build_messages(
+        llm_history,
+        financial_context=context_text,
+        language=session.language,
+        detail=data.detail,
+        focus=data.focus,
+    )
     provider = get_provider()
 
     async def event_generator():

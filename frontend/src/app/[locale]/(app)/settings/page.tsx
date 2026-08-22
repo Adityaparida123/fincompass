@@ -12,7 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { PageHeader } from "@/components/common/shared";
 import { useAuthStore } from "@/stores/auth-store";
-import { useUIStore, type NotificationPref, type Theme } from "@/stores/ui-store";
+import { useUIStore, type NotificationPref, type Theme, type AIDetail, type AIFocus } from "@/stores/ui-store";
 import { useConsents, useGrantConsent, useRevokeConsent } from "@/hooks/use-api";
 import { api, ApiRequestError } from "@/lib/api";
 import { useTheme } from "@/components/theme-provider";
@@ -48,6 +48,10 @@ export default function SettingsPage() {
   const setFinaiEnabled = useUIStore((s) => s.setFinaiEnabled);
   const followUpsEnabled = useUIStore((s) => s.followUpsEnabled);
   const setFollowUpsEnabled = useUIStore((s) => s.setFollowUpsEnabled);
+  const aiDetail = useUIStore((s) => s.aiDetail);
+  const setAiDetail = useUIStore((s) => s.setAiDetail);
+  const aiFocus = useUIStore((s) => s.aiFocus);
+  const setAiFocus = useUIStore((s) => s.setAiFocus);
   const budgetAlerts = useUIStore((s) => s.budgetAlerts);
   const expenseReminders = useUIStore((s) => s.expenseReminders);
   const savingsReminders = useUIStore((s) => s.savingsReminders);
@@ -233,6 +237,29 @@ export default function SettingsPage() {
           </SettingsRow>
           <SettingsRow title={t("followUps")} description={t("followUpsDesc")}>
             <Switch checked={followUpsEnabled} onCheckedChange={setFollowUpsEnabled} aria-label={t("followUps")} />
+          </SettingsRow>
+          <SettingsRow title={t("aiDetail")} description={t("aiDetailDesc")}>
+            <Select
+              value={aiDetail}
+              onChange={(e) => setAiDetail(e.target.value as AIDetail)}
+              className="h-9 w-36"
+              aria-label={t("aiDetail")}
+            >
+              <option value="simple">{t("aiDetailSimple")}</option>
+              <option value="detailed">{t("aiDetailDetailed")}</option>
+            </Select>
+          </SettingsRow>
+          <SettingsRow title={t("aiFocus")} description={t("aiFocusDesc")}>
+            <Select
+              value={aiFocus}
+              onChange={(e) => setAiFocus(e.target.value as AIFocus)}
+              className="h-9 w-36"
+              aria-label={t("aiFocus")}
+            >
+              <option value="business">{t("aiFocusBusiness")}</option>
+              <option value="personal">{t("aiFocusPersonal")}</option>
+              <option value="balanced">{t("aiFocusBalanced")}</option>
+            </Select>
           </SettingsRow>
           <SettingsRow title={t("personalizedInsights")} description={t("personalizedInsightsDesc")}>
             {consents.isLoading ? (

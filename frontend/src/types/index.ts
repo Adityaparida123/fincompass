@@ -8,6 +8,22 @@ export interface UserSummary {
   timezone: string;
 }
 
+export interface BusinessProfile {
+  business_name: string | null;
+  business_type: string | null;
+  main_products: string | null;
+  village: string | null;
+  district: string | null;
+  state: string | null;
+  started_on: string | null;
+  avg_monthly_sales: number | null;
+  avg_monthly_expenses: number | null;
+  workers_count: number | null;
+  typical_customers: string | null;
+  seasonal: boolean;
+  season_note: string | null;
+}
+
 export interface TokenPair {
   access_token: string;
   refresh_token: string;
@@ -207,6 +223,12 @@ export interface Scheme {
   source_url: string;
   last_verified: string;
   active: boolean;
+}
+
+export interface SchemeMatch {
+  scheme: Scheme;
+  match_reason: string;
+  confidence: "potential";
 }
 
 export interface ConsentItem {

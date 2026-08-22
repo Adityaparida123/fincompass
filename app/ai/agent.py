@@ -54,6 +54,8 @@ async def chat(
     *,
     session_id: int | None = None,
     language: str | None = None,
+    detail: str | None = None,
+    focus: str | None = None,
 ) -> ChatResponse:
     routing = route_intent(message)
     intent = str(routing["intent"])
@@ -95,7 +97,11 @@ async def chat(
     tool_used: str | None = None
 
     messages = build_messages(
-        llm_history, financial_context=context_text, language=session.language
+        llm_history,
+        financial_context=context_text,
+        language=session.language,
+        detail=detail,
+        focus=focus,
     )
     llm_messages = list(messages)
 

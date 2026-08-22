@@ -9,6 +9,8 @@ class ChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=8000)
     session_id: int | None = None
     language: str | None = Field(default=None, min_length=2, max_length=10)
+    detail: str | None = Field(default=None, pattern="^(simple|detailed)$")
+    focus: str | None = Field(default=None, pattern="^(business|personal|balanced)$")
 
 
 class ChatResponse(BaseModel):

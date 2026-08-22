@@ -12,12 +12,17 @@ export type NotificationPref =
   | "cashflowAlerts"
   | "forecastUpdates";
 
+export type AIDetail = "simple" | "detailed";
+export type AIFocus = "business" | "personal" | "balanced";
+
 interface UIState {
   sidebarOpen: boolean;
   theme: Theme;
   notificationSound: boolean;
   finaiEnabled: boolean;
   followUpsEnabled: boolean;
+  aiDetail: AIDetail;
+  aiFocus: AIFocus;
   budgetAlerts: boolean;
   expenseReminders: boolean;
   savingsReminders: boolean;
@@ -29,6 +34,8 @@ interface UIState {
   setNotificationSound: (on: boolean) => void;
   setFinaiEnabled: (on: boolean) => void;
   setFollowUpsEnabled: (on: boolean) => void;
+  setAiDetail: (detail: AIDetail) => void;
+  setAiFocus: (focus: AIFocus) => void;
   setNotificationPref: (key: NotificationPref, on: boolean) => void;
 }
 
@@ -40,6 +47,8 @@ export const useUIStore = create<UIState>()(
       notificationSound: false,
       finaiEnabled: true,
       followUpsEnabled: true,
+      aiDetail: "simple",
+      aiFocus: "business",
       budgetAlerts: true,
       expenseReminders: true,
       savingsReminders: true,
@@ -51,6 +60,8 @@ export const useUIStore = create<UIState>()(
       setNotificationSound: (on) => set({ notificationSound: on }),
       setFinaiEnabled: (on) => set({ finaiEnabled: on }),
       setFollowUpsEnabled: (on) => set({ followUpsEnabled: on }),
+      setAiDetail: (aiDetail) => set({ aiDetail }),
+      setAiFocus: (aiFocus) => set({ aiFocus }),
       setNotificationPref: (key, on) => set({ [key]: on } as Partial<UIState>),
     }),
     { name: "fincompass-ui" },

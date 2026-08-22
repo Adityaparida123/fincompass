@@ -405,6 +405,19 @@ async def tool_find_government_schemes(ctx: ToolContext, args: dict[str, Any]) -
         income=Decimal(str(args["income"])) if args.get("income") is not None else None,
         age=int(args["age"]) if args.get("age") is not None else None,
     )
+    # Enrich with the user's saved (self-reported) business profile when present.
+    try:
+        user = await ctx.db.find_one("users", {"id": ctx.user_id})
+        business = getattr(user, "business", None) or {} if user else {}
+        if business.get("state") and not data.location_state:
+            data.location_state = str(business["state"])
+        if business.get("business_type"):
+            data.occupation = str(business["business_type"])
+            data.special_eligibility.append(str(business["business_type"]))
+        if business.get("seasonal"):
+            data.special_eligibility.append("seasonal")
+    except Exception:  # noqa: BLE001 - profile enrichment is best-effort
+        pass
     matches = await match_schemes(ctx.db, data)
     return {
         "matches": [

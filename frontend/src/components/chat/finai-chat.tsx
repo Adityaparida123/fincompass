@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { motion, AnimatePresence } from "framer-motion";
 import { MessageCircle, X, Send, Minimize2 } from "lucide-react";
+import { format } from "date-fns";
 import { useChatStore } from "@/stores/chat-store";
 import { useUIStore } from "@/stores/ui-store";
 import { api } from "@/lib/api";
@@ -20,16 +21,21 @@ export function FinAIChat() {
   const { isOpen, isFullscreen, setOpen, setFullscreen, messages, addMessage, isLoading, setLoading, sessionId, setSessionId } = useChatStore();
   const [input, setInput] = useState("");
   const [followUps, setFollowUps] = useState<string[]>([]);
+  const lastFollowUpsRef = useRef<string[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
   const finaiEnabled = useUIStore((s) => s.finaiEnabled);
   const followUpsEnabled = useUIStore((s) => s.followUpsEnabled);
+  const aiDetail = useUIStore((s) => s.aiDetail);
+  const aiFocus = useUIStore((s) => s.aiFocus);
 
   const suggestions = [
     t("suggestions.save"),
     t("suggestions.expenses"),
     t("suggestions.loan"),
+    t("suggestions.price"),
+    t("suggestions.stock"),
+    t("suggestions.idea"),
     t("suggestions.readiness"),
-    t("suggestions.biggest"),
     t("suggestions.alternatives"),
   ];
 
@@ -54,7 +60,7 @@ export function FinAIChat() {
           Authorization: `Bearer ${api.getAccessToken()}`,
         },
         credentials: "include",
-        body: JSON.stringify({ message: text, session_id: sessionId, language: locale }),
+        body: JSON.stringify({ message: text, session_id: sessionId, language: locale, detail: aiDetail, focus: aiFocus }),
       });
 
       if (!res.ok || !res.body) {
@@ -79,12 +85,18 @@ export function FinAIChat() {
               message: text,
               session_id: sessionId,
               language: locale,
+              detail: aiDetail,
+              focus: aiFocus,
             },
             { timeout: 90_000 },
           );
           setSessionId(fallback.session_id);
           addMessage({ id: crypto.randomUUID(), role: "assistant", content: fallback.reply, timestamp: new Date() });
-          setFollowUps(followUpsEnabled ? generateFollowUps(text, fallback.reply, assistantTurn) : []);
+          const next = followUpsEnabled
+            ? generateFollowUps(text, fallback.reply, assistantTurn, lastFollowUpsRef.current)
+            : [];
+          lastFollowUpsRef.current = next;
+          setFollowUps(next);
         } catch {
           addMessage({ id: crypto.randomUUID(), role: "assistant", content: errorMsg, timestamp: new Date() });
         }
@@ -122,7 +134,11 @@ export function FinAIChat() {
 
       const finalReply = assistantText || "I wasn't able to generate a response. Please try rephrasing your question.";
       addMessage({ id: assistantId, role: "assistant", content: finalReply, timestamp: new Date() });
-      setFollowUps(followUpsEnabled ? generateFollowUps(text, finalReply, assistantTurn) : []);
+      const next = followUpsEnabled
+        ? generateFollowUps(text, finalReply, assistantTurn, lastFollowUpsRef.current)
+        : [];
+      lastFollowUpsRef.current = next;
+      setFollowUps(next);
     } catch (err) {
       const msg = err instanceof TypeError && err.message.includes("fetch")
         ? "Unable to connect to FinAI. Please check your connection."
@@ -191,22 +207,25 @@ export function FinAIChat() {
                 </div>
               )}
               {messages.map((m) => (
-                <div key={m.id} className={cn("flex", m.role === "user" ? "justify-end" : "justify-start")}>
+                <div key={m.id} className={cn("flex flex-col", m.role === "user" ? "items-end" : "items-start")}>
                   <div
                     className={cn(
-                      "max-w-[85%] rounded-2xl px-3.5 py-2 text-[13px] leading-relaxed break-words",
+                      "max-w-[88%] rounded-2xl px-4 py-2.5 text-[13.5px] leading-relaxed break-words",
                       m.role === "user"
-                        ? "bg-primary text-primary-foreground font-medium"
-                        : "bg-surface-container-high/60 text-text-primary whitespace-pre-wrap",
+                        ? "bg-primary text-primary-foreground font-medium rounded-br-sm shadow-sm"
+                        : "bg-surface-container-high border border-border-subtle text-text-primary whitespace-pre-wrap rounded-bl-sm",
                     )}
                   >
                     {m.content}
                   </div>
+                  <span className={cn("mt-0.5 px-1 text-[10px] text-text-muted/70 tabular-nums", m.role === "user" ? "text-right" : "text-left")}>
+                    {format(m.timestamp, "HH:mm")}
+                  </span>
                 </div>
               ))}
               {isLoading && (
                 <div className="flex justify-start">
-                  <div className="rounded-2xl bg-surface-container-high/60 px-3.5 py-2 text-[13px] text-text-muted animate-pulse">
+                  <div className="rounded-2xl rounded-bl-sm bg-surface-container-high border border-border-subtle px-4 py-2.5 text-[13.5px] text-text-muted animate-pulse">
                     FinAI is thinking...
                   </div>
                 </div>

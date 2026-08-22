@@ -7,7 +7,7 @@ from app.core.exceptions import ConflictError
 from app.db.mongo import Doc, MongoDatabase
 from app.db.session import get_session
 from app.schemas.auth import UserSummary
-from app.schemas.user import UserProfileUpdate
+from app.schemas.user import BusinessProfileOut, BusinessProfileUpdate, UserProfileUpdate
 from app.services.audit import log_audit
 from app.services.auth.service import get_user_by_email, get_user_by_id, user_summary
 
@@ -17,6 +17,39 @@ router = APIRouter(prefix="/users", tags=["users"])
 @router.get("/me", response_model=UserSummary)
 async def get_me(user: Doc = Depends(get_current_user)) -> UserSummary:
     return user_summary(user)
+
+
+@router.get("/me/business", response_model=BusinessProfileOut)
+async def get_business_profile(user: Doc = Depends(get_current_user)) -> BusinessProfileOut:
+    """Return the user's business profile. All fields are optional."""
+    data = getattr(user, "business", None) or {}
+    return BusinessProfileOut(**data)
+
+
+@router.patch("/me/business", response_model=BusinessProfileOut)
+async def update_business_profile(
+    data: BusinessProfileUpdate,
+    user: Doc = Depends(get_current_user),
+    db: MongoDatabase = Depends(get_session),
+) -> BusinessProfileOut:
+    """Merge the given fields into the business profile (partial updates allowed)."""
+    updates = data.model_dump(exclude_unset=True, exclude_none=True, mode="json")
+    current = dict(getattr(user, "business", None) or {})
+    current.update(updates)
+    # Drop keys explicitly cleared by the client (empty strings).
+    current = {k: v for k, v in current.items() if v not in ("", None)}
+    await db.update_one("users", {"id": user.id}, {"business": current})
+    await log_audit(
+        db,
+        action="user.update_business_profile",
+        resource_type="user",
+        user_id=user.id,
+        resource_id=user.id,
+        metadata={"fields": sorted(updates.keys())},
+    )
+    updated = await get_user_by_id(db, user.id)
+    result = getattr(updated, "business", None) or {}
+    return BusinessProfileOut(**result)
 
 
 @router.patch("/me", response_model=UserSummary)

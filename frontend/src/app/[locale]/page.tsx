@@ -4,8 +4,8 @@ import Link from "next/link";
 import { useTranslations, useLocale } from "next-intl";
 import { motion } from "framer-motion";
 import {
-  Compass, Shield, TrendingUp, PiggyBank, Wallet, Gauge,
-  HandCoins, Landmark, MessageCircle, ArrowRight, LayoutDashboard,
+  Compass, Shield, TrendingUp, PiggyBank, Wallet, Store,
+  HandCoins, Landmark, MessageCircle, ArrowRight, Home, Calculator,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,13 +14,13 @@ import { useAuthStore } from "@/stores/auth-store";
 
 const features = [
   { icon: TrendingUp, title: "Cash-flow analysis" },
+  { icon: Store, title: "Business health check" },
+  { icon: Calculator, title: "Pricing & planning tools" },
   { icon: Wallet, title: "Expense tracking" },
-  { icon: PiggyBank, title: "Savings capacity" },
-  { icon: Wallet, title: "Budgeting" },
-  { icon: Gauge, title: "Credit readiness" },
+  { icon: PiggyBank, title: "Business savings goals" },
   { icon: HandCoins, title: "Responsible borrowing" },
-  { icon: Landmark, title: "Public schemes" },
-  { icon: MessageCircle, title: "FinAI assistant" },
+  { icon: Landmark, title: "Government schemes" },
+  { icon: MessageCircle, title: "FinAI business advisor" },
 ];
 
 export default function LandingPage() {
@@ -35,7 +35,10 @@ export default function LandingPage() {
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
           <div className="flex items-center gap-2">
             <Compass className="h-7 w-7 text-primary" />
-            <span className="text-xl font-semibold">FinCompass</span>
+            <div>
+              <span className="text-xl font-semibold leading-tight block">FinCompass</span>
+              <span className="text-[10px] font-medium uppercase tracking-[0.08em] text-text-muted leading-none">{t("tagline")}</span>
+            </div>
           </div>
           <div className="flex gap-2">
             {!isAuthenticated && (
@@ -69,7 +72,7 @@ export default function LandingPage() {
               {isAuthenticated ? (
                 <Link href={`/${locale}/home`}>
                   <Button size="lg" className="w-full sm:w-auto">
-                    <LayoutDashboard className="mr-1.5 h-4 w-4" />
+                    <Home className="mr-1.5 h-4 w-4" />
                     {t("home")} <ArrowRight className="h-4 w-4" />
                   </Button>
                 </Link>
@@ -140,7 +143,7 @@ export default function LandingPage() {
             {isAuthenticated ? (
               <Link href={`/${locale}/home`} className="mt-6 inline-block">
                 <Button size="lg">
-                  <LayoutDashboard className="mr-1.5 h-4 w-4" />
+                  <Home className="mr-1.5 h-4 w-4" />
                   {t("home")}
                 </Button>
               </Link>

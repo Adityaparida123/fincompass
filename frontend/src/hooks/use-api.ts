@@ -17,6 +17,8 @@ import type {
   ScoreCorrectionResult,
   Recommendation,
   Scheme,
+  SchemeMatch,
+  BusinessProfile,
   ConsentItem,
   Notification,
   RecycleBinItem,
@@ -263,6 +265,35 @@ export function useSchemes() {
   return useQuery({
     queryKey: ["schemes"],
     queryFn: () => api.get<Scheme[]>("/schemes"),
+  });
+}
+
+export function useRecommendedSchemes(enabled: boolean) {
+  const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  return useQuery({
+    queryKey: ["schemes", "recommended", user?.id ?? "anonymous"],
+    queryFn: () => api.post<SchemeMatch[]>("/schemes/recommended", {}),
+    enabled: enabled && !!user?.id && isAuthenticated,
+  });
+}
+
+export function useBusinessProfile() {
+  const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  return useQuery({
+    queryKey: ["business-profile", user?.id ?? "anonymous"],
+    queryFn: () => api.get<BusinessProfile>("/users/me/business"),
+    enabled: !!user?.id && isAuthenticated,
+  });
+}
+
+export function useUpdateBusinessProfile() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: Record<string, unknown>) =>
+      api.patch<BusinessProfile>("/users/me/business", body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["business-profile"] }),
   });
 }
 

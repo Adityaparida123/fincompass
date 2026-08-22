@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations, useLocale } from "next-intl";
 import {
-  LayoutDashboard, Receipt, TrendingUp, PiggyBank, Wallet,
+  Home, Store, Stethoscope, Receipt, TrendingUp, PiggyBank, Wallet,
   CreditCard, HandCoins, Gauge, Lightbulb, Landmark,
   Trash2, Shield, Settings, User, Menu, X, Compass,
 } from "lucide-react";
@@ -16,7 +16,14 @@ const navGroups = [
   {
     label: "Overview",
     items: [
-      { key: "home", href: "/home", icon: LayoutDashboard },
+      { key: "home", href: "/home", icon: Home },
+    ],
+  },
+  {
+    label: "Business",
+    items: [
+      { key: "advisory", href: "/advisory", icon: Stethoscope },
+      { key: "businessProfile", href: "/business", icon: Store },
     ],
   },
   {
@@ -111,7 +118,7 @@ export function Sidebar() {
           </div>
           <div className="min-w-0">
             <h1 className="text-sm font-semibold text-primary tracking-tight leading-tight">FinCompass</h1>
-            <p className="text-[10px] leading-[12px] font-medium uppercase tracking-[0.08em] text-text-muted mt-0.5">Wealth Management</p>
+            <p className="text-[10px] leading-[12px] font-medium uppercase tracking-[0.08em] text-text-muted mt-0.5">AI Business Advisory</p>
           </div>
         </div>
 
@@ -162,7 +169,10 @@ export function MobileNav() {
   const t = useTranslations("nav");
   const locale = useLocale();
   const pathname = usePathname();
-  const mobileItems = allNavItems.slice(0, 4);
+  const preferred = ["/home", "/advisory", "/expenses", "/cashflow"];
+  const mobileItems = preferred
+    .map((href) => allNavItems.find((item) => item.href === href))
+    .filter((item): item is { key: string; href: string; icon: React.ElementType } => Boolean(item));
 
   return (
     <nav className="lg:hidden fixed bottom-0 left-0 w-full z-40 flex justify-around items-center px-2 py-1.5 pb-safe bg-surface-card/95 backdrop-blur-lg border-t border-border rounded-t-xl shadow-lg">
