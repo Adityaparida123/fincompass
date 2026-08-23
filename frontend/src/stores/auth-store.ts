@@ -2,7 +2,7 @@
 
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import { api, isTransientNetworkError } from "@/lib/api";
+import { api, authLog, isTransientNetworkError } from "@/lib/api";
 import { clearQueryCache } from "@/lib/query-client";
 import type { AuthResponse, UserSummary } from "@/types";
 
@@ -20,6 +20,7 @@ async function postWithColdStartRetry<T>(path: string, body: unknown): Promise<T
     return await api.post<T>(path, body, { skipAuth: true });
   } catch (err) {
     if (!isTransientNetworkError(err)) throw err;
+    authLog("transient network failure, retrying once", { path, errorName: (err as { name?: string })?.name });
     console.warn(`Auth request to ${path} failed transiently (likely cold start), retrying once`, err);
     return await api.post<T>(path, body, {
       skipAuth: true,
@@ -115,6 +116,7 @@ export const useAuthStore = create<AuthState>()(
       },
 
       login: async (email, password, rememberMe = false) => {
+        authLog("store login started", { emailPresent: !!email });
         clearQueryCache();
         setRememberMe(rememberMe);
         api.setRememberMe(rememberMe);
@@ -129,6 +131,7 @@ export const useAuthStore = create<AuthState>()(
           data.tokens.refresh_token,
           rememberMe,
         );
+        authLog("auth state updated", { userPresent: !!data.user, isAuthenticated: true });
       },
 
       register: async (fullName, email, password) => {

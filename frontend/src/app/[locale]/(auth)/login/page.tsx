@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuthStore } from "@/stores/auth-store";
-import { ApiRequestError, isTransientNetworkError } from "@/lib/api";
+import { ApiRequestError, authLog, isTransientNetworkError } from "@/lib/api";
 
 const schema = z.object({
   email: z.string().email(),
@@ -39,8 +39,10 @@ export default function LoginPage() {
 
   const onSubmit = async (data: FormData) => {
     setError("");
+    authLog("submit started", { emailPresent: !!data.email });
     try {
       await login(data.email, data.password, data.rememberMe);
+      authLog("redirect started", { target: `/${locale}/home` });
       router.push(`/${locale}/home`);
     } catch (e) {
       console.error("Login request failed:", e);

@@ -14,6 +14,16 @@ type RequestOptions = RequestInit & {
 const TOKEN_STORAGE_KEY = "fincompass-tokens";
 const TOKEN_STORAGE_KEY_SESSION = "fincompass-tokens-session";
 
+// Development-only auth diagnostics. Logs safe metadata only (statuses,
+// timings, presence booleans) — never credentials, tokens, or bodies.
+const AUTH_DEBUG = process.env.NODE_ENV !== "production";
+
+export function authLog(message: string, meta?: Record<string, unknown>) {
+  if (AUTH_DEBUG) {
+    console.info(`[LOGIN] ${message}`, meta ?? "");
+  }
+}
+
 // Refresh the access token before it expires instead of waiting for a 401,
 // so expired sessions never leak raw 401 responses into the console.
 const REFRESH_MARGIN_SECONDS = 60;
@@ -157,6 +167,8 @@ class ApiClient {
       this.rememberMe = rememberMe;
     }
     this.persistTokens();
+    authLog("token received", { received: !!access });
+    authLog("token persisted", { persisted: !!(access && this.accessToken) });
   }
 
   getAccessToken() {
@@ -249,6 +261,9 @@ class ApiClient {
       headers.set("Content-Type", "application/json");
     }
 
+    const isAuthFlow = AUTH_DEBUG && path.startsWith("/auth/");
+    if (isAuthFlow) authLog("request started", { method: init.method ?? "GET", path });
+
     const authToken = skipAuth ? null : (token ?? this.accessToken);
     if (authToken) headers.set("Authorization", `Bearer ${authToken}`);
 
@@ -262,12 +277,24 @@ class ApiClient {
 
     const signal = init.signal ?? AbortSignal.timeout(timeout);
 
-    let res = await fetch(`${API_BASE}${path}`, {
-      ...init,
-      headers,
-      credentials: "include",
-      signal,
-    });
+    let res: Response;
+    try {
+      res = await fetch(`${API_BASE}${path}`, {
+        ...init,
+        headers,
+        credentials: "include",
+        signal,
+      });
+    } catch (err) {
+      if (isAuthFlow) {
+        authLog("request failed without HTTP response", {
+          path,
+          errorName: (err as { name?: string })?.name ?? String(err),
+        });
+      }
+      throw err;
+    }
+    if (isAuthFlow) authLog("request finished", { status: res.status, path });
 
     if (res.status === 401 && !skipAuth) {
       const newToken = await this.refreshAccessToken();
