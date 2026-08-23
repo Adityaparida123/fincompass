@@ -337,4 +337,20 @@ export class ApiRequestError extends Error {
   }
 }
 
+/**
+ * True when a request failed without receiving an HTTP response:
+ * aborted by timeout (`TimeoutError`), manually cancelled (`AbortError`),
+ * or a connection-level failure (`TypeError: Failed to fetch`).
+ *
+ * These are transient infrastructure conditions (e.g. a sleeping
+ * free-tier backend waking up), distinct from real HTTP responses.
+ */
+export function isTransientNetworkError(err: unknown): boolean {
+  if (err instanceof TypeError) return true;
+  // Duck-typed on purpose: DOMException does not always inherit from Error
+  // depending on the engine/realm (e.g. jsdom vs browsers).
+  const name = (err as { name?: string } | null)?.name;
+  return name === "TimeoutError" || name === "AbortError";
+}
+
 export const api = new ApiClient();

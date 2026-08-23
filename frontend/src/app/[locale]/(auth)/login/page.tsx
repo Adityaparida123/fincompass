@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuthStore } from "@/stores/auth-store";
-import { ApiRequestError } from "@/lib/api";
+import { ApiRequestError, isTransientNetworkError } from "@/lib/api";
 
 const schema = z.object({
   email: z.string().email(),
@@ -43,7 +43,10 @@ export default function LoginPage() {
       await login(data.email, data.password, data.rememberMe);
       router.push(`/${locale}/home`);
     } catch (e) {
-      setError(e instanceof ApiRequestError ? e.message : "Login failed");
+      console.error("Login request failed:", e);
+      if (e instanceof ApiRequestError) setError(e.message);
+      else if (isTransientNetworkError(e)) setError(t("serverWakingUp"));
+      else setError(t("networkError"));
     }
   };
 

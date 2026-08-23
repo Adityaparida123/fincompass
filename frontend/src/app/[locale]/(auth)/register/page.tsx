@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuthStore } from "@/stores/auth-store";
-import { ApiRequestError } from "@/lib/api";
+import { ApiRequestError, isTransientNetworkError } from "@/lib/api";
 
 const schema = z.object({
   fullName: z.string().min(2),
@@ -47,13 +47,10 @@ export default function RegisterPage() {
       await registerUser(data.fullName, data.email, data.password);
       router.push(`/${locale}/home`);
     } catch (e) {
-      if (e instanceof ApiRequestError) {
-        setError(e.message);
-      } else if (e instanceof Error) {
-        setError(e.message);
-      } else {
-        setError("Registration failed");
-      }
+      console.error("Registration request failed:", e);
+      if (e instanceof ApiRequestError) setError(e.message);
+      else if (isTransientNetworkError(e)) setError(t("serverWakingUp"));
+      else setError(t("networkError"));
     }
   };
 

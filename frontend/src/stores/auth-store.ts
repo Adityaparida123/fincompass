@@ -2,12 +2,31 @@
 
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import { api } from "@/lib/api";
+import { api, isTransientNetworkError } from "@/lib/api";
 import { clearQueryCache } from "@/lib/query-client";
 import type { AuthResponse, UserSummary } from "@/types";
 
 const STORAGE_KEY = "fincompass-auth";
 const STORAGE_KEY_SESSION = "fincompass-auth-session";
+
+// Render free-tier instances sleep when idle and take ~30-90s to boot.
+// The first request can be held by the platform past the default 30s
+// client timeout while the instance wakes up; the retry lands on the
+// now-warm instance. One understood-purpose retry, not a blind loop.
+const COLD_START_RETRY_TIMEOUT_MS = 90_000;
+
+async function postWithColdStartRetry<T>(path: string, body: unknown): Promise<T> {
+  try {
+    return await api.post<T>(path, body, { skipAuth: true });
+  } catch (err) {
+    if (!isTransientNetworkError(err)) throw err;
+    console.warn(`Auth request to ${path} failed transiently (likely cold start), retrying once`, err);
+    return await api.post<T>(path, body, {
+      skipAuth: true,
+      timeout: COLD_START_RETRY_TIMEOUT_MS,
+    });
+  }
+}
 
 let _rememberMe = false;
 
@@ -99,11 +118,11 @@ export const useAuthStore = create<AuthState>()(
         clearQueryCache();
         setRememberMe(rememberMe);
         api.setRememberMe(rememberMe);
-        const data = await api.post<AuthResponse>(
-          "/auth/login",
-          { email, password, remember_me: rememberMe },
-          { skipAuth: true },
-        );
+        const data = await postWithColdStartRetry<AuthResponse>("/auth/login", {
+          email,
+          password,
+          remember_me: rememberMe,
+        });
         set({ user: data.user, isAuthenticated: true });
         api.setTokens(
           data.tokens.access_token,
@@ -116,10 +135,9 @@ export const useAuthStore = create<AuthState>()(
         clearQueryCache();
         setRememberMe(false);
         api.setRememberMe(false);
-        const data = await api.post<AuthResponse>(
+        const data = await postWithColdStartRetry<AuthResponse>(
           "/auth/register",
           { full_name: fullName, email, password },
-          { skipAuth: true },
         );
         set({ user: data.user, isAuthenticated: true });
         api.setTokens(

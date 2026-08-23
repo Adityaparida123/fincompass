@@ -88,7 +88,9 @@
     "hasAccount": "Already have an account?",
     "termsAgree": "I agree to the terms of service",
     "loginButton": "Sign in",
-    "registerButton": "Create account"
+    "registerButton": "Create account",
+    "serverWakingUp": "The server took too long to respond and may be starting up. Please try again.",
+    "networkError": "Cannot reach the server. Check your internet connection and try again."
   },
   "home": {
     "greeting_morning": "Good morning",
