@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { format, getISOWeek, getYear } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -46,13 +46,6 @@ export default function ExpensesPage() {
 
   const weeklyData = fillWeeklyDays(weekly.data?.daily_breakdown ?? {});
 
-  useEffect(() => {
-    if (process.env.NODE_ENV === "development") {
-      console.log("[Expenses] weekly raw breakdown:", weekly.data?.daily_breakdown);
-      console.log("[Expenses] weeklyData (filled 7 days):", weeklyData);
-      console.log("[Expenses] weeklyData length:", weeklyData.length);
-    }
-  }, [weekly.data?.daily_breakdown, weeklyData]);
   const monthlyData = Object.entries(monthly.data?.categories ?? {}).map(([name, val]) => ({
     name, value: toNumber(val),
   }));

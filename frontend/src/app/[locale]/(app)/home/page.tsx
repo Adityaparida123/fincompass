@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,17 +10,32 @@ import {
   useExpensesMonthly, useExpenseTrends, useReadiness,
   useRecommendations, useBudgetStatus, useSavingsGoals,
   useMLPatterns, useMLForecast, useDebts,
+  useBusinessProfile, useRecommendedSchemes,
 } from "@/hooks/use-api";
 import { formatCurrency, toNumber, formatPercent } from "@/lib/utils";
 import { getTimeOfDay } from "@/lib/greeting";
+import { generateBusinessInsights, type BusinessInsight } from "@/lib/insight-engine";
+import { classifyScope } from "@/lib/expense-scope";
 import { useChatStore } from "@/stores/chat-store";
+import { useAuthStore } from "@/stores/auth-store";
 import Link from "next/link";
 import {
   TrendingUp, Receipt, ArrowRight, Lightbulb, Target,
   FileText, Flag, Calculator, Info, MessageCircle, Store, Wallet,
+  Sparkles, AlertTriangle, Landmark, ExternalLink, CircleHelp,
 } from "lucide-react";
 
 type HealthStatus = "good" | "stable" | "attention" | "nodata";
+
+const INSIGHT_SEVERITY_STYLES: Record<
+  BusinessInsight["severity"],
+  { wrap: string; iconCls: string; Icon: typeof Lightbulb }
+> = {
+  critical: { wrap: "border-destructive/30 bg-destructive/5", iconCls: "text-destructive", Icon: AlertTriangle },
+  warning: { wrap: "border-warning/30 bg-warning/5", iconCls: "text-warning", Icon: AlertTriangle },
+  info: { wrap: "border-primary/25 bg-primary/5", iconCls: "text-primary", Icon: Info },
+  positive: { wrap: "border-primary/25 bg-primary/5", iconCls: "text-primary", Icon: TrendingUp },
+};
 
 export default function HomePage() {
   const t = useTranslations("home");
@@ -37,7 +53,12 @@ export default function HomePage() {
   const patterns = useMLPatterns();
   const forecast = useMLForecast();
   const debts = useDebts();
+  const businessProfile = useBusinessProfile();
   const { setOpen: setChatOpen, setDraft } = useChatStore();
+  const user = useAuthStore((s) => s.user);
+
+  const hasBizContext = !!businessProfile.data && (!!businessProfile.data.state || !!businessProfile.data.business_type);
+  const localSchemes = useRecommendedSchemes(hasBizContext);
 
   const askFinai = (question: string) => {
     setDraft(question);
@@ -114,6 +135,33 @@ export default function HomePage() {
     };
   }) ?? [];
 
+  // ── AI Business Insights (structured: what happened / why / action) ──
+  const insights = useMemo(
+    () => generateBusinessInsights({
+      monthly: monthly.data ?? null,
+      trends: trends.data ?? null,
+      forecast: forecast.data ?? null,
+      debts: debts.data ?? null,
+      savingsGoals: savings.data ?? null,
+    }),
+    [monthly.data, trends.data, forecast.data, debts.data, savings.data],
+  );
+
+  const askInsightDraft = (insight: BusinessInsight, tHeadline: string, tAction: string) =>
+    t("insightAskDraft", { headline: tHeadline, action: tAction });
+
+  // ── Business vs Personal expense split (this month) ─────────────
+  const scopeSplit = useMemo(() => {
+    const categories = monthly.data?.categories;
+    if (!categories || transactionCount === 0) return null;
+    const split = { business: 0, personal: 0, mixed: 0 };
+    for (const [category, value] of Object.entries(categories)) {
+      split[classifyScope(category)] += toNumber(value);
+    }
+    const total = split.business + split.personal + split.mixed;
+    return total > 0 ? { ...split, total } : null;
+  }, [monthly.data, transactionCount]);
+
   const forecastData = forecast.data?.forecasts?.map((f) => ({
     period: f.forecast_month,
     expected: f.expected_cashflow,
@@ -135,6 +183,15 @@ export default function HomePage() {
         : greetingPeriod === "evening"
           ? t("greeting_evening")
           : t("greeting_night");
+
+  const firstName = user?.full_name?.trim().split(/\s+/)[0] ?? "";
+  const displayName = firstName.length > 0 && firstName.length <= 20 ? firstName : "";
+
+  const bizLabelParts = [
+    businessProfile.data?.business_type?.replace(/_/g, " ") || "",
+    businessProfile.data?.village || businessProfile.data?.district || "",
+  ].filter(Boolean);
+  const bizContextLine = bizLabelParts.length > 0 ? bizLabelParts.join(" · ") : "";
 
   const quickActions = [
     { label: t("logExpense"), desc: t("logExpenseDesc"), icon: FileText, href: `/${locale}/expenses` },
@@ -161,8 +218,19 @@ export default function HomePage() {
     <div className="space-y-6 page-transition">
       {/* Header */}
       <div className="section-reveal">
-        <h1 className="text-2xl font-semibold tracking-tight text-text-primary" suppressHydrationWarning>{greeting}</h1>
-        <p className="text-sm text-text-muted mt-0.5">{t("businessQuestion")} · {format(new Date(), "EEEE, MMMM d, yyyy")}</p>
+        <h1 className="text-2xl font-semibold tracking-tight text-text-primary" suppressHydrationWarning>
+          {displayName ? t("greetingWithName", { greeting, name: displayName }) : greeting}
+        </h1>
+        <p className="text-sm text-text-muted mt-0.5 flex flex-wrap items-center gap-x-1.5">
+          {bizContextLine && (
+            <>
+              <Store className="h-3.5 w-3.5 text-primary/70 shrink-0" />
+              <span className="capitalize">{bizContextLine}</span>
+              <span aria-hidden>·</span>
+            </>
+          )}
+          <span>{t("businessQuestion")} · {format(new Date(), "EEEE, MMMM d, yyyy")}</span>
+        </p>
       </div>
 
       {/* AI Business Health — primary advisory card */}
@@ -205,6 +273,111 @@ export default function HomePage() {
         )}
         <p className="mt-3 text-[10px] uppercase tracking-[0.06em] text-text-muted/60">{t("healthBasis")}</p>
       </div>
+
+      {/* AI BUSINESS INSIGHTS — what happened / why it matters / recommended action */}
+      <section className="section-reveal section-reveal-delay-1" aria-label={t("aiInsightsTitle")}>
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted flex items-center gap-1.5">
+            <Sparkles className="h-3.5 w-3.5 text-primary" />
+            {t("aiInsightsTitle")}
+          </h2>
+          <span className="px-2 py-0.5 border border-border rounded-full text-[10px] font-medium text-text-muted bg-surface-card">
+            {t("insightsDataBadge")}
+          </span>
+        </div>
+
+        {monthly.isLoading ? (
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Skeleton className="h-36 rounded-xl" />
+            <Skeleton className="h-36 rounded-xl hidden sm:block" />
+          </div>
+        ) : insights.length > 0 ? (
+          <>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {insights.map((insight) => {
+                const style = INSIGHT_SEVERITY_STYLES[insight.severity];
+                const tHeadline = t(insight.headline.key, insight.headline.params ?? {});
+                const tWhy = insight.why ? t(insight.why.key, insight.why.params ?? {}) : null;
+                const tAction = t(insight.action.key, insight.action.params ?? {});
+                return (
+                  <article
+                    key={insight.id}
+                    className={`rounded-xl border p-4 transition-colors ${style.wrap}`}
+                  >
+                    <div className="flex items-start gap-2.5">
+                      <style.Icon className={`mt-0.5 h-4 w-4 shrink-0 ${style.iconCls}`} aria-hidden />
+                      <div className="min-w-0 flex-1">
+                        {/* What happened */}
+                        <p className="text-sm font-semibold leading-snug text-text-primary">{tHeadline}</p>
+                        {/* Why it matters */}
+                        {tWhy && (
+                          <div className="mt-2 pl-3 border-l-2 border-border">
+                            <p className="text-[10px] uppercase tracking-[0.06em] font-semibold text-text-muted">{t("insightsWhyItMatters")}</p>
+                            <p className="mt-0.5 text-xs leading-relaxed text-text-secondary">{tWhy}</p>
+                          </div>
+                        )}
+                        {/* Recommended action */}
+                        <div className="mt-2.5 rounded-lg bg-surface-container px-3 py-2">
+                          <p className="text-[10px] uppercase tracking-[0.06em] font-semibold text-text-muted">{t("insightsAction")}</p>
+                          <p className="mt-0.5 text-xs font-medium leading-relaxed text-text-primary flex items-start gap-1.5">
+                            <ArrowRight className="mt-0.5 h-3 w-3 shrink-0 text-primary" aria-hidden />
+                            {tAction}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => askFinai(askInsightDraft(insight, tHeadline, tAction))}
+                          className="mt-2.5 inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[11px] font-medium text-primary transition-colors hover:bg-primary/20"
+                        >
+                          <MessageCircle className="h-3 w-3" />
+                          {t("askInsight")}
+                        </button>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+            <p className="mt-2 text-[10px] text-text-muted/70">{t("insightsDisclaimer")}</p>
+          </>
+        ) : (patterns.data as { patterns?: Array<{ pattern: string; description: string }> } | undefined)?.patterns?.length || monthly.data?.insights?.length ? (
+          <div className="rounded-xl border border-border bg-surface-card p-4 space-y-1.5">
+            {(patterns.data as { patterns?: Array<{ description: string }> } | undefined)?.patterns?.slice(0, 2)?.map((p, i) => (
+              <div key={`p-${i}`} className="flex items-start gap-2">
+                <Lightbulb className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning" />
+                <p className="text-xs text-text-muted leading-relaxed flex-1">{p.description}</p>
+                <button type="button" onClick={() => askFinai(t("insightDraft", { insight: p.description }))} className="inline-flex items-center gap-1 text-[10px] font-medium text-primary hover:underline shrink-0">
+                  <MessageCircle className="h-2.5 w-2.5" />{t("askInsight")}
+                </button>
+              </div>
+            ))}
+            {monthly.data?.insights?.slice(0, 2).map((ins, i) => (
+              <div key={`m-${i}`} className="flex items-start gap-2">
+                <Lightbulb className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning" />
+                <p className="text-xs text-text-muted leading-relaxed flex-1">{ins}</p>
+                <button type="button" onClick={() => askFinai(t("insightDraft", { insight: ins }))} className="inline-flex items-center gap-1 text-[10px] font-medium text-primary hover:underline shrink-0">
+                  <MessageCircle className="h-2.5 w-2.5" />{t("askInsight")}
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          /* Intelligent empty state */
+          <div className="rounded-xl border border-dashed border-border bg-surface-card/60 p-5 text-center">
+            <Sparkles className="mx-auto h-5 w-5 text-primary/50" />
+            <p className="mt-2 text-sm font-medium text-text-primary">{t("insightsEmptyTitle")}</p>
+            <p className="mx-auto mt-1 max-w-md text-xs leading-relaxed text-text-muted">{t("insightsEmptyDesc")}</p>
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+              <Link href={`/${locale}/expenses`} className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[11px] font-medium text-primary transition-colors hover:bg-primary/20">
+                <Receipt className="h-3 w-3" />{t("logExpense")}
+              </Link>
+              <Link href={`/${locale}/expenses`} className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-[11px] font-medium text-text-secondary transition-colors hover:bg-surface-container-high">
+                <FileText className="h-3 w-3" />{t("importStatementCta")}
+              </Link>
+            </div>
+          </div>
+        )}
+      </section>
 
       {/* Business Summary — stat row */}
       <div className={`grid gap-px rounded-xl border border-border overflow-hidden bg-border section-reveal section-reveal-delay-2 ${todaysSales != null ? "sm:grid-cols-4" : "sm:grid-cols-3"}`}>
@@ -492,51 +665,41 @@ export default function HomePage() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">{t("insights")}</CardTitle>
+            <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">{t("scopeSplitTitle")}</CardTitle>
           </CardHeader>
           <CardContent>
-            {patterns.isLoading ? (
-              <div className="space-y-2"><Skeleton className="h-6 w-full" /><Skeleton className="h-6 w-full" /><Skeleton className="h-6 w-full" /></div>
-            ) : patterns.isError ? (
-              <PageError message={patterns.error instanceof Error ? patterns.error.message : tc("error")} onRetry={() => patterns.refetch()} />
-            ) : (patterns.data as { patterns?: Array<{ pattern: string; description: string }> } | undefined)?.patterns?.length ? (
-              <div className="space-y-1.5">
-                {(patterns.data as { patterns: Array<{ pattern: string; description: string }> }).patterns.slice(0, 4).map((p, i) => (
-                  <div key={i} className="flex items-start gap-2 rounded-lg bg-surface-container px-3 py-2">
-                    <Lightbulb className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning" />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[11px] text-text-muted leading-relaxed">{p.description}</p>
-                      <button
-                        type="button"
-                        onClick={() => askFinai(t("insightDraft", { insight: p.description }))}
-                        className="mt-1 inline-flex items-center gap-1 text-[10px] font-medium text-primary hover:underline"
-                      >
-                        <MessageCircle className="h-2.5 w-2.5" />{t("askInsight")}
-                      </button>
+            {scopeSplit ? (
+              <div className="space-y-3">
+                {([
+                  { key: "business" as const, label: t("scopeBusiness"), amount: scopeSplit.business, cls: "bg-primary" },
+                  { key: "personal" as const, label: t("scopePersonal"), amount: scopeSplit.personal, cls: "bg-warning" },
+                  ...(scopeSplit.mixed > 0 ? [{ key: "mixed" as const, label: t("scopeMixed"), amount: scopeSplit.mixed, cls: "bg-text-muted/60" }] : []),
+                ]).map((row) => (
+                  <div key={row.key}>
+                    <div className="flex items-center justify-between text-xs mb-1">
+                      <span className="text-text-muted flex items-center gap-1.5">
+                        <span className={`h-2 w-2 rounded-full ${row.cls}`} aria-hidden />
+                        {row.label}
+                      </span>
+                      <span className="font-medium font-[family-name:var(--font-jetbrains-mono)] text-text-primary">
+                        {formatCurrency(row.amount)}
+                        <span className="ml-1.5 text-[10px] text-text-muted">{Math.round((row.amount / scopeSplit.total) * 100)}%</span>
+                      </span>
+                    </div>
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-container-high" role="presentation">
+                      <div
+                        className={`h-full rounded-full ${row.cls} transition-all duration-700`}
+                        style={{ width: `${Math.max(2, Math.round((row.amount / scopeSplit.total) * 100))}%` }}
+                      />
                     </div>
                   </div>
                 ))}
-              </div>
-            ) : monthly.data?.insights?.length ? (
-              <div className="space-y-1.5">
-                {monthly.data.insights.slice(0, 4).map((ins, i) => (
-                  <div key={i} className="flex items-start gap-2 rounded-lg bg-surface-container px-3 py-2">
-                    <Lightbulb className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning" />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[11px] text-text-muted leading-relaxed">{ins}</p>
-                      <button
-                        type="button"
-                        onClick={() => askFinai(t("insightDraft", { insight: ins }))}
-                        className="mt-1 inline-flex items-center gap-1 text-[10px] font-medium text-primary hover:underline"
-                      >
-                        <MessageCircle className="h-2.5 w-2.5" />{t("askInsight")}
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                <p className="text-[10px] text-text-muted/70 leading-relaxed pt-1 border-t border-border">
+                  {t("scopeSplitBasis", { count: transactionCount })}
+                </p>
               </div>
             ) : (
-              <p className="text-xs text-text-muted py-4 text-center">{tc("noInsightsYet")}</p>
+              <p className="text-xs text-text-muted py-4 text-center">{t("scopeSplitEmpty")}</p>
             )}
           </CardContent>
         </Card>
@@ -577,6 +740,62 @@ export default function HomePage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* LOCAL OPPORTUNITIES — schemes matched to this business & location */}
+      {hasBizContext && (
+        <section className="section-reveal section-reveal-delay-6" aria-label={t("localOppsTitle")}>
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted flex items-center gap-1.5">
+              <Landmark className="h-3.5 w-3.5 text-primary" />
+              {t("localOppsTitle")}
+            </h2>
+            <Link href={`/${locale}/schemes`} className="flex items-center gap-1 text-[11px] text-primary hover:underline">
+              {t("viewSchemes")} <ExternalLink className="h-3 w-3 icon-hover" />
+            </Link>
+          </div>
+          {localSchemes.isLoading ? (
+            <div className="grid gap-3 sm:grid-cols-3">
+              {[1, 2, 3].map((i) => <Skeleton key={i} className="h-24 rounded-xl" />)}
+            </div>
+          ) : localSchemes.data?.length ? (
+            <div className="grid gap-3 sm:grid-cols-3">
+              {localSchemes.data.slice(0, 3).map((m, i) => (
+                <Link
+                  key={i}
+                  href={`/${locale}/schemes`}
+                  className="rounded-xl border border-border bg-surface-card p-4 transition-colors hover:border-primary/30 interactive-card block"
+                >
+                  <p className="text-xs font-semibold leading-snug text-text-primary line-clamp-2">{m.scheme?.name ?? "—"}</p>
+                  <p className="mt-1.5 text-[11px] text-text-muted leading-relaxed line-clamp-2 flex items-start gap-1.5">
+                    <CircleHelp className="mt-0.5 h-3 w-3 shrink-0 text-primary/60" />
+                    {m.match_reason}
+                  </p>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-xl border border-dashed border-border bg-surface-card/60 p-4 text-center">
+              <p className="text-xs text-text-muted">{t("localOppsEmpty")}</p>
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* ASK FINAI CTA */}
+      <button
+        type="button"
+        onClick={() => setChatOpen(true)}
+        className="w-full rounded-xl border border-primary/25 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-4 flex items-center gap-3 text-left transition-colors hover:border-primary/40 hover:from-primary/15 section-reveal section-reveal-delay-6 cursor-pointer"
+      >
+        <span className="h-10 w-10 rounded-full bg-primary/15 text-primary flex items-center justify-center shrink-0">
+          <MessageCircle className="h-5 w-5" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-medium text-text-primary">{t("askFinaiBannerTitle")}</span>
+          <span className="block text-xs text-text-muted truncate">{t("askFinaiBannerDesc")}</span>
+        </span>
+        <ArrowRight className="h-4 w-4 text-primary shrink-0" />
+      </button>
     </div>
   );
 }

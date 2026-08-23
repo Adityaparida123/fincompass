@@ -1,16 +1,17 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
-import { useTranslations } from "next-intl";
+import { useMemo } from "react";
+import Link from "next/link";
+import { useTranslations, useLocale } from "next-intl";
 import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/input";
 import { CashFlowTrendChart, ForecastChart, ChartCard, ChartSkeleton, PageError } from "@/components/charts/responsive-charts";
 import { StatCard, PageHeader, EmptyState } from "@/components/common/shared";
-import { useExpensesMonthly, useExpenseTrends, useMLForecast } from "@/hooks/use-api";
+import { useExpensesMonthly, useExpenseTrends, useMLForecast, useDebts } from "@/hooks/use-api";
 import { formatCurrency, toNumber } from "@/lib/utils";
 import { classifyScope } from "@/lib/expense-scope";
-import { TrendingUp, TrendingDown, Wallet } from "lucide-react";
+import { TrendingUp, TrendingDown, Wallet, Receipt } from "lucide-react";
 
 const QUALITY_LABELS: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" | "success" }> = {
   good: { label: "Good", variant: "success" },
@@ -22,11 +23,13 @@ const QUALITY_LABELS: Record<string, { label: string; variant: "default" | "seco
 export default function CashflowPage() {
   const t = useTranslations("cashflow");
   const tc = useTranslations("common");
+  const locale = useLocale();
   const period = format(new Date(), "yyyy-MM");
 
   const monthly = useExpensesMonthly(period);
   const trends = useExpenseTrends(6);
   const forecast = useMLForecast();
+  const debts = useDebts();
 
   const income = toNumber(monthly.data?.total_income);
   const expenses = toNumber(monthly.data?.total_expenses);
@@ -49,13 +52,24 @@ export default function CashflowPage() {
 
   const isInsufficientData = forecast.data?.status === "insufficient_data";
 
-  useEffect(() => {
-    if (process.env.NODE_ENV === "development") {
-      console.log("[Cashflow] trendData count:", trendData.length);
-      console.log("[Cashflow] trendData:", trendData);
-      console.log("[Cashflow] forecastData count:", forecastData.length);
-    }
-  }, [trendData, forecastData]);
+  // ── Upcoming obligations (next 30 days) ─────────────────────────
+  const monthlyPayments = (debts.data ?? []).reduce((s, d) => s + toNumber(d.monthly_payment), 0);
+  const upcomingDebts = useMemo(() => {
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    return (debts.data ?? [])
+      .filter((d) => !!d.due_date)
+      .map((d) => {
+        const due = new Date(`${d.due_date}T00:00:00`);
+        const days = Math.round((due.getTime() - now.getTime()) / 86400000);
+        return { debt: d, due, days };
+      })
+      .filter((d) => d.days <= 30)
+      .sort((a, b) => a.days - b.days)
+      .slice(0, 4);
+  }, [debts.data]);
+  const obligationsStrain = monthlyPayments > 0 && net < monthlyPayments;
+
   const isNoTransactions = forecast.data?.status === "insufficient_data" && (forecast.data?.available_months ?? 0) === 0;
   const forecastMethod = forecast.data?.method;
   const quality = forecast.data?.forecast_quality ?? "none";
@@ -83,6 +97,46 @@ export default function CashflowPage() {
         <StatCard label={t("expenses")} value={formatCurrency(expenses)} icon={TrendingDown} loading={monthly.isLoading} subtitle="This month" />
         <StatCard label={t("net")} value={formatCurrency(net)} icon={Wallet} loading={monthly.isLoading} subtitle={net >= 0 ? "Positive cash flow" : "Negative cash flow"} trend={net >= 0 ? "up" : "down"} />
       </div>
+
+      {/* Upcoming obligations */}
+      {upcomingDebts.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+              <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">{t("upcomingTitle")}</CardTitle>
+              <Link href={`/${locale}/debt`} className="text-[11px] font-medium text-primary hover:underline">{t("manageDebts")}</Link>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {obligationsStrain && (
+              <div className="rounded-lg border border-warning/30 bg-warning/5 px-3.5 py-2.5 text-xs leading-relaxed text-text-secondary" role="alert">
+                <span className="font-medium text-warning">{t("obligationsWarningTitle")} </span>
+                {t("obligationsWarning", { payments: formatCurrency(monthlyPayments), net: formatCurrency(net) })}
+              </div>
+            )}
+            {upcomingDebts.map(({ debt, due, days }) => (
+              <div key={debt.id} className="flex items-center justify-between rounded-lg border border-border px-3 py-2.5 transition-colors hover:bg-surface-container-low">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 ${days <= 7 ? "bg-destructive/10 text-destructive" : "bg-surface-container-high text-text-muted"}`}>
+                    <Receipt className="h-3.5 w-3.5" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-text-primary">{debt.name}</p>
+                    <p className="text-[11px] text-text-muted">
+                      {days < 0 ? t("overdueBy", { days: Math.abs(days) })
+                        : days === 0 ? t("dueToday")
+                        : t("dueInDays", { count: days })} · {format(due, "d MMM")}
+                    </p>
+                  </div>
+                </div>
+                <span className="shrink-0 text-sm font-medium font-[family-name:var(--font-jetbrains-mono)] text-text-primary">
+                  {formatCurrency(toNumber(debt.monthly_payment))}
+                </span>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       {hasScopeData && (
         <Card>

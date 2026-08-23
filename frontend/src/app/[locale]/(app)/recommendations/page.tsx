@@ -6,7 +6,8 @@ import { Skeleton, Badge } from "@/components/ui/input";
 import { PageHeader, EmptyState } from "@/components/common/shared";
 import { useRecommendations } from "@/hooks/use-api";
 import { PageError } from "@/components/charts/responsive-charts";
-import { Lightbulb, TrendingUp, Wallet, Receipt, CreditCard, ShieldCheck, PiggyBank, Landmark, HandCoins, AlertTriangle, BarChart3 } from "lucide-react";
+import { useChatStore } from "@/stores/chat-store";
+import { MessageCircle, Lightbulb, TrendingUp, Wallet, Receipt, CreditCard, ShieldCheck, PiggyBank, Landmark, HandCoins, AlertTriangle, BarChart3 } from "lucide-react";
 
 const TYPE_ICONS: Record<string, typeof Lightbulb> = {
   income: TrendingUp,
@@ -30,8 +31,15 @@ const PRIORITY_STYLES: Record<number, string> = {
 
 export default function RecommendationsPage() {
   const t = useTranslations("recommendations");
+  const th = useTranslations("home");
   const tc = useTranslations("common");
   const { data, isLoading, isError, refetch } = useRecommendations();
+  const { setOpen, setDraft } = useChatStore();
+
+  const askFinai = (title: string) => {
+    setDraft(th("recommendationDraft", { title }));
+    setOpen(true);
+  };
 
   const sorted = [...(data?.recommendations ?? [])].sort((a, b) => a.priority - b.priority);
 
@@ -65,7 +73,17 @@ export default function RecommendationsPage() {
                 </CardHeader>
                 <CardContent className="pl-12">
                   <p className="text-xs text-text-muted leading-relaxed">{r.reason}</p>
-                  <Badge variant="outline" className="mt-2 text-[10px]">{r.type.replace(/_/g, " ")}</Badge>
+                  <div className="mt-2 flex items-center gap-2">
+                    <Badge variant="outline" className="text-[10px]">{r.type.replace(/_/g, " ")}</Badge>
+                    <button
+                      type="button"
+                      onClick={() => askFinai(r.title)}
+                      className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 text-[10px] font-medium text-primary transition-colors hover:bg-primary/20"
+                    >
+                      <MessageCircle className="h-2.5 w-2.5" />
+                      {th("askInsight")}
+                    </button>
+                  </div>
                 </CardContent>
               </Card>
             );
@@ -74,7 +92,7 @@ export default function RecommendationsPage() {
       ) : (
         <EmptyState
           title={t("noRecommendations")}
-          description="Add transactions and grant recommendations consent to receive personalized financial advice."
+          description={t("noRecommendationsDesc")}
           icon={Lightbulb}
         />
       )}

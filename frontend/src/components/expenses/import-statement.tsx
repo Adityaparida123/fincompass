@@ -17,6 +17,7 @@ import { useAnalyzeStatement, useImportStatement } from "@/hooks/use-api";
 import { ApiRequestError } from "@/lib/api";
 import { CATEGORIES } from "@/lib/constants";
 import { resolveScope } from "@/lib/expense-scope";
+import { formatCurrency, toNumber } from "@/lib/utils";
 import type { StatementPreviewTransaction } from "@/types";
 
 const ACCEPT =
@@ -126,6 +127,12 @@ export function ImportStatementDialog({
   const needsReviewCount = rows.filter((r) => r.needs_review).length;
   const possibleDuplicateCount = rows.filter((r) => r.duplicate_status === "possible_duplicate").length;
   const recurringCount = rows.filter((r) => r.recurring).length;
+  const selectedIncome = rows
+    .filter((r) => r.selected && r.transaction_type === "income")
+    .reduce((s, r) => s + toNumber(r.amount), 0);
+  const selectedExpenses = rows
+    .filter((r) => r.selected && r.transaction_type === "expense")
+    .reduce((s, r) => s + toNumber(r.amount), 0);
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -212,6 +219,15 @@ export function ImportStatementDialog({
                 <Badge variant="outline">{t("needsReviewBadge", { count: needsReviewCount })}</Badge>
               )}
             </div>
+            {selectedCount > 0 && (
+              <p className="text-xs text-muted-foreground">
+                {t("detectedAmounts", {
+                  count: selectedCount,
+                  expenses: formatCurrency(selectedExpenses),
+                  income: formatCurrency(selectedIncome),
+                })}
+              </p>
+            )}
 
             <div className="max-h-[45vh] overflow-auto rounded-lg border">
               <table className="w-full text-sm">

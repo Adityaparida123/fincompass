@@ -8,8 +8,9 @@ import { Input, Label, Skeleton, Badge, Textarea } from "@/components/ui/input";
 import { PageHeader } from "@/components/common/shared";
 import { useReadiness, useCorrectReadiness } from "@/hooks/use-api";
 import { ApiRequestError } from "@/lib/api";
+import { useChatStore } from "@/stores/chat-store";
 import type { ReadinessFactor, ScoreCorrectionResult } from "@/types";
-import { Gauge, ChevronDown, ChevronUp, Info, AlertTriangle, RefreshCw } from "lucide-react";
+import { Gauge, ChevronDown, ChevronUp, Info, AlertTriangle, RefreshCw, MessageCircle } from "lucide-react";
 
 const FACTOR_LABELS: Record<string, string> = {
   cash_flow_stability: "Cash Flow Stability",
@@ -65,6 +66,7 @@ function ScoreGauge({ score }: { score: number }) {
 export default function ReadinessPage() {
   const t = useTranslations("readiness");
   const tc = useTranslations("common");
+  const th = useTranslations("home");
   const [selectedFactor, setSelectedFactor] = useState<ReadinessFactor | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [correction, setCorrection] = useState({ income: "", total_expenses: "", essential_monthly_expenses: "", debt_payments: "", savings: "", reason: "" });
@@ -73,6 +75,7 @@ export default function ReadinessPage() {
 
   const readiness = useReadiness();
   const correct = useCorrectReadiness();
+  const { setOpen, setDraft } = useChatStore();
 
   const handleCorrect = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -127,10 +130,21 @@ export default function ReadinessPage() {
               <ScoreGauge score={score} />
               <div className="flex-1 text-center sm:text-left">
                 <p className="text-sm text-text-muted">{readiness.data?.summary}</p>
-                <div className="mt-3 flex flex-wrap gap-2 justify-center sm:justify-start">
+                <div className="mt-3 flex flex-wrap items-center gap-2 justify-center sm:justify-start">
                   <Badge variant={tier.variant}>
                     {tier.label}
                   </Badge>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDraft(t("askDraft", { score: `${score}`, tier: tier.label }));
+                      setOpen(true);
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[11px] font-medium text-primary transition-colors hover:bg-primary/20"
+                  >
+                    <MessageCircle className="h-3 w-3" />
+                    {th("askFinai")}
+                  </button>
                 </div>
               </div>
             </div>

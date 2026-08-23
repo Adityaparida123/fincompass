@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { Moon, Sun, Monitor, LogOut, Globe, Settings, Search } from "lucide-react";
+import { Moon, Sun, Monitor, LogOut, Globe, Settings } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import { ISTClock } from "@/components/common/ist-clock";
 import { NotificationBell } from "@/components/layout/notification-bell";
@@ -39,15 +39,6 @@ export function TopBar() {
       <div className="flex items-center gap-3 min-w-0">
         <SidebarToggle />
         <div className="lg:hidden text-sm font-semibold text-primary tracking-tight truncate">FinCompass</div>
-      </div>
-      <div className="flex-1 max-w-sm mx-4 hidden md:block relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted h-3.5 w-3.5" />
-        <input
-          className="w-full bg-surface-container-low border border-border rounded-lg pl-9 pr-3 py-1.5 text-sm text-text-primary placeholder:text-text-muted input-premium focus:outline-none"
-          placeholder="Search..."
-          type="text"
-          readOnly
-        />
       </div>
       <div className="flex items-center gap-1">
         <ISTClock className="hidden sm:block" />

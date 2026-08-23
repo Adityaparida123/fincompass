@@ -11,6 +11,7 @@ import { EmptyState, PageHeader } from "@/components/common/shared";
 import { useBudgetStatus, useCreateBudget, useDeleteBudget, useMLForecast } from "@/hooks/use-api";
 import { formatCurrency, toNumber } from "@/lib/utils";
 import { ApiRequestError } from "@/lib/api";
+import { CATEGORIES } from "@/lib/constants";
 import { Plus, Target, AlertTriangle } from "lucide-react";
 
 export default function BudgetPage() {
@@ -62,7 +63,20 @@ export default function BudgetPage() {
         <Card>
           <CardContent className="pt-6">
             <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2">
-              <div><Label>{t("category")}</Label><Input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="e.g., food, transport, housing" required /></div>
+              <div>
+                <Label>{t("category")}</Label>
+                <select
+                  value={form.category}
+                  onChange={(e) => setForm({ ...form, category: e.target.value })}
+                  className="w-full h-9 rounded-lg border border-border bg-surface-container-low px-3 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  required
+                >
+                  <option value="" disabled>{t("categoryPlaceholder")}</option>
+                  {CATEGORIES.filter((c) => c !== "income").map((c) => (
+                    <option key={c} value={c}>{c.replace(/_/g, " ")}</option>
+                  ))}
+                </select>
+              </div>
               <div><Label>{t("limit")}</Label><Input type="number" min="0" step="0.01" value={form.limit_amount} onChange={(e) => setForm({ ...form, limit_amount: e.target.value })} required /></div>
               <div className="flex gap-2 sm:col-span-2"><Button type="submit" disabled={createBudget.isPending}>{tc("save")}</Button><Button type="button" variant="outline" onClick={() => setShowForm(false)}>{tc("cancel")}</Button></div>
             </form>
