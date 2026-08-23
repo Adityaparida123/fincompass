@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" fill="none">
+  <g stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round">
+    <!-- outer ring -->
+    <circle cx="512" cy="512" r="400" stroke-width="56"/>
+    <circle cx="512" cy="512" r="312" stroke-width="16" opacity="0.45"/>
+    <!-- cardinal ticks -->
+    <g stroke-width="28" opacity="0.85">
+      <line x1="512" y1="132" x2="512" y2="212"/>
+      <line x1="512" y1="812" x2="512" y2="892"/>
+      <line x1="132" y1="512" x2="212" y2="512"/>
+      <line x1="812" y1="512" x2="892" y2="512"/>
+    </g>
+    <g stroke-width="14" opacity="0.4">
+      <line x1="259" y1="259" x2="315" y2="315"/>
+      <line x1="765" y1="259" x2="709" y2="315"/>
+      <line x1="259" y1="765" x2="315" y2="709"/>
+      <line x1="765" y1="765" x2="709" y2="709"/>
+    </g>
+    <!-- growth needle: rising arrow to north-east -->
+    <path d="M330 694 L610 414 L610 300 L724 300 L724 414 L444 694 Z"
+          fill="#ffffff" stroke="#ffffff" stroke-width="24" opacity="0.95"/>
+    <path d="M330 694 L444 580 L494 630 Z" fill="#ffffff" stroke="#ffffff" stroke-width="24"/>
+    <!-- hub -->
+    <circle cx="512" cy="512" r="52" fill="#ffffff" stroke="#ffffff" stroke-width="24"/>
+  </g>
+</svg>

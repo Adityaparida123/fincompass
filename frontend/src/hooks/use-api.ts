@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/api";
+import { api, ApiRequestError } from "@/lib/api";
 import { useAuthStore } from "@/stores/auth-store";
 import type {
   ExpenseSummary,
@@ -282,8 +282,20 @@ export function useBusinessProfile() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   return useQuery({
     queryKey: ["business-profile", user?.id ?? "anonymous"],
-    queryFn: () => api.get<BusinessProfile>("/users/me/business"),
+    queryFn: async () => {
+      try {
+        return await api.get<BusinessProfile>("/users/me/business");
+      } catch (err) {
+        // Older backend builds may not expose the profile endpoint yet —
+        // treat a missing profile as "no data" instead of an error state.
+        if (err instanceof ApiRequestError && err.status === 404) return null;
+        throw err;
+      }
+    },
     enabled: !!user?.id && isAuthenticated,
+    staleTime: 5 * 60 * 1000,
+    retry: (failureCount, error) =>
+      !(error instanceof ApiRequestError && error.status === 404) && failureCount < 2,
   });
 }
 

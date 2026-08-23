@@ -2,7 +2,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { Compass } from "lucide-react";
 
-const LOGO_SRC = "/assets/fincompass-logo.png";
+const LOGO_SRC = "/assets/fincompass-logo.svg";
 
 export function AnimatedLogoWatermark() {
   const [logoMissing, setLogoMissing] = useState(false);

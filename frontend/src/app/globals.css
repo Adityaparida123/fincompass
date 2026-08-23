@@ -1129,8 +1129,8 @@ body {
   position: absolute;
   inset: 0;
   background: linear-gradient(135deg, var(--primary) 10%, var(--info) 90%);
-  -webkit-mask: url("/assets/fincompass-logo.png") center / contain no-repeat;
-  mask: url("/assets/fincompass-logo.png") center / contain no-repeat;
+  -webkit-mask: url("/assets/fincompass-logo.svg") center / contain no-repeat;
+  mask: url("/assets/fincompass-logo.svg") center / contain no-repeat;
   mix-blend-mode: color;
   opacity: 0.6;
 }
