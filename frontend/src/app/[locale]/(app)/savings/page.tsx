@@ -50,9 +50,9 @@ function SavingsGoalCard({ goal }: { goal: SavingsGoal }) {
               </Badge>
             )}
             {progress >= 100 ? (
-              <Badge variant="success" className="text-[10px]">Complete</Badge>
+              <Badge variant="success" className="text-[10px]">{t("goalComplete")}</Badge>
             ) : progress >= 75 ? (
-              <Badge variant="secondary" className="text-[10px]">Almost there</Badge>
+              <Badge variant="secondary" className="text-[10px]">{t("goalAlmostThere")}</Badge>
             ) : null}
           </div>
         </div>
@@ -60,15 +60,15 @@ function SavingsGoalCard({ goal }: { goal: SavingsGoal }) {
       <CardContent className="space-y-3">
         <div className="flex items-baseline justify-between">
           <span className="text-xl font-bold font-[family-name:var(--font-jetbrains-mono)]">{formatCurrency(currentAmount)}</span>
-          <span className="text-sm text-text-muted">of {formatCurrency(targetAmount)}</span>
+          <span className="text-sm text-text-muted">{t("ofTarget", { amount: formatCurrency(targetAmount) })}</span>
         </div>
         <Progress value={progress} className="h-2" />
         <div className="flex items-center justify-between flex-wrap gap-1">
           <p className="text-xs text-text-muted">
-            {progress.toFixed(0)}% complete
+            {t("percentComplete", { percent: progress.toFixed(0) })}
           </p>
           {goal.target_date && (
-            <p className="text-xs text-text-muted">Target: {goal.target_date}</p>
+            <p className="text-xs text-text-muted">{t("targetOn", { date: new Date(`${goal.target_date}T00:00:00`).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }) })}</p>
           )}
         </div>
         {monthly !== null && (
@@ -125,7 +125,7 @@ export default function SavingsPage() {
     <div className="space-y-6">
       <PageHeader
         title={t("title")}
-        subtitle={`${goals.data?.length ?? 0} goals · ${formatCurrency(totalCurrent)} saved`}
+        subtitle={t("subtitleSummary", { count: goals.data?.length ?? 0, amount: formatCurrency(totalCurrent) })}
         action={
           <Button size="sm" onClick={() => setShowForm(!showForm)}>
             <Plus className="mr-1.5 h-3.5 w-3.5" />{t("addGoal")}
@@ -136,7 +136,7 @@ export default function SavingsPage() {
       {showForm && (
         <Card><CardContent className="pt-6">
           <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2">
-            <div><Label>{t("goalName")}</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g., Emergency Fund" required /></div>
+            <div><Label>{t("goalName")}</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder={t("goalNamePlaceholder")} required /></div>
             <div><Label>{t("targetAmount")}</Label><Input type="number" min="0" step="0.01" value={form.target_amount} onChange={(e) => setForm({ ...form, target_amount: e.target.value })} required /></div>
             <div><Label>{t("currentAmount")}</Label><Input type="number" min="0" step="0.01" value={form.current_amount} onChange={(e) => setForm({ ...form, current_amount: e.target.value })} /></div>
             <div><Label>{t("targetDate")}</Label><Input type="date" value={form.target_date} onChange={(e) => setForm({ ...form, target_date: e.target.value })} /></div>
@@ -181,8 +181,8 @@ export default function SavingsPage() {
               </p>
               <p className="mt-1 text-xs text-text-muted">
                 {projectedSurplus >= 0
-                  ? `You may be able to allocate approximately ${formatCurrency(projectedSurplus)} toward savings.`
-                  : `Projected expenses exceed income by ${formatCurrency(Math.abs(projectedSurplus))}.`}
+                  ? t("surplusPositive", { amount: formatCurrency(projectedSurplus) })
+                  : t("surplusNegative", { amount: formatCurrency(Math.abs(projectedSurplus)) })}
               </p>
             </CardContent>
           </Card>
@@ -202,12 +202,12 @@ export default function SavingsPage() {
         ) : (
           <div className="sm:col-span-2">
             <EmptyState
-              title="No savings goals yet"
-              description="Set a savings goal to track your progress and build financial discipline."
+              title={t("noGoalsTitle")}
+              description={t("noGoalsDesc")}
               icon={PiggyBank}
               action={
                 <Button size="sm" onClick={() => setShowForm(true)}>
-                  <Plus className="mr-1.5 h-3.5 w-3.5" />Add goal
+                  <Plus className="mr-1.5 h-3.5 w-3.5" />{t("addGoal")}
                 </Button>
               }
             />

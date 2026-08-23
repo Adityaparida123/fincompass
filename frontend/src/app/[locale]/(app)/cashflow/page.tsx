@@ -90,12 +90,12 @@ export default function CashflowPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title={t("title")} subtitle="Track your income, expenses, and projected cash flow." />
+      <PageHeader title={t("title")} subtitle={t("subtitle")} />
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard label={t("income")} value={formatCurrency(income)} icon={TrendingUp} loading={monthly.isLoading} subtitle="This month" />
-        <StatCard label={t("expenses")} value={formatCurrency(expenses)} icon={TrendingDown} loading={monthly.isLoading} subtitle="This month" />
-        <StatCard label={t("net")} value={formatCurrency(net)} icon={Wallet} loading={monthly.isLoading} subtitle={net >= 0 ? "Positive cash flow" : "Negative cash flow"} trend={net >= 0 ? "up" : "down"} />
+        <StatCard label={t("income")} value={formatCurrency(income)} icon={TrendingUp} loading={monthly.isLoading} subtitle={t("thisMonth")} />
+        <StatCard label={t("expenses")} value={formatCurrency(expenses)} icon={TrendingDown} loading={monthly.isLoading} subtitle={t("thisMonth")} />
+        <StatCard label={t("net")} value={formatCurrency(net)} icon={Wallet} loading={monthly.isLoading} subtitle={net >= 0 ? t("netPositive") : t("netNegative")} trend={net >= 0 ? "up" : "down"} />
       </div>
 
       {/* Upcoming obligations */}
@@ -160,14 +160,15 @@ export default function CashflowPage() {
         </Card>
       )}
 
-      <ChartCard title={t("trends")} subtitle="Income, expenses, and net cash flow">
+      <ChartCard title={t("trends")} subtitle={t("trendsSubtitle")}>
         {trends.isLoading ? <ChartSkeleton variant="area" /> : trends.isError ? (
           <PageError message={tc("error")} onRetry={() => trends.refetch()} />
         ) : trendData.length ? (
           <CashFlowTrendChart data={trendData} valueFormatter={(v) => formatCurrency(v)} />
         ) : (
-          <div className="flex h-64 items-center justify-center text-sm text-text-muted">
-            No trend data yet. Add transactions across multiple months to see trends.
+          <div className="flex h-64 flex-col items-center justify-center gap-1 text-sm text-text-muted">
+            <p className="font-medium">{t("noTrendData")}</p>
+            <p className="text-xs">{t("noTrendDataDesc")}</p>
           </div>
         )}
       </ChartCard>
@@ -216,7 +217,7 @@ export default function CashflowPage() {
                     <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">{t("expectedExpenses")}</p>
                     <p className="mt-1 text-2xl font-bold tracking-tight font-[family-name:var(--font-jetbrains-mono)]">{formatCurrency(expenseForecast.predicted)}</p>
                     <p className="mt-0.5 text-xs text-text-muted">
-                      Range: {formatCurrency(expenseForecast.lower)} – {formatCurrency(expenseForecast.upper)}
+                      {t("rangeLabel")}: {formatCurrency(expenseForecast.lower)} – {formatCurrency(expenseForecast.upper)}
                     </p>
                   </div>
                 )}
@@ -225,7 +226,7 @@ export default function CashflowPage() {
                     <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">{t("expectedIncome")}</p>
                     <p className="mt-1 text-2xl font-bold tracking-tight font-[family-name:var(--font-jetbrains-mono)]">{formatCurrency(incomeForecast.predicted)}</p>
                     <p className="mt-0.5 text-xs text-text-muted">
-                      Range: {formatCurrency(incomeForecast.lower)} – {formatCurrency(incomeForecast.upper)}
+                      {t("rangeLabel")}: {formatCurrency(incomeForecast.lower)} – {formatCurrency(incomeForecast.upper)}
                     </p>
                   </div>
                 )}
@@ -272,7 +273,7 @@ export default function CashflowPage() {
               ) : null}
             </>
           ) : (
-            <EmptyState title={tc("noData")} description="No forecast data available." icon={Wallet} />
+            <EmptyState title={tc("noData")} description={t("noForecast")} icon={Wallet} />
           )}
         </CardContent>
       </Card>

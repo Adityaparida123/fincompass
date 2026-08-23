@@ -395,14 +395,14 @@ export default function HomePage() {
           <p className="text-xl font-bold font-[family-name:var(--font-jetbrains-mono)] text-text-primary tabular-nums">
             {monthly.isLoading ? <Skeleton className="h-6 w-24 inline-block" /> : formatCurrency(totalIncome)}
           </p>
-          <p className="text-[11px] text-text-muted mt-1">This month</p>
+          <p className="text-[11px] text-text-muted mt-1">{t("thisMonth")}</p>
         </div>
         <div className="bg-surface-card p-4 stat-card">
           <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted mb-1">{t("monthlyExpenses")}</p>
           <p className="text-xl font-bold font-[family-name:var(--font-jetbrains-mono)] text-text-primary tabular-nums">
             {monthly.isLoading ? <Skeleton className="h-6 w-24 inline-block" /> : formatCurrency(totalExpenses)}
           </p>
-          <p className="text-[11px] text-text-muted mt-1">This month</p>
+          <p className="text-[11px] text-text-muted mt-1">{t("thisMonth")}</p>
         </div>
         <div className="bg-surface-card p-4 stat-card">
           <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted mb-1">{t("estimatedProfit")}</p>
@@ -470,7 +470,7 @@ export default function HomePage() {
             </div>
           </div>
           <Link href={`/${locale}/readiness`} className="w-full mt-3 bg-surface-container-high border border-border text-text-primary font-medium py-1.5 rounded-lg hover:bg-surface-container-highest transition-colors flex items-center justify-center gap-2 text-xs">
-            View Analysis <ArrowRight className="h-3.5 w-3.5 icon-hover" />
+            {t("viewAnalysis")} <ArrowRight className="h-3.5 w-3.5 icon-hover" />
           </Link>
         </div>
 

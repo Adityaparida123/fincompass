@@ -138,7 +138,7 @@ export default function BudgetPage() {
         ) : (
           <EmptyState
             title="No budgets set yet"
-            description="Create a monthly budget to track spending and receive alerts when you're approaching a category limit."
+            description={t("noBudgetsDesc")}
             icon={Target}
             action={
               <Button size="sm" onClick={() => setShowForm(true)}>

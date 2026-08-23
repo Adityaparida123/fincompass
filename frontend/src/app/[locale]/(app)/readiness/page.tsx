@@ -12,37 +12,28 @@ import { useChatStore } from "@/stores/chat-store";
 import type { ReadinessFactor, ScoreCorrectionResult } from "@/types";
 import { Gauge, ChevronDown, ChevronUp, Info, AlertTriangle, RefreshCw, MessageCircle } from "lucide-react";
 
-const FACTOR_LABELS: Record<string, string> = {
-  cash_flow_stability: "Cash Flow Stability",
-  income_consistency: "Income Consistency",
-  savings_capacity: "Savings Capacity",
-  emergency_buffer: "Emergency Buffer",
-  existing_debt_burden: "Existing Debt Burden",
-  repayment_affordability: "Repayment Affordability",
-  expense_volatility: "Expense Volatility",
+function scoreTier(score: number, t: (key: string) => string): { label: string; variant: "success" | "secondary" | "destructive" } {
+  if (score >= 80) return { label: t("tierStrong"), variant: "success" };
+  if (score >= 60) return { label: t("tierGood"), variant: "success" };
+  if (score >= 40) return { label: t("tierFair"), variant: "secondary" };
+  return { label: t("tierNeedsWork"), variant: "destructive" };
+}
+
+const FACTOR_LABEL_KEYS: Record<string, string> = {
+  cash_flow_stability: "cashFlowStability",
+  income_consistency: "incomeConsistency",
+  savings_capacity: "savingsCapacity",
+  emergency_buffer: "emergencyBuffer",
+  existing_debt_burden: "debtBurden",
+  repayment_affordability: "repaymentAffordability",
+  expense_volatility: "expenseVolatility",
 };
 
-function factorLabel(name: string): string {
-  if (FACTOR_LABELS[name]) return FACTOR_LABELS[name];
+function factorLabel(name: string, t: (key: string) => string): string {
+  const key = FACTOR_LABEL_KEYS[name];
+  if (key) return t(key);
   return name.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
-
-function scoreTier(score: number): { label: string; variant: "success" | "secondary" | "destructive" } {
-  if (score >= 80) return { label: "Strong", variant: "success" };
-  if (score >= 60) return { label: "Good", variant: "success" };
-  if (score >= 40) return { label: "Fair", variant: "secondary" };
-  return { label: "Needs Improvement", variant: "destructive" };
-}
-
-const FACTOR_DESCRIPTIONS: Record<string, string> = {
-  cash_flow_stability: "How stable your income minus expenses and debt is month to month.",
-  income_consistency: "How consistent your income has been across recent months.",
-  savings_capacity: "Your ability to save based on income and spending patterns.",
-  emergency_buffer: "How many months of essential expenses your savings could cover.",
-  existing_debt_burden: "How much of your income goes toward existing debt payments.",
-  repayment_affordability: "Available room in your budget after essentials and debt for new repayments.",
-  expense_volatility: "How much your monthly expenses fluctuate over time.",
-};
 
 function ScoreGauge({ score }: { score: number }) {
   const circumference = 2 * Math.PI * 54;
@@ -65,6 +56,7 @@ function ScoreGauge({ score }: { score: number }) {
 
 export default function ReadinessPage() {
   const t = useTranslations("readiness");
+  const tf = useTranslations("readiness.factorLabels");
   const tc = useTranslations("common");
   const th = useTranslations("home");
   const [selectedFactor, setSelectedFactor] = useState<ReadinessFactor | null>(null);
@@ -98,11 +90,11 @@ export default function ReadinessPage() {
 
   const score = readiness.data?.score ?? 0;
   const hasInsufficientData = readiness.data?.insufficient_data ?? false;
-  const tier = scoreTier(score);
+  const tier = scoreTier(score, t);
 
   return (
     <div className="space-y-6">
-      <PageHeader title={t("title")} subtitle="Understand your credit readiness based on your financial data." />
+      <PageHeader title={t("title")} subtitle={t("subtitle")} />
 
       <Card>
         <CardContent className="pt-6">
@@ -111,18 +103,18 @@ export default function ReadinessPage() {
           ) : readiness.isError ? (
             <div className="flex flex-col items-center gap-3 py-8 text-center">
               <AlertTriangle className="h-8 w-8 text-destructive" />
-              <p className="text-sm font-medium">Credit readiness couldn&apos;t be calculated right now.</p>
-              <p className="text-sm text-text-muted">Please try again in a moment.</p>
+              <p className="text-sm font-medium">{t("errorTitle")}</p>
+              <p className="text-sm text-text-muted">{t("errorDesc")}</p>
               <Button variant="outline" size="sm" onClick={() => readiness.refetch()}>
-                <RefreshCw className="mr-1 h-3 w-3" /> Retry
+                <RefreshCw className="mr-1 h-3 w-3" /> {tc("retry")}
               </Button>
             </div>
           ) : hasInsufficientData ? (
             <div className="flex flex-col items-center gap-3 py-8 text-center">
               <Gauge className="h-8 w-8 text-text-muted/50" />
-              <p className="text-sm font-medium">Not enough financial data yet</p>
+              <p className="text-sm font-medium">{t("insufficientTitle")}</p>
               <p className="text-xs text-text-muted max-w-sm">
-                Add income and expense transactions, savings goals, or debt obligations to start calculating your credit readiness score.
+                {t("insufficientDesc")}
               </p>
             </div>
           ) : (
@@ -168,7 +160,7 @@ export default function ReadinessPage() {
             </div>
             {result.changed_factors.map((f, i) => (
               <div key={i} className="rounded-lg border border-border p-3">
-                <p className="font-medium text-sm">{factorLabel(f.name)}</p>
+                <p className="font-medium text-sm">{factorLabel(f.name, tf)}</p>
                 <p className="text-xs text-text-muted">{f.explanation}</p>
               </div>
             ))}
@@ -190,7 +182,7 @@ export default function ReadinessPage() {
                 className="w-full rounded-lg border border-border p-3 text-left transition-colors hover:bg-surface-container"
               >
                 <div className="flex items-center justify-between">
-                  <span className="font-medium text-sm">{factorLabel(f.name)}</span>
+                  <span className="font-medium text-sm">{factorLabel(f.name, tf)}</span>
                   <div className="flex items-center gap-2">
                     <Badge variant={f.direction === "positive" ? "success" : f.direction === "negative" ? "destructive" : "secondary"} className="text-[10px]">
                       {f.impact > 0 ? "+" : ""}{f.impact}
@@ -200,7 +192,7 @@ export default function ReadinessPage() {
                 </div>
                 {selectedFactor?.name === f.name && (
                   <div className="mt-2 space-y-1">
-                    <p className="text-xs text-text-muted italic">{FACTOR_DESCRIPTIONS[f.name] ?? "Assesses your financial health across this dimension."}</p>
+                    <p className="text-xs text-text-muted italic">{tf.has(`desc_${FACTOR_LABEL_KEYS[f.name] ?? ""}`) ? tf(`desc_${FACTOR_LABEL_KEYS[f.name]}`) : t("factorGenericDesc")}</p>
                     <p className="text-sm text-text-muted leading-relaxed">{f.explanation}{f.value ? ` (${f.value})` : ""}</p>
                   </div>
                 )}
@@ -229,16 +221,16 @@ export default function ReadinessPage() {
           <CardContent>
             <form onSubmit={handleCorrect} className="grid gap-4 sm:grid-cols-2">
               {([
-                { key: "income", label: "Income" },
-                { key: "total_expenses", label: "Total Expenses" },
-                { key: "essential_monthly_expenses", label: "Essential Monthly Expenses" },
-                { key: "debt_payments", label: "Debt Payments" },
-                { key: "savings", label: "Savings" },
+                { key: "income", label: t("fieldIncome") },
+                { key: "total_expenses", label: t("fieldTotalExpenses") },
+                { key: "essential_monthly_expenses", label: t("fieldEssentialExpenses") },
+                { key: "debt_payments", label: t("fieldDebtPayments") },
+                { key: "savings", label: t("fieldSavings") },
               ] as const).map((field) => (
                 <div key={field.key}><Label>{field.label}</Label>
                   <Input type="number" min="0" value={correction[field.key]} onChange={(e) => setCorrection({ ...correction, [field.key]: e.target.value })} required /></div>
               ))}
-              <div className="sm:col-span-2"><Label>Reason</Label><Textarea value={correction.reason} onChange={(e) => setCorrection({ ...correction, reason: e.target.value })} required /></div>
+              <div className="sm:col-span-2"><Label>{t("fieldReason")}</Label><Textarea value={correction.reason} onChange={(e) => setCorrection({ ...correction, reason: e.target.value })} required /></div>
               <div className="flex gap-2 sm:col-span-2"><Button type="submit" disabled={correct.isPending}>{tc("save")}</Button><Button type="button" variant="outline" onClick={() => setShowForm(false)}>{tc("cancel")}</Button></div>
             </form>
             {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
