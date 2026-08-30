@@ -30,6 +30,7 @@ from app.schemas.import_statement import (
     StatementConfirmResponse,
     StatementPreviewTransaction,
 )
+from app.services.finance.scope import SCOPE_BUSINESS, SCOPE_PERSONAL, classify_scope
 from app.services.import_statement.categorize import categorize_row
 from app.services.import_statement.dedupe import (
     fingerprint,
@@ -62,6 +63,55 @@ def _cleanup(path: str) -> None:
         os.unlink(path)
     except OSError:
         pass
+
+
+def _summarize_statement(preview: list[StatementPreviewTransaction]) -> dict[str, object]:
+    """Derive a lightweight financial summary of the previewed rows.
+
+    Totals are computed over the canonical income/expense rows only, matching
+    what the confirm step can actually persist. The business/personal split is
+    a category-based estimate of the expense side (`classify_scope`).
+    """
+    if not preview:
+        return {
+            "start_date": None,
+            "end_date": None,
+            "income_total": None,
+            "expense_total": None,
+            "net_cash_flow": None,
+            "business_total": None,
+            "personal_total": None,
+        }
+
+    income_total = sum(
+        (float(t.amount) for t in preview if t.transaction_type == TransactionType.income),
+        0.0,
+    )
+    expense_total = sum(
+        (float(t.amount) for t in preview if t.transaction_type == TransactionType.expense),
+        0.0,
+    )
+    business_total = 0.0
+    personal_total = 0.0
+    for t in preview:
+        if t.transaction_type != TransactionType.expense:
+            continue
+        scope = classify_scope(t.category)
+        if scope == SCOPE_BUSINESS:
+            business_total += float(t.amount)
+        elif scope == SCOPE_PERSONAL:
+            personal_total += float(t.amount)
+
+    dates = [t.date for t in preview]
+    return {
+        "start_date": min(dates),
+        "end_date": max(dates),
+        "income_total": f"{income_total:,.2f}",
+        "expense_total": f"{expense_total:,.2f}",
+        "net_cash_flow": f"{income_total - expense_total:,.2f}",
+        "business_total": f"{business_total:,.2f}",
+        "personal_total": f"{personal_total:,.2f}",
+    }
 
 
 async def analyze_statement_file(
@@ -168,6 +218,8 @@ async def analyze_statement_file(
         needs_review=needs_review,
     )
 
+    summary = _summarize_statement(preview)
+
     return StatementAnalyzeResponse(
         file_name=upload.filename or "statement",
         total_rows=len(preview),
@@ -181,6 +233,13 @@ async def analyze_statement_file(
         skipped_rows=skipped,
         transactions=preview,
         message=" ".join(messages) if messages else None,
+        start_date=summary["start_date"],
+        end_date=summary["end_date"],
+        income_total=summary["income_total"],
+        expense_total=summary["expense_total"],
+        net_cash_flow=summary["net_cash_flow"],
+        business_total=summary["business_total"],
+        personal_total=summary["personal_total"],
     )
 
 

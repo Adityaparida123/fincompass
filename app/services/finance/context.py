@@ -43,6 +43,10 @@ async def _business_profile_line(db: MongoDatabase, user_id: int) -> str:
         parts.append(f"'{business['business_name']}'")
     if business.get("business_type"):
         parts.append(f"type: {business['business_type']}")
+    if business.get("business_category"):
+        parts.append(f"category: {business['business_category']}")
+    if business.get("business_stage"):
+        parts.append(f"stage: {business['business_stage']}")
     if business.get("main_products"):
         parts.append(f"products/services: {business['main_products']}")
     location = ", ".join(
@@ -56,10 +60,26 @@ async def _business_profile_line(db: MongoDatabase, user_id: int) -> str:
         parts.append(f"user-stated avg monthly sales: ₹{float(business['avg_monthly_sales']):,.0f}")
     if business.get("avg_monthly_expenses") is not None:
         parts.append(f"user-stated avg monthly expenses: ₹{float(business['avg_monthly_expenses']):,.0f}")
+    if business.get("monthly_income_estimate") is not None:
+        parts.append(
+            f"user-stated monthly income estimate: ₹{float(business['monthly_income_estimate']):,.0f}"
+        )
     if business.get("workers_count"):
         parts.append(f"workers: {business['workers_count']}")
     if business.get("typical_customers"):
         parts.append(f"customers: {business['typical_customers']}")
+    goals = business.get("financial_goals") or business.get("business_goals")
+    if isinstance(goals, list) and goals:
+        if isinstance(goals[0], dict):
+            formatted = "; ".join(
+                f"{g.get('name', '')} ({g.get('timeframe', '')})"
+                for g in goals
+                if isinstance(g, dict) and g.get("name")
+            )
+        else:
+            formatted = "; ".join(str(g).strip() for g in goals if str(g).strip())
+        if formatted:
+            parts.append(f"goals: {formatted}")
     if business.get("seasonal"):
         note = f" ({business['season_note']})" if business.get("season_note") else ""
         parts.append(f"seasonal business{note}")
@@ -194,6 +214,19 @@ async def build_context_for_intent(
         return _slice(
             f"Business credit readiness score: {result.score}/100. Key factors: {factors}.",
             ["readiness_score", "readiness_factors"],
+        )
+
+    if intent in ("health", "financial_health", "wellbeing"):
+        from app.services.health.service import get_current_health_score
+
+        result = await get_current_health_score(db, user_id)
+        factors = "; ".join(
+            f"{f.name} ({f.score}/100): {f.explanation}" for f in result.factors
+        )
+        return _slice(
+            f"Financial health score: {result.score}/100 ({result.label}). "
+            f"This is an internal summary, NOT a credit score. Pillars: {factors}. {result.summary}",
+            ["health_score", "health_factors", "health_summary"],
         )
 
     if profile_line:

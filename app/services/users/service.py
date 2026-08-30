@@ -44,6 +44,15 @@ async def delete_account(db: MongoDatabase, user: Doc) -> dict[str, int]:
             "readiness_scores", {"id": {"$in": score_ids}}
         )
 
+    health_ids = [s.id for s in await db.find("financial_health_scores", {"user_id": user_id})]
+    if health_ids:
+        deleted["financial_health_factors"] = await db.delete_many(
+            "financial_health_factors", {"health_score_id": {"$in": health_ids}}
+        )
+        deleted["financial_health_scores"] = await db.delete_many(
+            "financial_health_scores", {"id": {"$in": health_ids}}
+        )
+
     for collection in _USER_SCOPED_COLLECTIONS:
         count = await db.delete_many(collection, {"user_id": user_id})
         if count:

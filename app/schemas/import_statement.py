@@ -69,6 +69,13 @@ class StatementAnalyzeResponse(BaseModel):
     skipped_rows: int = 0
     transactions: list[StatementPreviewTransaction]
     message: str | None = None
+    start_date: date | None = None
+    end_date: date | None = None
+    income_total: str | None = None
+    expense_total: str | None = None
+    net_cash_flow: str | None = None
+    business_total: str | None = None
+    personal_total: str | None = None
 
 
 class StatementConfirmItem(BaseModel):

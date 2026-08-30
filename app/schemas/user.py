@@ -24,6 +24,28 @@ BUSINESS_TYPES = {
     "other",
 }
 
+BUSINESS_STAGES = {
+    "idea",
+    "starting",
+    "growing",
+    "stable",
+    "expanding",
+}
+
+BUSINESS_CATEGORIES = {
+    "agri",
+    "food_processing",
+    "handicrafts",
+    "textiles",
+    "retail",
+    "services",
+    "transportation",
+    "dairy",
+    "poultry",
+    "fisheries",
+    "other",
+}
+
 
 class UserProfileUpdate(BaseModel):
     full_name: str | None = Field(default=None, min_length=1, max_length=200)
@@ -57,6 +79,8 @@ class BusinessProfileOut(BaseModel):
 
     business_name: str | None = Field(default=None, max_length=200)
     business_type: str | None = None
+    business_category: str | None = Field(default=None, max_length=120)
+    business_stage: str | None = Field(default=None, max_length=30)
     main_products: str | None = Field(default=None, max_length=500)
     village: str | None = Field(default=None, max_length=120)
     district: str | None = Field(default=None, max_length=120)
@@ -64,10 +88,14 @@ class BusinessProfileOut(BaseModel):
     started_on: date | None = None
     avg_monthly_sales: float | None = Field(default=None, ge=0)
     avg_monthly_expenses: float | None = Field(default=None, ge=0)
+    monthly_income_estimate: float | None = Field(default=None, ge=0)
     workers_count: int | None = Field(default=None, ge=0, le=10000)
     typical_customers: str | None = Field(default=None, max_length=300)
     seasonal: bool = False
     season_note: str | None = Field(default=None, max_length=200)
+    financial_goals: list[str] | None = None
+    business_goals: list[str] | None = None
+    demo_synthetic: bool = False
 
 
 class BusinessProfileUpdate(BusinessProfileOut):
@@ -78,4 +106,22 @@ class BusinessProfileUpdate(BusinessProfileOut):
     def validate_business_type(cls, v: str | None) -> str | None:
         if v is not None and v.lower() not in BUSINESS_TYPES:
             raise ValueError(f"Unsupported business type. Supported: {', '.join(sorted(BUSINESS_TYPES))}")
+        return v.lower() if v else v
+
+    @field_validator("business_category")
+    @classmethod
+    def validate_business_category(cls, v: str | None) -> str | None:
+        if v is not None and v.lower() not in BUSINESS_CATEGORIES:
+            raise ValueError(
+                f"Unsupported business category. Supported: {', '.join(sorted(BUSINESS_CATEGORIES))}"
+            )
+        return v.lower() if v else v
+
+    @field_validator("business_stage")
+    @classmethod
+    def validate_business_stage(cls, v: str | None) -> str | None:
+        if v is not None and v.lower() not in BUSINESS_STAGES:
+            raise ValueError(
+                f"Unsupported business stage. Supported: {', '.join(sorted(BUSINESS_STAGES))}"
+            )
         return v.lower() if v else v

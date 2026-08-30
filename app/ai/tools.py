@@ -128,6 +128,14 @@ TOOL_SPECS: list[dict[str, Any]] = [
     {
         "type": "function",
         "function": {
+            "name": "calculate_financial_health",
+            "description": "Compute the explainable 0-100 financial health score from consented financial data. This is an internal financial-health summary, NOT a credit score.",
+            "parameters": {"type": "object", "properties": {}},
+        },
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "simulate_loan",
             "description": "Simulate a loan: EMI, post-loan cash flow, debt burden, warnings, and alternatives.",
             "parameters": {
@@ -318,6 +326,14 @@ async def tool_calculate_credit_readiness(ctx: ToolContext, args: dict[str, Any]
     return _to_dict(result)
 
 
+@_register("calculate_financial_health")
+async def tool_calculate_financial_health(ctx: ToolContext, args: dict[str, Any]) -> dict[str, Any]:
+    from app.services.health.service import get_current_health_score
+
+    result = await get_current_health_score(ctx.db, ctx.user_id)
+    return _to_dict(result)
+
+
 @_register("simulate_loan")
 async def tool_simulate_loan(ctx: ToolContext, args: dict[str, Any]) -> dict[str, Any]:
     data = LoanSimulationRequest(
@@ -338,6 +354,9 @@ async def tool_get_financial_summary(ctx: ToolContext, args: dict[str, Any]) -> 
     data = await build_readiness_input(ctx.db, ctx.user_id)
     readiness = compute_readiness(data)
     analysis = await _execute_expense_analysis(ctx, int(args.get("months", 3)))
+    from app.services.health.engine import compute_health
+
+    health = compute_health(data)
     return {
         "income": str(data.income),
         "total_expenses": str(data.total_expenses),
@@ -351,6 +370,9 @@ async def tool_get_financial_summary(ctx: ToolContext, args: dict[str, Any]) -> 
         ),
         "credit_readiness": readiness.score,
         "readiness_summary": readiness.summary,
+        "financial_health_score": health.score,
+        "financial_health_label": health.label,
+        "financial_health_summary": health.summary,
         "expense_breakdown": analysis,
     }
 

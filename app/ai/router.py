@@ -18,6 +18,7 @@ _INTENT_RULES: list[tuple[list[str], str, list[str]]] = [
     (["expense", "expenditure", "kharch", "spend", "spending", "खर्च"], "expenses", ["analyze_expenses"]),
     (["cash flow", "cashflow", "cash-flow", "nagad", "nagdina"], "cashflow", ["calculate_cash_flow", "get_financial_summary"]),
     (["debt", "karz", "rin", "khabar", "emi", "कर्ज", "ऋण"], "debt", ["calculate_debt_burden", "get_financial_summary"]),
+    (["financial health", "health score", "wellbeing", "well-being", "financial wellness", "financial wellbeing"], "health", ["calculate_financial_health", "get_financial_summary"]),
     (["readiness", "credit score", "score", "credit-worthiness", "creditworthiness"], "readiness", ["calculate_credit_readiness", "get_financial_summary"]),
     (["emergency", "buffer", "emergency fund", "suraksha"], "savings", ["calculate_emergency_buffer", "calculate_savings_capacity"]),
     (["scheme", "yojana", "government", "sarkari", "subsidy", "योजना"], "schemes", ["find_government_schemes"]),
@@ -27,7 +28,7 @@ _INTENT_RULES: list[tuple[list[str], str, list[str]]] = [
 
 _PERSONAL_INTENTS = {
     "loan", "savings", "budget", "expenses", "cashflow", "debt",
-    "readiness", "summary", "goals",
+    "readiness", "health", "summary", "goals",
     "business_pricing", "business_inventory", "business_capital", "business_summary",
 }
 

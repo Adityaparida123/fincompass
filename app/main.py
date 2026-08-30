@@ -14,6 +14,7 @@ from app.api.routes import (
     credit_readiness,
     debt,
     expenses,
+    financial_health,
     health,
     loans,
     ml,
@@ -137,6 +138,7 @@ app.include_router(budget.router, prefix=API_PREFIX)
 app.include_router(debt.router, prefix=API_PREFIX)
 app.include_router(loans.router, prefix=API_PREFIX)
 app.include_router(credit_readiness.router, prefix=API_PREFIX)
+app.include_router(financial_health.router, prefix=API_PREFIX)
 app.include_router(recommendations.router, prefix=API_PREFIX)
 app.include_router(schemes.router, prefix=API_PREFIX)
 app.include_router(consent.router, prefix=API_PREFIX)
