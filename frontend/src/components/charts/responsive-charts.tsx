@@ -297,6 +297,163 @@ export function ForecastChart({
   return <MultiPointForecast data={data} formatter={fmt} className={className} height={height} showGrid={showGrid} />;
 }
 
+// ─── Combined Historical Net + Forecast Chart ──────────────────
+// Shows the recent actual net cash flow joined to the ML forecast
+// (expected line + confidence band) so the projection reads in context.
+export function CombinedTrendForecastChart({
+  historical,
+  forecast,
+  valueFormatter,
+  className,
+  height,
+}: {
+  historical: Record<string, unknown>[];
+  forecast: Record<string, unknown>[];
+  valueFormatter?: (value: number, name: string) => string;
+  className?: string;
+  height?: string;
+}) {
+  const fmt = valueFormatter ?? ((v: number) => formatCurrency(v));
+
+  const histTail = historical.slice(-4).map((h) => ({
+    period: h.period,
+    historicalNet: Number(h.net) || 0,
+    expected: null as number | null,
+    lower: null as number | null,
+    upper: null as number | null,
+  }));
+
+  const combined = [
+    ...histTail,
+    ...forecast.map((f) => {
+      const expected = Number(f.expected) || 0;
+      const lower = Number(f.lower) ?? expected;
+      const upper = Number(f.upper) ?? expected;
+      return {
+        period: f.period,
+        historicalNet: null as number | null,
+        expected,
+        lower,
+        upper,
+        range: upper - lower,
+      };
+    }),
+  ];
+
+  const hasForecast = forecast.length > 0;
+  const yDomain = computeYDomain(combined, ["historicalNet", "expected", "lower", "upper"]);
+
+  if (!combined.length) {
+    return (
+      <div className={cn("w-full min-w-0 flex items-center justify-center text-sm text-text-muted", height ?? "h-52 sm:h-60 lg:h-64", className)}>
+        No data available
+      </div>
+    );
+  }
+
+  return (
+    <div className={cn("w-full min-w-0 chart-animate relative", height ?? "h-52 sm:h-60 lg:h-72", className)}>
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart data={combined} margin={{ top: 12, right: 12, left: 0, bottom: 0 }}>
+          <defs>
+            <linearGradient id="cmbGradNet" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={CHART_COLORS.amber} stopOpacity={0.15} />
+              <stop offset="100%" stopColor={CHART_COLORS.amber} stopOpacity={0} />
+            </linearGradient>
+            <linearGradient id="cmbGradExpected" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={CHART_COLORS.cyan} stopOpacity={0.18} />
+              <stop offset="100%" stopColor={CHART_COLORS.cyan} stopOpacity={0.02} />
+            </linearGradient>
+            <linearGradient id="cmbGradBand" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={CHART_COLORS.cyan} stopOpacity={0.12} />
+              <stop offset="100%" stopColor={CHART_COLORS.cyan} stopOpacity={0.03} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid {...gridProps} />
+          {yDomain[0] < 0 && (
+            <ReferenceLine y={0} stroke="var(--border)" strokeDasharray="4 4" strokeOpacity={0.6} />
+          )}
+          <XAxis
+            dataKey="period"
+            tickFormatter={formatPeriodLabel}
+            {...axisProps}
+            tick={{ fontSize: 10, fill: "var(--text-muted)" }}
+          />
+          <YAxis domain={yDomain} tickFormatter={formatCompactINR} {...axisProps} width={56} />
+          <Tooltip
+            content={<CombinedForecastTooltip formatter={fmt} />}
+            cursor={{ stroke: "var(--border)", strokeDasharray: "4 4" }}
+          />
+          <Legend wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />
+
+          <Area
+            type="monotone"
+            dataKey="historicalNet"
+            name="Actual net"
+            stroke={CHART_COLORS.amber}
+            strokeWidth={2}
+            fill="url(#cmbGradNet)"
+            dot={{ r: 3, fill: CHART_COLORS.amber }}
+            activeDot={{ r: 5, strokeWidth: 2, stroke: CHART_COLORS.amber, fill: "var(--surface-card)" }}
+            connectNulls={false}
+            animationDuration={600}
+          />
+
+          {hasForecast && (
+            <>
+              <Area type="monotone" dataKey="lower" stroke="none" fill="transparent" fillOpacity={0} name="Lower" dot={false} activeDot={false} animationDuration={600} />
+              <Area type="monotone" dataKey="range" stroke="none" fill="url(#cmbGradBand)" fillOpacity={1} name="Confidence Range" dot={false} activeDot={false} animationDuration={800} animationEasing="ease-out" />
+              <Area
+                type="monotone"
+                dataKey="expected"
+                stroke={CHART_COLORS.cyan}
+                strokeWidth={2.5}
+                fill="url(#cmbGradExpected)"
+                name="Expected"
+                dot={false}
+                activeDot={{ r: 6, strokeWidth: 2, stroke: CHART_COLORS.cyan, fill: "var(--surface-card)" }}
+                connectNulls={false}
+                animationDuration={800}
+                animationEasing="ease-out"
+              />
+              <Line type="monotone" dataKey="upper" stroke={CHART_COLORS.cyan} strokeWidth={1} strokeDasharray="4 4" strokeOpacity={0.35} name="Upper" dot={false} activeDot={false} animationDuration={600} />
+              <Line type="monotone" dataKey="lower" stroke={CHART_COLORS.cyan} strokeWidth={1} strokeDasharray="4 4" strokeOpacity={0.35} name="Lower" dot={false} activeDot={false} animationDuration={600} />
+            </>
+          )}
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+function CombinedForecastTooltip({ active, payload, label, formatter }: {
+  active?: boolean;
+  payload?: Array<{ name: string; value: number | null; dataKey: string }>;
+  label?: string;
+  formatter?: (value: number, name: string) => string;
+}) {
+  if (!active || !payload?.length) return null;
+  const rows = payload.filter((p) => p.value != null);
+  if (!rows.length) return null;
+  const fmtVal = formatter ?? ((v: number) => v.toLocaleString("en-IN"));
+  return (
+    <div className="chart-tooltip popover-enter rounded-xl border border-border/80 bg-surface-card px-4 py-3 shadow-lg min-w-[170px]">
+      {label && <p className="mb-2 text-[11px] font-semibold text-text-muted/80 tracking-wide uppercase">{formatPeriodLabel(label)}</p>}
+      <div className="space-y-1.5">
+        {rows.map((p) => (
+          <div key={p.dataKey} className="flex items-center justify-between gap-4">
+            <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: p.dataKey === "historicalNet" ? CHART_COLORS.amber : p.dataKey === "expected" ? CHART_COLORS.cyan : "var(--text-muted)" }} />
+            <span className="text-xs font-medium text-text-primary">{p.name === "Lower" || p.name === "Upper" ? (p.dataKey === "lower" ? "Low" : "High") : p.name}</span>
+            <span className="ml-auto text-xs font-bold font-[family-name:var(--font-jetbrains-mono)] text-text-primary tabular-nums">
+              {fmtVal(Number(p.value), p.name)}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── Single-Point Forecast (horizontal range visualization) ─────
 function SinglePointForecast({
   data,

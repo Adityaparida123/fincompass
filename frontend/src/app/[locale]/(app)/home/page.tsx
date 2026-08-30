@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton, Badge } from "@/components/ui/input";
 import { FinancialTrendChart, ChartCard, BudgetProgressList, ChartSkeleton, PageError } from "@/components/charts/responsive-charts";
 import {
-  useExpensesMonthly, useExpenseTrends, useReadiness,
+  useExpensesMonthly, useExpenseTrends, useReadiness, useFinancialHealth,
   useRecommendations, useBudgetStatus, useSavingsGoals,
   useMLPatterns, useMLForecast, useDebts,
   useBusinessProfile, useRecommendedSchemes,
@@ -16,6 +16,7 @@ import { formatCurrency, toNumber, formatPercent } from "@/lib/utils";
 import { getTimeOfDay } from "@/lib/greeting";
 import { generateBusinessInsights, type BusinessInsight } from "@/lib/insight-engine";
 import { classifyScope } from "@/lib/expense-scope";
+import { buildActionPlans, groupByPriority, type ActionPriority } from "@/lib/action-plan";
 import { useChatStore } from "@/stores/chat-store";
 import { useAuthStore } from "@/stores/auth-store";
 import Link from "next/link";
@@ -23,6 +24,7 @@ import {
   TrendingUp, Receipt, ArrowRight, Lightbulb, Target,
   FileText, Flag, Calculator, Info, MessageCircle, Store, Wallet,
   Sparkles, AlertTriangle, Landmark, ExternalLink, CircleHelp,
+  ListChecks, Eye,
 } from "lucide-react";
 
 type HealthStatus = "good" | "stable" | "attention" | "nodata";
@@ -54,6 +56,7 @@ export default function HomePage() {
   const forecast = useMLForecast();
   const debts = useDebts();
   const businessProfile = useBusinessProfile();
+  const healthQuery = useFinancialHealth();
   const { setOpen: setChatOpen, setDraft } = useChatStore();
   const user = useAuthStore((s) => s.user);
 
@@ -170,6 +173,39 @@ export default function HomePage() {
   })) ?? [];
   const isInsufficientData = forecast.data?.status === "insufficient_data";
 
+  // ── Action Plan (prioritized buckets of the recommendation engine) ──
+  const actionPlans = useMemo(
+    () => groupByPriority(buildActionPlans(recommendations.data?.recommendations ?? [])),
+    [recommendations.data],
+  );
+  const actionBuckets: Array<{
+    key: ActionPriority;
+    label: string;
+    desc: string;
+    icon: typeof ListChecks;
+    wrap: string;
+    hasItems: boolean;
+  }> = [
+    { key: "high", label: t("planHigh"), desc: t("planHighDesc"), icon: ListChecks, wrap: "border-destructive/25 bg-destructive/5", hasItems: actionPlans.high.length > 0 },
+    { key: "medium", label: t("planMedium"), desc: t("planMediumDesc"), icon: Target, wrap: "border-warning/25 bg-warning/5", hasItems: actionPlans.medium.length > 0 },
+    { key: "opportunity", label: t("planOpportunity"), desc: t("planOpportunityDesc"), icon: Lightbulb, wrap: "border-primary/25 bg-primary/5", hasItems: actionPlans.opportunity.length > 0 },
+    { key: "monitor", label: t("planMonitor"), desc: t("planMonitorDesc"), icon: Eye, wrap: "border-border bg-surface-container", hasItems: actionPlans.monitor.length > 0 },
+  ];
+  const hasActionPlan = Object.values(actionPlans).some((items) => items.length > 0);
+
+  const healthResult = healthQuery.data;
+  const hasHealthScore = !!healthResult && !healthResult.insufficient_data;
+  const healthLabelValue =
+    healthResult?.label === "Good" ? t("healthScoreGood")
+      : healthResult?.label === "Moderate" ? t("healthScoreModerate")
+        : healthResult?.label === "Needs attention" ? t("healthScoreAttention")
+          : t("healthNoData");
+  const healthChange = healthResult?.change;
+  const healthArcOffset = 283 - (283 * Math.min(100, Math.max(0, healthResult?.score ?? 0))) / 100;
+  const weakestFactors = [...(healthResult?.factors ?? [])]
+    .sort((a, b) => a.score - b.score)
+    .slice(0, 3);
+
   const scoreProgress = Math.min(100, Math.max(0, score));
   const dashOffset = 283 - (283 * scoreProgress) / 100;
   const scoreStatus = score >= 80 ? t("readinessExcellent") : score >= 60 ? t("readinessGood") : score >= 40 ? t("readinessFair") : t("readinessLow");
@@ -248,28 +284,70 @@ export default function HomePage() {
         {health === "nodata" ? (
           <p className="text-sm text-text-muted leading-relaxed max-w-3xl">{t("healthNoDataDesc")}</p>
         ) : (
-          <>
-            <ul className="space-y-1 max-w-3xl">
-              {healthFacts.map((fact, i) => (
-                <li key={i} className="text-sm text-text-muted leading-relaxed flex items-start gap-2">
-                  <span className={`mt-1.5 h-1 w-1 rounded-full shrink-0 ${i === 0 ? "bg-primary" : "bg-text-muted/40"}`} />
-                  {fact}
-                </li>
-              ))}
-            </ul>
-            <p className="mt-3 text-xs font-medium text-text-secondary flex items-start gap-1.5 max-w-3xl">
-              <Lightbulb className="h-3.5 w-3.5 mt-0.5 shrink-0 text-warning" />
-              {opportunity}
-            </p>
-            <button
-              type="button"
-              onClick={() => askFinai(t("healthDraft", { status: healthLabel, amount: formatCurrency(netCashFlow) }))}
-              className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[11px] font-medium text-primary transition-colors hover:bg-primary/20"
-            >
-              <MessageCircle className="h-3 w-3" />
-              {t("askAboutHealth")}
-            </button>
-          </>
+          <div className="mt-2 flex flex-col sm:flex-row gap-5">
+            {hasHealthScore && healthResult && (
+              <div className="flex flex-col items-start sm:items-center justify-center shrink-0">
+                <div className="relative w-24 h-24 flex items-center justify-center">
+                  <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                    <circle cx="50" cy="50" fill="none" r="45" className="stroke-surface-container-high" strokeDasharray="283" strokeDashoffset="0" strokeWidth="8" />
+                    <circle
+                      className="transition-all duration-1000 ease-out"
+                      cx="50" cy="50" fill="none" r="45"
+                      stroke={healthResult.score >= 75 ? "var(--primary)" : healthResult.score >= 50 ? "var(--warning)" : "var(--destructive)"}
+                      strokeDasharray="283" strokeDashoffset={healthArcOffset} strokeLinecap="round" strokeWidth="8"
+                    />
+                  </svg>
+                  <div className="absolute flex flex-col items-center justify-center text-center">
+                    <span className="text-2xl font-bold font-[family-name:var(--font-jetbrains-mono)] text-text-primary leading-none">{healthResult.score}</span>
+                    <span className="text-[9px] text-text-muted mt-0.5">/100</span>
+                  </div>
+                </div>
+                <div className="mt-1.5 flex flex-wrap items-center justify-center gap-1.5">
+                  <span className="px-2 py-0.5 border rounded-full text-[10px] font-medium text-primary border-primary/20 bg-primary/10">{healthLabelValue}</span>
+                  {healthChange != null && (
+                    <span className={`px-2 py-0.5 border rounded-full text-[10px] font-medium ${healthChange > 0 ? "text-primary border-primary/20 bg-primary/10" : "text-destructive border-destructive/25 bg-destructive/5"}`}>
+                      {healthChange > 0 ? "+" : ""}{healthChange}
+                    </span>
+                  )}
+                </div>
+                <p className="mt-1 text-[10px] text-text-muted/70 leading-tight text-center">{t("healthNotCredit")}</p>
+              </div>
+            )}
+            <div className="min-w-0 flex-1">
+              <ul className="space-y-1 max-w-3xl">
+                {healthFacts.map((fact, i) => (
+                  <li key={i} className="text-sm text-text-muted leading-relaxed flex items-start gap-2">
+                    <span className={`mt-1.5 h-1 w-1 rounded-full shrink-0 ${i === 0 ? "bg-primary" : "bg-text-muted/40"}`} />
+                    {fact}
+                  </li>
+                ))}
+              </ul>
+              {hasHealthScore && weakestFactors.length > 0 && (
+                <div className="mt-2.5 flex flex-wrap gap-1.5">
+                  {weakestFactors.map((f) => (
+                    <span key={f.name} className="inline-flex items-center gap-1.5 border border-border bg-surface-container px-2 py-1 rounded-full text-[10px] text-text-secondary">
+                      <span className="capitalize font-medium">{f.name.replace(/_/g, " ")}</span>
+                      <span className="font-[family-name:var(--font-jetbrains-mono)] text-text-muted">{f.score}/100</span>
+                    </span>
+                  ))}
+                </div>
+              )}
+              <p className="mt-3 text-xs font-medium text-text-secondary flex items-start gap-1.5 max-w-3xl">
+                <Lightbulb className="h-3.5 w-3.5 mt-0.5 shrink-0 text-warning" />
+                {opportunity}
+              </p>
+              <button
+                type="button"
+                onClick={() => askFinai(hasHealthScore
+                  ? t("healthDraftScore", { score: healthResult?.score ?? 0, label: healthLabelValue })
+                  : t("healthDraft", { status: healthLabel, amount: formatCurrency(netCashFlow) }))}
+                className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[11px] font-medium text-primary transition-colors hover:bg-primary/20"
+              >
+                <MessageCircle className="h-3 w-3" />
+                {t("askAboutHealth")}
+              </button>
+            </div>
+          </div>
         )}
         <p className="mt-3 text-[10px] uppercase tracking-[0.06em] text-text-muted/60">{t("healthBasis")}</p>
       </div>
@@ -378,6 +456,48 @@ export default function HomePage() {
           </div>
         )}
       </section>
+
+      {/* ACTION PLAN — prioritized, bucket-grouped next steps */}
+      {hasActionPlan && (
+        <section className="section-reveal section-reveal-delay-2" aria-label={t("planTitle")}>
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted flex items-center gap-1.5">
+              <ListChecks className="h-3.5 w-3.5 text-primary" />
+              {t("planTitle")}
+            </h2>
+            <Link href={`/${locale}/recommendations`} className="flex items-center gap-1 text-[11px] text-primary hover:underline">
+              {tc("viewAll")} <ArrowRight className="h-3 w-3 icon-hover" />
+            </Link>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {actionBuckets.filter((b) => b.hasItems).map((bucket) => (
+              <div key={bucket.key} className={`rounded-xl border p-4 ${bucket.wrap}`}>
+                <div className="flex items-center gap-2 mb-2.5">
+                  <bucket.icon className="h-4 w-4 text-text-secondary" aria-hidden />
+                  <span className="text-xs font-semibold text-text-primary">{bucket.label}</span>
+                </div>
+                <p className="text-[11px] leading-relaxed text-text-muted mb-2.5">{bucket.desc}</p>
+                <div className="space-y-1.5">
+                  {actionPlans[bucket.key].slice(0, 3).map((item, i) => (
+                    <div key={i} className="rounded-lg border border-border/70 bg-surface-card/80 p-2.5 action-plan-item">
+                      <p className="text-xs font-medium leading-snug text-text-primary">{item.title}</p>
+                      <p className="mt-0.5 text-[11px] text-text-muted line-clamp-2">{item.reason}</p>
+                      <button
+                        type="button"
+                        onClick={() => askFinai(t("recommendationDraft", { title: item.title }))}
+                        className="mt-1.5 inline-flex items-center gap-1 text-[10px] font-medium text-primary hover:underline"
+                      >
+                        <MessageCircle className="h-2.5 w-2.5" />{t("askInsight")}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="mt-2 text-[10px] text-text-muted/70">{t("planBasis")}</p>
+        </section>
+      )}
 
       {/* Business Summary — stat row */}
       <div className={`grid gap-px rounded-xl border border-border overflow-hidden bg-border section-reveal section-reveal-delay-2 ${todaysSales != null ? "sm:grid-cols-4" : "sm:grid-cols-3"}`}>

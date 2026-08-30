@@ -6,12 +6,13 @@ import { useTranslations, useLocale } from "next-intl";
 import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/input";
-import { CashFlowTrendChart, ForecastChart, ChartCard, ChartSkeleton, PageError } from "@/components/charts/responsive-charts";
+import { CashFlowTrendChart, CombinedTrendForecastChart, ChartCard, ChartSkeleton, PageError } from "@/components/charts/responsive-charts";
 import { StatCard, PageHeader, EmptyState } from "@/components/common/shared";
 import { useExpensesMonthly, useExpenseTrends, useMLForecast, useDebts } from "@/hooks/use-api";
+import { useChatStore } from "@/stores/chat-store";
 import { formatCurrency, toNumber } from "@/lib/utils";
 import { classifyScope } from "@/lib/expense-scope";
-import { TrendingUp, TrendingDown, Wallet, Receipt } from "lucide-react";
+import { TrendingUp, TrendingDown, Wallet, Receipt, Sparkles } from "lucide-react";
 
 const QUALITY_LABELS: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" | "success" }> = {
   good: { label: "Good", variant: "success" },
@@ -25,6 +26,7 @@ export default function CashflowPage() {
   const tc = useTranslations("common");
   const locale = useLocale();
   const period = format(new Date(), "yyyy-MM");
+  const { setOpen: setChatOpen, setDraft: setChatDraft } = useChatStore();
 
   const monthly = useExpensesMonthly(period);
   const trends = useExpenseTrends(6);
@@ -185,6 +187,29 @@ export default function CashflowPage() {
                 <Badge variant={qualityInfo.variant} className="text-[10px]">{t("forecastQuality")}: {qualityInfo.label}</Badge>
               )}
               <Badge variant="outline" className="text-[10px]">{tc("forecastDisclaimer")}</Badge>
+              {!isNoTransactions && !isInsufficientData && forecastData.length > 0 && !forecast.isLoading && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const f = forecastData[0]!;
+                    const last = forecastData[forecastData.length - 1]!;
+                    setChatDraft(
+                      t("forecastDraft", {
+                        net: formatCurrency(f.expected),
+                        low: formatCurrency(f.lower),
+                        high: formatCurrency(f.upper),
+                        until: String(last.period ?? ""),
+                        quality: qualityInfo.label,
+                      }),
+                    );
+                    setChatOpen(true);
+                  }}
+                  className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/5 px-2.5 py-1 text-[10px] font-medium text-primary hover:bg-primary/10 transition-colors"
+                >
+                  <Sparkles className="h-3 w-3" />
+                  {t("forecastExplain")}
+                </button>
+              )}
             </div>
           </div>
         </CardHeader>
@@ -243,7 +268,13 @@ export default function CashflowPage() {
                 )}
               </div>
 
-              <ForecastChart data={forecastData} valueFormatter={(v) => formatCurrency(v)} />
+              <CombinedTrendForecastChart
+                historical={trendData}
+                forecast={forecastData}
+                valueFormatter={(v) => formatCurrency(v)}
+              />
+
+              <p className="mt-2 text-[10px] text-text-muted/70">{t("combinedChartNote")}</p>
 
               {categoryForecasts.length > 0 && (
                 <div className="mt-6">

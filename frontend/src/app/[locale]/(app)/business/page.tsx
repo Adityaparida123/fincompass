@@ -30,9 +30,26 @@ const BUSINESS_TYPES = [
   "other",
 ] as const;
 
+const BUSINESS_CATEGORIES = [
+  "agri",
+  "food_processing",
+  "handicrafts",
+  "textiles",
+  "retail",
+  "services",
+  "transportation",
+  "dairy",
+  "poultry",
+  "fisheries",
+] as const;
+
+const BUSINESS_STAGES = ["idea", "starting", "growing", "stable", "expanding"] as const;
+
 interface BusinessForm {
   business_name: string;
   business_type: string;
+  business_category: string;
+  business_stage: string;
   main_products: string;
   village: string;
   district: string;
@@ -40,8 +57,11 @@ interface BusinessForm {
   started_on: string;
   avg_monthly_sales: string;
   avg_monthly_expenses: string;
+  monthly_income_estimate: string;
   workers_count: string;
   typical_customers: string;
+  financial_goals: string;
+  business_goals: string;
   seasonal: boolean;
   season_note: string;
 }
@@ -49,6 +69,8 @@ interface BusinessForm {
 const EMPTY_FORM: BusinessForm = {
   business_name: "",
   business_type: "",
+  business_category: "",
+  business_stage: "",
   main_products: "",
   village: "",
   district: "",
@@ -56,8 +78,11 @@ const EMPTY_FORM: BusinessForm = {
   started_on: "",
   avg_monthly_sales: "",
   avg_monthly_expenses: "",
+  monthly_income_estimate: "",
   workers_count: "",
   typical_customers: "",
+  financial_goals: "",
+  business_goals: "",
   seasonal: false,
   season_note: "",
 };
@@ -79,6 +104,8 @@ export default function BusinessProfilePage() {
     setForm({
       business_name: data.business_name ?? "",
       business_type: data.business_type ?? "",
+      business_category: data.business_category ?? "",
+      business_stage: data.business_stage ?? "",
       main_products: data.main_products ?? "",
       village: data.village ?? "",
       district: data.district ?? "",
@@ -88,8 +115,12 @@ export default function BusinessProfilePage() {
         data.avg_monthly_sales != null ? String(data.avg_monthly_sales) : "",
       avg_monthly_expenses:
         data.avg_monthly_expenses != null ? String(data.avg_monthly_expenses) : "",
+      monthly_income_estimate:
+        data.monthly_income_estimate != null ? String(data.monthly_income_estimate) : "",
       workers_count: data.workers_count != null ? String(data.workers_count) : "",
       typical_customers: data.typical_customers ?? "",
+      financial_goals: (data.financial_goals ?? []).join(", "),
+      business_goals: (data.business_goals ?? []).join(", "),
       seasonal: data.seasonal ?? false,
       season_note: data.season_note ?? "",
     });
@@ -106,6 +137,8 @@ export default function BusinessProfilePage() {
     const body: Record<string, unknown> = {
       business_name: form.business_name || null,
       business_type: form.business_type || null,
+      business_category: form.business_category || null,
+      business_stage: form.business_stage || null,
       main_products: form.main_products || null,
       village: form.village || null,
       district: form.district || null,
@@ -114,8 +147,24 @@ export default function BusinessProfilePage() {
       avg_monthly_sales: form.avg_monthly_sales === "" ? null : Number(form.avg_monthly_sales),
       avg_monthly_expenses:
         form.avg_monthly_expenses === "" ? null : Number(form.avg_monthly_expenses),
+      monthly_income_estimate:
+        form.monthly_income_estimate === "" ? null : Number(form.monthly_income_estimate),
       workers_count: form.workers_count === "" ? null : Number(form.workers_count),
       typical_customers: form.typical_customers || null,
+      financial_goals:
+        form.financial_goals.trim() === ""
+          ? null
+          : form.financial_goals
+              .split(",")
+              .map((g) => g.trim())
+              .filter(Boolean),
+      business_goals:
+        form.business_goals.trim() === ""
+          ? null
+          : form.business_goals
+              .split(",")
+              .map((g) => g.trim())
+              .filter(Boolean),
       seasonal: form.seasonal,
       season_note: form.season_note || null,
     };
@@ -156,6 +205,24 @@ export default function BusinessProfilePage() {
                 ))}
               </Select>
             </div>
+            <div>
+              <Label>{t("businessCategory")}</Label>
+              <Select value={form.business_category} onChange={(e) => set("business_category", e.target.value)}>
+                <option value="">{t("selectCategory")}</option>
+                {BUSINESS_CATEGORIES.map((bc) => (
+                  <option key={bc} value={bc}>{t(`category_${bc}`)}</option>
+                ))}
+              </Select>
+            </div>
+            <div>
+              <Label>{t("businessStage")}</Label>
+              <Select value={form.business_stage} onChange={(e) => set("business_stage", e.target.value)}>
+                <option value="">{t("selectStage")}</option>
+                {BUSINESS_STAGES.map((bs) => (
+                  <option key={bs} value={bs}>{t(`stage_${bs}`)}</option>
+                ))}
+              </Select>
+            </div>
             <div className="sm:col-span-2">
               <Label>{t("mainProducts")}</Label>
               <Textarea rows={2} value={form.main_products} onChange={(e) => set("main_products", e.target.value)} placeholder={t("phMainProducts")} />
@@ -183,6 +250,20 @@ export default function BusinessProfilePage() {
             <div>
               <Label>{t("avgMonthlyExpenses")}</Label>
               <Input type="number" min="0" value={form.avg_monthly_expenses} onChange={(e) => set("avg_monthly_expenses", e.target.value)} placeholder={t("phAmount")} />
+            </div>
+            <div>
+              <Label>{t("monthlyIncomeEstimate")}</Label>
+              <Input type="number" min="0" value={form.monthly_income_estimate} onChange={(e) => set("monthly_income_estimate", e.target.value)} placeholder={t("phAmount")} />
+            </div>
+            <div className="sm:col-span-2">
+              <Label>{t("financialGoals")}</Label>
+              <Input value={form.financial_goals} onChange={(e) => set("financial_goals", e.target.value)} placeholder={t("phGoals")} />
+              <p className="mt-1 text-[11px] text-text-muted">{t("goalsHint")}</p>
+            </div>
+            <div className="sm:col-span-2">
+              <Label>{t("businessGoals")}</Label>
+              <Input value={form.business_goals} onChange={(e) => set("business_goals", e.target.value)} placeholder={t("phGoals")} />
+              <p className="mt-1 text-[11px] text-text-muted">{t("goalsHint")}</p>
             </div>
             <div>
               <Label>{t("workers")}</Label>

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { FileUp, UploadCloud } from "lucide-react";
+import { FileUp, UploadCloud, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge, Input, Progress } from "@/components/ui/input";
 import {
@@ -18,7 +18,8 @@ import { ApiRequestError } from "@/lib/api";
 import { CATEGORIES } from "@/lib/constants";
 import { resolveScope } from "@/lib/expense-scope";
 import { formatCurrency, toNumber } from "@/lib/utils";
-import type { StatementPreviewTransaction } from "@/types";
+import { useChatStore } from "@/stores/chat-store";
+import type { StatementAnalyzeResponse, StatementPreviewTransaction } from "@/types";
 
 const ACCEPT =
   ".pdf,.xlsx,.xls,.csv,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv";
@@ -42,6 +43,7 @@ export function ImportStatementDialog({
   const tc = useTranslations("common");
   const analyze = useAnalyzeStatement();
   const confirmImport = useImportStatement();
+  const { setOpen: setChatOpen, setDraft: setChatDraft } = useChatStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [step, setStep] = useState<Step>("upload");
@@ -49,6 +51,7 @@ export function ImportStatementDialog({
   const [progress, setProgress] = useState(0);
   const [preview, setPreview] = useState<StatementPreviewTransaction[]>([]);
   const [rows, setRows] = useState<EditableRow[]>([]);
+  const [summary, setSummary] = useState<StatementAnalyzeResponse | null>(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -68,6 +71,7 @@ export function ImportStatementDialog({
       setProgress(0);
       setPreview([]);
       setRows([]);
+      setSummary(null);
       setError("");
       analyze.reset();
       confirmImport.reset();
@@ -84,6 +88,7 @@ export function ImportStatementDialog({
       const result = await analyze.mutateAsync(file);
       setPreview(result.transactions);
       setRows(result.transactions.map((tx) => ({ ...tx, selected: !tx.is_duplicate })));
+      setSummary(result);
       setProgress(100);
       setStep("review");
     } catch (err) {
@@ -227,6 +232,79 @@ export function ImportStatementDialog({
                   income: formatCurrency(selectedIncome),
                 })}
               </p>
+            )}
+
+            {summary?.start_date && (
+              <div className="rounded-xl border bg-surface-card p-4">
+                <div className="mb-3 flex items-center justify-between gap-2">
+                  <p className="text-xs font-semibold uppercase tracking-[0.06em] text-text-muted">
+                    {t("summaryTitle")}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setChatDraft(
+                        t("summaryDraft", {
+                          start: summary.start_date ?? "",
+                          end: summary.end_date ?? "",
+                          income: formatCurrency(toNumber(summary.income_total ?? "0")),
+                          expenses: formatCurrency(toNumber(summary.expense_total ?? "0")),
+                          net: formatCurrency(toNumber(summary.net_cash_flow ?? "0")),
+                        }),
+                      );
+                      setChatOpen(true);
+                      onOpenChange(false);
+                    }}
+                    className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
+                  >
+                    <MessageCircle className="h-3 w-3" />
+                    {t("summaryAsk")}
+                  </button>
+                </div>
+                <dl className="grid gap-2 sm:grid-cols-3">
+                  <div className="rounded-lg border border-border/70 p-3">
+                    <dt className="text-[10px] uppercase tracking-[0.06em] text-text-muted">{t("summaryPeriod")}</dt>
+                    <dd className="mt-1 text-sm font-medium text-text-primary">
+                      {summary.start_date} → {summary.end_date}
+                    </dd>
+                  </div>
+                  <div className="rounded-lg border border-border/70 p-3">
+                    <dt className="text-[10px] uppercase tracking-[0.06em] text-text-muted">{t("summaryIncome")}</dt>
+                    <dd className="mt-1 text-sm font-semibold text-text-primary">
+                      {formatCurrency(toNumber(summary.income_total ?? "0"))}
+                    </dd>
+                  </div>
+                  <div className="rounded-lg border border-border/70 p-3">
+                    <dt className="text-[10px] uppercase tracking-[0.06em] text-text-muted">{t("summaryExpenses")}</dt>
+                    <dd className="mt-1 text-sm font-semibold text-text-primary">
+                      {formatCurrency(toNumber(summary.expense_total ?? "0"))}
+                    </dd>
+                  </div>
+                  <div className="rounded-lg border border-border/70 p-3">
+                    <dt className="text-[10px] uppercase tracking-[0.06em] text-text-muted">{t("summaryNet")}</dt>
+                    <dd
+                      className={`mt-1 text-sm font-semibold ${
+                        (summary.net_cash_flow ?? "0").startsWith("-") ? "text-destructive" : "text-emerald-600"
+                      }`}
+                    >
+                      {formatCurrency(toNumber(summary.net_cash_flow ?? "0"))}
+                    </dd>
+                  </div>
+                  <div className="rounded-lg border border-border/70 p-3">
+                    <dt className="text-[10px] uppercase tracking-[0.06em] text-text-muted">{t("summaryBusiness")}</dt>
+                    <dd className="mt-1 text-sm font-semibold text-text-primary">
+                      {formatCurrency(toNumber(summary.business_total ?? "0"))}
+                    </dd>
+                  </div>
+                  <div className="rounded-lg border border-border/70 p-3">
+                    <dt className="text-[10px] uppercase tracking-[0.06em] text-text-muted">{t("summaryPersonal")}</dt>
+                    <dd className="mt-1 text-sm font-semibold text-text-primary">
+                      {formatCurrency(toNumber(summary.personal_total ?? "0"))}
+                    </dd>
+                  </div>
+                </dl>
+                <p className="mt-2 text-[10px] text-text-muted/70">{t("summaryScopeNote")}</p>
+              </div>
             )}
 
             <div className="max-h-[45vh] overflow-auto rounded-lg border">

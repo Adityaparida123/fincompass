@@ -8,7 +8,7 @@ import { format } from "date-fns";
 import { useChatStore } from "@/stores/chat-store";
 import { useUIStore } from "@/stores/ui-store";
 import { api } from "@/lib/api";
-import { generateFollowUps } from "@/lib/chat-followups";
+import { generateFollowUps, type DashboardContext } from "@/lib/chat-followups";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -22,6 +22,7 @@ export function FinAIChat() {
   const [input, setInput] = useState("");
   const [followUps, setFollowUps] = useState<string[]>([]);
   const lastFollowUpsRef = useRef<string[]>([]);
+  const dashboardContextRef = useRef<DashboardContext | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const finaiEnabled = useUIStore((s) => s.finaiEnabled);
   const followUpsEnabled = useUIStore((s) => s.followUpsEnabled);
@@ -42,6 +43,32 @@ export function FinAIChat() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
+
+  useEffect(() => {
+    if (!isOpen || dashboardContextRef.current) return;
+    let active = true;
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE}/financial-health`, {
+          headers: { Authorization: `Bearer ${api.getAccessToken()}` },
+          credentials: "include",
+        });
+        if (!active || !res.ok) return;
+        const data = (await res.json()) as { score?: number; label?: string };
+        if (typeof data.score === "number") {
+          dashboardContextRef.current = {
+            healthScore: data.score,
+            healthLabel: data.label ?? undefined,
+          };
+        }
+      } catch {
+        // context stays empty → default follow-up behaviour
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [isOpen]);
 
   const activeDraft = isOpen ? draft : null;
   const value = activeDraft ?? input;
@@ -97,7 +124,7 @@ export function FinAIChat() {
           setSessionId(fallback.session_id);
           addMessage({ id: crypto.randomUUID(), role: "assistant", content: fallback.reply, timestamp: new Date() });
           const next = followUpsEnabled
-            ? generateFollowUps(text, fallback.reply, assistantTurn, lastFollowUpsRef.current)
+            ? generateFollowUps(text, fallback.reply, assistantTurn, lastFollowUpsRef.current, dashboardContextRef.current ?? {})
             : [];
           lastFollowUpsRef.current = next;
           setFollowUps(next);
@@ -139,7 +166,7 @@ export function FinAIChat() {
       const finalReply = assistantText || "I wasn't able to generate a response. Please try rephrasing your question.";
       addMessage({ id: assistantId, role: "assistant", content: finalReply, timestamp: new Date() });
       const next = followUpsEnabled
-        ? generateFollowUps(text, finalReply, assistantTurn, lastFollowUpsRef.current)
+        ? generateFollowUps(text, finalReply, assistantTurn, lastFollowUpsRef.current, dashboardContextRef.current ?? {})
         : [];
       lastFollowUpsRef.current = next;
       setFollowUps(next);

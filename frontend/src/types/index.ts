@@ -11,6 +11,8 @@ export interface UserSummary {
 export interface BusinessProfile {
   business_name: string | null;
   business_type: string | null;
+  business_category: string | null;
+  business_stage: string | null;
   main_products: string | null;
   village: string | null;
   district: string | null;
@@ -18,10 +20,14 @@ export interface BusinessProfile {
   started_on: string | null;
   avg_monthly_sales: number | null;
   avg_monthly_expenses: number | null;
+  monthly_income_estimate: number | null;
   workers_count: number | null;
   typical_customers: string | null;
   seasonal: boolean;
   season_note: string | null;
+  financial_goals: string[] | null;
+  business_goals: string[] | null;
+  demo_synthetic?: boolean;
 }
 
 export interface TokenPair {
@@ -100,6 +106,13 @@ export interface StatementAnalyzeResponse {
   skipped_rows: number;
   transactions: StatementPreviewTransaction[];
   message: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  income_total: string | null;
+  expense_total: string | null;
+  net_cash_flow: string | null;
+  business_total: string | null;
+  personal_total: string | null;
 }
 
 export interface StatementConfirmResponse {
@@ -206,6 +219,27 @@ export interface ReadinessResult {
   factors: ReadinessFactor[];
   summary: string;
   insufficient_data?: boolean;
+}
+
+export interface FinancialHealthFactor {
+  name: string;
+  score: number;
+  weight: number;
+  direction: "positive" | "negative" | "neutral";
+  explanation: string;
+  value: string | null;
+}
+
+export interface FinancialHealthResult {
+  score: number;
+  label: string;
+  version: string;
+  factors: FinancialHealthFactor[];
+  summary: string;
+  insufficient_data?: boolean;
+  is_credit_score: boolean;
+  previous_score: number | null;
+  change: number | null;
 }
 
 export interface ScoreCorrectionResult {

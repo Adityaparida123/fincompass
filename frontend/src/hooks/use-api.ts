@@ -24,6 +24,7 @@ import type {
   RecycleBinItem,
   EMIResult,
   LoanSimulationResult,
+  FinancialHealthResult,
   StatementAnalyzeResponse,
   StatementConfirmResponse,
   StatementConfirmItem,
@@ -95,6 +96,7 @@ export function useCreateTransaction() {
       qc.invalidateQueries({ queryKey: ["expenses"] });
       qc.invalidateQueries({ queryKey: ["cashflow"] });
       qc.invalidateQueries({ queryKey: ["readiness"] });
+      qc.invalidateQueries({ queryKey: ["financial-health"] });
       qc.invalidateQueries({ queryKey: ["ml"] });
     },
   });
@@ -109,6 +111,7 @@ export function useDeleteTransaction() {
       qc.invalidateQueries({ queryKey: ["expenses"] });
       qc.invalidateQueries({ queryKey: ["cashflow"] });
       qc.invalidateQueries({ queryKey: ["readiness"] });
+      qc.invalidateQueries({ queryKey: ["financial-health"] });
       qc.invalidateQueries({ queryKey: ["ml"] });
     },
   });
@@ -143,6 +146,7 @@ export function useImportStatement() {
       qc.invalidateQueries({ queryKey: ["expenses"] });
       qc.invalidateQueries({ queryKey: ["cashflow"] });
       qc.invalidateQueries({ queryKey: ["readiness"] });
+      qc.invalidateQueries({ queryKey: ["financial-health"] });
       qc.invalidateQueries({ queryKey: ["ml"] });
     },
   });
@@ -165,6 +169,7 @@ export function useCreateSavingsGoal() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["savings"] });
       qc.invalidateQueries({ queryKey: ["readiness"] });
+      qc.invalidateQueries({ queryKey: ["financial-health"] });
     },
   });
 }
@@ -227,6 +232,7 @@ export function useCreateDebt() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["debt"] });
       qc.invalidateQueries({ queryKey: ["readiness"] });
+      qc.invalidateQueries({ queryKey: ["financial-health"] });
     },
   });
 }
@@ -237,6 +243,16 @@ export function useReadiness() {
   return useQuery({
     queryKey: ["readiness", user?.id ?? "anonymous"],
     queryFn: () => api.get<ReadinessResult>("/credit-readiness"),
+    enabled: !!user?.id && isAuthenticated,
+  });
+}
+
+export function useFinancialHealth() {
+  const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  return useQuery({
+    queryKey: ["financial-health", user?.id ?? "anonymous"],
+    queryFn: () => api.get<FinancialHealthResult>("/financial-health"),
     enabled: !!user?.id && isAuthenticated,
   });
 }

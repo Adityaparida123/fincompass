@@ -13,9 +13,19 @@ export type ChatTopic =
   | "sales"
   | "schemes"
   | "cashflow"
+  | "health"
   | "general";
 
+/** Live dashboard facts used to personalize follow-up suggestions. */
+export interface DashboardContext {
+  healthScore?: number;
+  healthLabel?: string;
+  netCashFlow?: string;
+  topExpenseCategory?: string;
+}
+
 const TOPIC_KEYWORDS: Array<[ChatTopic, RegExp]> = [
+  ["health", /\b(health score|health is|wellbeing|financial health|score is)\b/i],
   ["pricing", /\b(price|pricing|charge|rate|margin|mrp|daam|कीमत|दाम)\b/i],
   ["inventory", /\b(stock|inventory|restock|purchase|buy stock|maal)\b/i],
   [
@@ -140,6 +150,14 @@ const TOPIC_FOLLOW_UPS: Record<ChatTopic, string[]> = {
     "What documents help show financial consistency?",
     "Can you explain my readiness breakdown simply?",
   ],
+  health: [
+    "What is driving my health score up or down?",
+    "Which factor needs the most attention right now?",
+    "How is this score different from a credit score?",
+    "What is the quickest way to move my score higher?",
+    "Does this score stay private and between us?",
+    "How does my health score change each month?",
+  ],
   income: [
     "Is my income stable enough month to month?",
     "How do I plan for irregular income?",
@@ -196,14 +214,28 @@ function normalize(text: string): string {
  * by the user, blends in one question from a related topic so sets evolve
  * across the conversation, and never repeats the previous set or echoes
  * the user's own question.
+ *
+ * When `dashboardContext` is provided, live dashboard facts (health score,
+ * net cash flow, biggest expense category) are blended in first so the
+ * suggestions reflect the user's actual numbers. Omitting it keeps the
+ * exact previous behaviour, so existing callers and tests are unaffected.
  */
 export function generateFollowUps(
   userMessage: string,
   assistantReply: string,
   turnIndex: number,
   previousSuggestions: string[] = [],
+  dashboardContext: DashboardContext = {},
 ): string[] {
-  const topic = detectChatTopic(`${userMessage} ${assistantReply.slice(0, 400)}`);
+  const hasContext = Object.values(dashboardContext).some(
+    (v) => v != null && v !== "",
+  );
+  const contextLine = hasContext
+    ? ` context: health status ${dashboardContext.healthScore}${dashboardContext.healthLabel ? ` (${dashboardContext.healthLabel})` : ""}${dashboardContext.netCashFlow ? `, net cash flow ${dashboardContext.netCashFlow}` : ""}${dashboardContext.topExpenseCategory ? `, largest expense category ${dashboardContext.topExpenseCategory}` : ""}`
+    : "";
+  const topic = detectChatTopic(
+    `${userMessage} ${assistantReply.slice(0, 400)}${contextLine}`,
+  );
   const pool = TOPIC_FOLLOW_UPS[topic];
   const amount = extractAmount(userMessage);
   const context = { amount: amount ? formatAmount(amount) : "₹50", nextAmount: nextAmount(amount ?? 50) };
@@ -222,6 +254,32 @@ export function generateFollowUps(
   const seen = new Set(previousSuggestions.map(normalize));
   const userNorm = normalize(userMessage);
   const results: string[] = [];
+
+  if (hasContext) {
+    const dataAware: string[] = [];
+    if (dashboardContext.healthScore != null) {
+      dataAware.push(
+        `My dashboard health is ${dashboardContext.healthScore}/100${dashboardContext.healthLabel ? ` (${dashboardContext.healthLabel})` : ""}. What is driving it and what should I improve first?`,
+      );
+    }
+    if (dashboardContext.netCashFlow != null) {
+      dataAware.push(
+        `My net cash flow right now is about ${dashboardContext.netCashFlow}. What should I do first to stay safe?`,
+      );
+    }
+    if (dashboardContext.topExpenseCategory != null) {
+      dataAware.push(
+        `My biggest expense category is "${dashboardContext.topExpenseCategory}". Is that reasonable and where can I cut?`,
+      );
+    }
+    for (const candidate of dataAware) {
+      const norm = normalize(candidate);
+      if (seen.has(norm)) continue;
+      if (norm === userNorm || userNorm.includes(norm) || norm.includes(userNorm)) continue;
+      seen.add(norm);
+      results.push(candidate);
+    }
+  }
 
   for (let offset = 0; offset < candidates.length && results.length < 3; offset++) {
     const candidate = candidates[(offset + turnIndex * 3) % candidates.length];
