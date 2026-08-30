@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import (
+    advisor,
     auth,
     budget,
     cashflow,
@@ -146,6 +147,7 @@ app.include_router(chat.router, prefix=API_PREFIX)
 app.include_router(notifications.router, prefix=API_PREFIX)
 app.include_router(recycle_bin.router, prefix=API_PREFIX)
 app.include_router(ml.router, prefix=API_PREFIX)
+app.include_router(advisor.router, prefix=API_PREFIX)
 
 
 @app.api_route("/", methods=["GET", "HEAD"])

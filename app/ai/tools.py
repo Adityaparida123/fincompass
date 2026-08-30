@@ -222,6 +222,49 @@ TOOL_SPECS: list[dict[str, Any]] = [
             "parameters": {"type": "object", "properties": {}},
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "assess_purchase_affordability",
+            "description": (
+                "Deterministic 'can I afford this?' check using the user's consented averages. "
+                "Compares buy now, save first, and finance. Does not write data."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string"},
+                    "amount": {"type": "number", "description": "Purchase amount in INR."},
+                    "monthly_benefit_income": {"type": "number"},
+                    "financing_amount": {"type": "number"},
+                    "financing_interest_rate": {"type": "number"},
+                    "financing_tenure_months": {"type": "integer"},
+                },
+                "required": ["amount"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "simulate_financial_scenario",
+            "description": (
+                "What-if simulation of income/expense/debt/savings changes. Read-only. "
+                "Uses the same financial health engine as the dashboard."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "income_delta": {"type": "number"},
+                    "expenses_delta": {"type": "number"},
+                    "debt_delta": {"type": "number"},
+                    "savings_contribution": {"type": "number"},
+                    "one_time_purchase": {"type": "number"},
+                    "label": {"type": "string"},
+                },
+            },
+        },
+    },
 ]
 
 TOOL_REGISTRY: dict[str, Callable[[ToolContext, dict[str, Any]], Coroutine[Any, Any, Any]]] = {}
@@ -504,6 +547,73 @@ async def tool_get_ml_savings_capacity(ctx: ToolContext, args: dict[str, Any]) -
         "explanation": result.get("explanation", []),
         "model": result.get("model"),
         "disclaimer": "ML savings estimate is a range, not a guarantee.",
+    }
+
+
+@_register("assess_purchase_affordability")
+async def tool_assess_purchase(ctx: ToolContext, args: dict[str, Any]) -> dict[str, Any]:
+    from app.db.enums import ConsentType
+    from app.services.consent.service import require_consent
+    from app.services.finance.purchase_advisor import PurchaseInput, assess
+    from app.services.readiness.factors import build_readiness_input
+
+    await require_consent(ctx.db, ctx.user_id, ConsentType.financial_data_analysis)
+    base = await build_readiness_input(ctx.db, ctx.user_id)
+    purchase = PurchaseInput(
+        amount=Decimal(str(args["amount"])),
+        monthly_benefit_income=(
+            Decimal(str(args["monthly_benefit_income"]))
+            if args.get("monthly_benefit_income") is not None
+            else None
+        ),
+        financing_amount=(
+            Decimal(str(args["financing_amount"])) if args.get("financing_amount") is not None else None
+        ),
+        financing_interest_rate=(
+            Decimal(str(args["financing_interest_rate"]))
+            if args.get("financing_interest_rate") is not None
+            else None
+        ),
+        financing_tenure_months=(
+            int(args["financing_tenure_months"]) if args.get("financing_tenure_months") is not None else None
+        ),
+    )
+    result = assess(base, purchase, name=args.get("name"))
+    return _to_dict(result)
+
+
+@_register("simulate_financial_scenario")
+async def tool_simulate_scenario(ctx: ToolContext, args: dict[str, Any]) -> dict[str, Any]:
+    from app.db.enums import ConsentType
+    from app.services.consent.service import require_consent
+    from app.services.finance.simulator import (
+        ScenarioDeltas,
+        apply_deltas,
+        build_snapshot,
+        risk_label,
+    )
+    from app.services.readiness.factors import build_readiness_input
+
+    await require_consent(ctx.db, ctx.user_id, ConsentType.financial_data_analysis)
+    base = await build_readiness_input(ctx.db, ctx.user_id)
+    deltas = ScenarioDeltas(
+        income_delta=Decimal(str(args.get("income_delta") or 0)),
+        expenses_delta=Decimal(str(args.get("expenses_delta") or 0)),
+        debt_delta=Decimal(str(args.get("debt_delta") or 0)),
+        savings_contribution=Decimal(str(args.get("savings_contribution") or 0)),
+        one_time_purchase=Decimal(str(args.get("one_time_purchase") or 0)),
+    )
+    baseline = build_snapshot(base)
+    adjusted = apply_deltas(base, deltas)
+    scenario = build_snapshot(adjusted)
+    return {
+        "label": args.get("label"),
+        "baseline": _to_dict(baseline),
+        "scenario": _to_dict(scenario),
+        "score_change": (scenario.health_score or 0) - (baseline.health_score or 0),
+        "risk_before": risk_label(base, baseline),
+        "risk_after": risk_label(adjusted, scenario),
+        "disclaimer": "Simulation only. Nothing is written to the user's financial records.",
     }
 
 

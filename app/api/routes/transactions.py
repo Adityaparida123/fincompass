@@ -9,6 +9,7 @@ from app.api.dependencies import get_current_user, rate_limit_statement
 from app.db.enums import ConsentType, TransactionSource, TransactionType
 from app.db.mongo import MongoDatabase
 from app.db.session import get_session
+from app.schemas.advisor import SmartParseOut, SmartParseRequest
 from app.schemas.common import Page
 from app.schemas.import_statement import (
     StatementAnalyzeResponse,
@@ -17,6 +18,7 @@ from app.schemas.import_statement import (
 )
 from app.schemas.transaction import TransactionCreate, TransactionRead, TransactionUpdate
 from app.services.consent.service import require_consent
+from app.services.finance.smart_parse import parse_text
 from app.services.finance.transactions import (
     amount_in_range,
     create_transaction,
@@ -125,6 +127,21 @@ async def confirm_statement(
     """Persist the user-confirmed statement transactions (duplicates skipped)."""
     await _require_financial_consent(db, user.id)
     return await confirm_statement_import(db, user.id, data.transactions)
+
+
+@router.post("/parse-smart", response_model=SmartParseOut, status_code=200)
+async def parse_smart(
+    data: SmartParseRequest,
+    user=Depends(get_current_user),
+    db: MongoDatabase = Depends(get_session),
+) -> SmartParseOut:
+    """Best-effort parse of an UPI/bank-SMS snippet into a reviewable draft.
+
+    Nothing is saved here; the user reviews the suggestion and saves it via
+    the regular transaction endpoints.
+    """
+    await _require_financial_consent(db, user.id)
+    return await parse_text(data.text)
 
 
 @router.get("/{transaction_id}", response_model=TransactionRead)
