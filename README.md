@@ -195,6 +195,18 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 - **ReDoc:** http://localhost:8000/redoc
 - **Health:** http://localhost:8000/health
 
+### Demo data (optional)
+
+```bash
+.\.venv\Scripts\python.exe scripts\seed_demo_data.py          # idempotent
+.\.venv\Scripts\python.exe scripts\seed_demo_data.py --reset  # recreate
+```
+
+Seeds the account `demo@fincompass.app` / `Demo@1234` (profile "Demo Store")
+with ~7 months of transactions, a synthetic business profile (flagged
+`demo_synthetic`), savings goals, a debt obligation, and a computed financial
+health score — useful for exploring the dashboard, Action Plan, and FinAI.
+
 ---
 
 ## Running Tests
@@ -293,6 +305,16 @@ curl -X POST http://localhost:8000/api/v1/chat \
   -d '{"message":"Can I afford a ₹50,000 loan?"}'
 ```
 
+### Example: Financial Health Score (requires auth + consent)
+
+```bash
+curl http://localhost:8000/api/v1/financial-health \
+  -H "Authorization: Bearer <access_token>"
+```
+A composite 0–100 indicator of five explained pillars (cash flow, expense
+control, savings, debt, stability). It is **not a credit score** — every
+response carries `is_credit_score: false`.
+
 ---
 
 ## Financial Engine
@@ -310,10 +332,14 @@ Deterministic services (never LLM-computed):
 | EMI | `POST /api/v1/tools/emi` |
 | Loan simulation | `POST /api/v1/tools/loan-simulation` |
 | Credit readiness | `GET /api/v1/credit-readiness`, `POST /api/v1/credit-readiness/correct` |
+| Financial health | `GET /api/v1/financial-health` |
 | Recommendations | `GET /api/v1/recommendations` |
 | Government schemes | `GET /api/v1/schemes`, `POST /api/v1/schemes/match` |
 
 Monetary values use Python `Decimal` for precision.
+
+See `FINANCIAL_ENGINE.md` and `docs/ML_SYSTEM.md` for the scoring and ML
+methodology.
 
 ---
 
@@ -324,7 +350,7 @@ User Question → Intent Router → Context Retrieval → Tool Selection
     → Deterministic Financial Tool → Result → LLM Explanation → Safety Validation → Response
 ```
 
-- **Tools:** EMI, cash flow, savings, expenses, budget, debt, emergency buffer, credit readiness, loan simulation, schemes, financial summary, ML spending patterns, cash-flow forecast, ML savings capacity
+- **Tools:** EMI, cash flow, savings, expenses, budget, debt, emergency buffer, credit readiness, loan simulation, schemes, financial summary, ML spending patterns, cash-flow forecast, ML savings capacity, financial health
 - **Languages:** English, Hindi, and Hinglish (including code-switching)
 - **Fallback:** When no LLM is configured, chat returns structured tool-based responses
 - **LLM provider:** Groq via the OpenAI-compatible client (no extra SDK needed)
@@ -362,6 +388,7 @@ recalculates or invents figures.
 - `financial_data_analysis`
 - `personalized_recommendations`
 - `chat_financial_context`
+- `ml_analysis`
 
 ---
 
