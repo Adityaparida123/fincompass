@@ -124,6 +124,8 @@ class Settings(BaseSettings):
     SMTP_USERNAME: str | None = None
     SMTP_PASSWORD: str | None = None
     SMTP_FROM: str | None = None
+    RESEND_API_KEY: str | None = None
+    RESEND_FROM: str | None = None
     FRONTEND_URL: str = "http://localhost:3000"
 
     KNOWLEDGE_BASE_DIR: str = "knowledge_base"
