@@ -265,7 +265,7 @@ export default function HomePage() {
               <span aria-hidden>·</span>
             </>
           )}
-          <span>{t("businessQuestion")} · {format(new Date(), "EEEE, MMMM d, yyyy")}</span>
+          <span>{format(new Date(), "EEEE, MMMM d, yyyy")}</span>
         </p>
       </div>
 
