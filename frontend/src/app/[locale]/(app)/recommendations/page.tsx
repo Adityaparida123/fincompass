@@ -1,13 +1,15 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton, Badge } from "@/components/ui/input";
-import { PageHeader, EmptyState } from "@/components/common/shared";
+import { Skeleton } from "@/components/ui/input";
+import { EmptyState } from "@/components/common/shared";
 import { useRecommendations } from "@/hooks/use-api";
 import { PageError } from "@/components/charts/responsive-charts";
 import { useChatStore } from "@/stores/chat-store";
-import { MessageCircle, Lightbulb, TrendingUp, Wallet, Receipt, CreditCard, ShieldCheck, PiggyBank, Landmark, HandCoins, AlertTriangle, BarChart3 } from "lucide-react";
+import { MessageCircle, Lightbulb, TrendingUp, Wallet, Receipt, CreditCard, ShieldCheck, PiggyBank, Landmark, HandCoins, AlertTriangle, BarChart3, Sparkles } from "lucide-react";
+import { CommandHeader } from "@/components/spatial/command-header";
+import { GlassPanel } from "@/components/spatial/glass-panel";
+import { SpatialBadge } from "@/components/spatial/spatial-badge";
 
 const TYPE_ICONS: Record<string, typeof Lightbulb> = {
   income: TrendingUp,
@@ -21,12 +23,6 @@ const TYPE_ICONS: Record<string, typeof Lightbulb> = {
   responsible_borrowing: AlertTriangle,
   forecast_alert: BarChart3,
   category_forecast: BarChart3,
-};
-
-const PRIORITY_STYLES: Record<number, string> = {
-  1: "border-l-destructive",
-  2: "border-l-warning",
-  3: "border-l-primary",
 };
 
 export default function RecommendationsPage() {
@@ -44,12 +40,21 @@ export default function RecommendationsPage() {
   const sorted = [...(data?.recommendations ?? [])].sort((a, b) => a.priority - b.priority);
 
   return (
-    <div className="space-y-6">
-      <PageHeader title={t("title")} subtitle={t("subtitle")} />
+    <div className="space-y-6 page-transition">
+      <CommandHeader
+        tag="INTELLIGENCE DIRECTIVES"
+        title={t("title")}
+        subtitle={t("subtitle")}
+        action={
+          <div className="flex items-center gap-2">
+            <SpatialBadge variant="cyan" pulse>{sorted.length} ACTIVE DIRECTIVES</SpatialBadge>
+          </div>
+        }
+      />
 
       {isLoading ? (
         <div className="space-y-3">
-          {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-24 w-full" />)}
+          {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-28 w-full rounded-2xl" />)}
         </div>
       ) : isError ? (
         <PageError message={tc("error")} onRetry={() => refetch()} />
@@ -57,35 +62,38 @@ export default function RecommendationsPage() {
         <div className="space-y-3">
           {sorted.map((r, i) => {
             const Icon = TYPE_ICONS[r.type] ?? Lightbulb;
-            const borderClass = PRIORITY_STYLES[Math.min(r.priority, 3)] ?? "border-l-muted";
+            const glow = r.priority === 1 ? "rose" : r.priority === 2 ? "amber" : "cyan";
+            const badgeVariant = r.priority === 1 ? "rose" : r.priority === 2 ? "amber" : "cyan";
+
             return (
-              <Card key={i} className={`border-l-4 ${borderClass}`}>
-                <CardHeader className="flex flex-row items-start gap-3 pb-2">
-                  <div className="rounded-lg bg-primary/10 p-1.5">
-                    <Icon className="h-4 w-4 text-primary" />
+              <GlassPanel key={i} glow={glow} hudCorners className="p-5">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                  <div className="flex items-start gap-3.5 min-w-0">
+                    <div className="rounded-xl bg-cyan-500/10 border border-cyan-500/20 p-2.5 shrink-0 text-cyan-400 mt-0.5">
+                      <Icon className="h-4 w-4" />
+                    </div>
+                    <div className="space-y-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <SpatialBadge variant={badgeVariant}>P{r.priority}</SpatialBadge>
+                        <h4 className="text-sm font-semibold text-text-primary leading-snug">{r.title}</h4>
+                      </div>
+                      <p className="text-xs text-text-secondary leading-relaxed pt-1">{r.reason}</p>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <CardTitle className="text-sm font-medium leading-snug">{r.title}</CardTitle>
-                  </div>
-                  <Badge variant={r.priority === 1 ? "destructive" : r.priority === 2 ? "secondary" : "outline"} className="shrink-0 text-[10px]">
-                    P{r.priority}
-                  </Badge>
-                </CardHeader>
-                <CardContent className="pl-12">
-                  <p className="text-xs text-text-muted leading-relaxed">{r.reason}</p>
-                  <div className="mt-2 flex items-center gap-2">
-                    <Badge variant="outline" className="text-[10px]">{r.type.replace(/_/g, " ")}</Badge>
+
+                  <div className="flex sm:flex-col items-center sm:items-end justify-between gap-2 shrink-0 pt-2 sm:pt-0">
+                    <SpatialBadge variant="neutral">{r.type.replace(/_/g, " ")}</SpatialBadge>
                     <button
                       type="button"
                       onClick={() => askFinai(r.title)}
-                      className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 text-[10px] font-medium text-primary transition-colors hover:bg-primary/20"
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-3 py-1 text-xs font-mono font-medium text-cyan-300 transition-all hover:bg-cyan-500/20 hover:shadow-[0_0_15px_rgba(0,242,254,0.2)]"
                     >
-                      <MessageCircle className="h-2.5 w-2.5" />
-                      {th("askInsight")}
+                      <Sparkles className="h-3 w-3 text-cyan-400" />
+                      <span>{th("askInsight")}</span>
                     </button>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </GlassPanel>
             );
           })}
         </div>

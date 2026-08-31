@@ -1,14 +1,15 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Skeleton, Badge } from "@/components/ui/input";
-import { PageHeader } from "@/components/common/shared";
+import { Skeleton } from "@/components/ui/input";
 import { useConsents, useGrantConsent, useRevokeConsent } from "@/hooks/use-api";
 import { PageError } from "@/components/charts/responsive-charts";
 import { ApiRequestError } from "@/lib/api";
-import { Lock, Unlock } from "lucide-react";
+import { Lock, Unlock, ShieldCheck, ShieldAlert } from "lucide-react";
+import { CommandHeader } from "@/components/spatial/command-header";
+import { GlassPanel } from "@/components/spatial/glass-panel";
+import { SpatialBadge } from "@/components/spatial/spatial-badge";
 
 const CONSENT_LABELS: Record<string, string> = {
   financial_data_analysis: "financialAnalysis",
@@ -39,11 +40,20 @@ export default function ConsentPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <PageHeader title={t("title")} subtitle={t("revokeWarning")} />
+    <div className="space-y-6 page-transition">
+      <CommandHeader
+        tag="DATA GOVERNANCE & CONSENT"
+        title={t("title")}
+        subtitle={t("revokeWarning")}
+        action={
+          <div className="flex items-center gap-2">
+            <SpatialBadge variant="emerald" pulse>DPDP 2023 COMPLIANT</SpatialBadge>
+          </div>
+        }
+      />
 
       {isLoading ? (
-        <div className="space-y-3">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-20 w-full" />)}</div>
+        <div className="space-y-3">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-24 w-full rounded-2xl" />)}</div>
       ) : isError ? (
         <PageError message={tc("error")} onRetry={() => refetch()} />
       ) : (
@@ -53,30 +63,33 @@ export default function ConsentPage() {
             const granted = item?.status === "granted";
             const labelKey = CONSENT_LABELS[consentType];
             return (
-              <Card key={consentType}>
-                <CardContent className="flex items-center gap-4 py-4">
-                  <div className={`rounded-lg p-2 ${granted ? "bg-income/10" : "bg-surface-container"}`}>
-                    {granted ? <Unlock className="h-4 w-4 text-income" /> : <Lock className="h-4 w-4 text-text-muted" />}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-medium">{t(labelKey as "financialAnalysis")}</p>
-                      <Badge variant={granted ? "success" : "secondary"} className="text-[10px]">
-                        {item ? item.status : t("notGranted")}
-                      </Badge>
+              <GlassPanel key={consentType} glow={granted ? "emerald" : "none"} hudCorners className="p-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-start gap-3.5 min-w-0">
+                    <div className={`rounded-xl p-2.5 shrink-0 ${granted ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30" : "bg-surface-container text-text-muted border border-white/5"}`}>
+                      {granted ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
                     </div>
-                    <p className="text-xs text-text-muted mt-0.5">{CONSENT_DESCRIPTIONS[consentType]}</p>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-sm font-semibold text-text-primary">{t(labelKey as "financialAnalysis")}</h4>
+                        <SpatialBadge variant={granted ? "emerald" : "neutral"}>
+                          {item ? item.status.toUpperCase() : t("notGranted").toUpperCase()}
+                        </SpatialBadge>
+                      </div>
+                      <p className="text-xs text-text-muted mt-1 leading-relaxed">{CONSENT_DESCRIPTIONS[consentType]}</p>
+                    </div>
                   </div>
                   <Button
                     size="sm"
+                    className={`shrink-0 font-bold px-4 ${granted ? "border-white/10 text-text-secondary hover:bg-surface-container" : "bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-[0_0_15px_rgba(0,242,254,0.3)]"}`}
                     variant={granted ? "outline" : "default"}
                     onClick={() => handleToggle(consentType, granted)}
                     disabled={grant.isPending || revoke.isPending}
                   >
                     {granted ? t("revoke") : t("grant")}
                   </Button>
-                </CardContent>
-              </Card>
+                </div>
+              </GlassPanel>
             );
           })}
         </div>

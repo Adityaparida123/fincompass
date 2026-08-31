@@ -3,16 +3,19 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { format } from "date-fns";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input, Label, Skeleton, Badge } from "@/components/ui/input";
+import { Input, Label, Skeleton } from "@/components/ui/input";
 import { BudgetProgressList, ChartCard, PageError } from "@/components/charts/responsive-charts";
-import { EmptyState, PageHeader } from "@/components/common/shared";
+import { EmptyState } from "@/components/common/shared";
 import { useBudgetStatus, useCreateBudget, useDeleteBudget, useMLForecast } from "@/hooks/use-api";
 import { formatCurrency, toNumber } from "@/lib/utils";
 import { ApiRequestError } from "@/lib/api";
 import { CATEGORIES } from "@/lib/constants";
-import { Plus, Target, AlertTriangle } from "lucide-react";
+import { Plus, Target, AlertTriangle, Wallet, PieChart, ShieldCheck } from "lucide-react";
+import { CommandHeader } from "@/components/spatial/command-header";
+import { GlassPanel } from "@/components/spatial/glass-panel";
+import { SpatialMetric } from "@/components/spatial/spatial-metric";
+import { SpatialBadge } from "@/components/spatial/spatial-badge";
 
 export default function BudgetPage() {
   const t = useTranslations("budget");
@@ -48,76 +51,99 @@ export default function BudgetPage() {
   const overBudgetCount = budget.data?.filter((b) => toNumber(b.percent_used) > 100).length ?? 0;
 
   return (
-    <div className="space-y-6">
-      <PageHeader
+    <div className="space-y-6 page-transition">
+      <CommandHeader
+        tag="ALLOCATION PROTOCOL"
         title={t("title")}
-        subtitle={period}
+        subtitle={`Active Fiscal Period: ${period}`}
         action={
-          <Button size="sm" onClick={() => setShowForm(!showForm)}>
-            <Plus className="mr-1.5 h-3.5 w-3.5" />{t("addBudget")}
+          <Button
+            onClick={() => setShowForm(!showForm)}
+            className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold px-4 shadow-[0_0_15px_rgba(0,242,254,0.3)]"
+          >
+            <Plus className="mr-1.5 h-4 w-4" />{t("addBudget")}
           </Button>
         }
       />
 
-      {showForm && (
-        <Card>
-          <CardContent className="pt-6">
-            <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <Label>{t("category")}</Label>
-                <select
-                  value={form.category}
-                  onChange={(e) => setForm({ ...form, category: e.target.value })}
-                  className="w-full h-9 rounded-lg border border-border bg-surface-container-low px-3 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
-                  required
-                >
-                  <option value="" disabled>{t("categoryPlaceholder")}</option>
-                  {CATEGORIES.filter((c) => c !== "income").map((c) => (
-                    <option key={c} value={c}>{c.replace(/_/g, " ")}</option>
-                  ))}
-                </select>
-              </div>
-              <div><Label>{t("limit")}</Label><Input type="number" min="0" step="0.01" value={form.limit_amount} onChange={(e) => setForm({ ...form, limit_amount: e.target.value })} required /></div>
-              <div className="flex gap-2 sm:col-span-2"><Button type="submit" disabled={createBudget.isPending}>{tc("save")}</Button><Button type="button" variant="outline" onClick={() => setShowForm(false)}>{tc("cancel")}</Button></div>
-            </form>
-            {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
-          </CardContent>
-        </Card>
-      )}
-
+      {/* High-Level Budget Metrics */}
       {budget.data?.length ? (
         <div className="grid gap-4 sm:grid-cols-3">
-          <Card>
-            <CardContent className="pt-5">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">Total Budget</p>
-              <p className="mt-1 text-2xl font-bold font-[family-name:var(--font-jetbrains-mono)]">{formatCurrency(totalBudget)}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-5">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">Spent</p>
-              <p className="mt-1 text-2xl font-bold font-[family-name:var(--font-jetbrains-mono)]">{formatCurrency(totalSpent)}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-5">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">Remaining</p>
-              <p className={`mt-1 text-2xl font-bold font-[family-name:var(--font-jetbrains-mono)] ${totalRemaining < 0 ? "text-destructive" : "text-income"}`}>{formatCurrency(totalRemaining)}</p>
-            </CardContent>
-          </Card>
+          <SpatialMetric
+            label="Total Allocation"
+            value={formatCurrency(totalBudget)}
+            subtitle="Configured Monthly Cap"
+            glow="cyan"
+            icon={<Target className="h-4 w-4 text-cyan-400" />}
+          />
+          <SpatialMetric
+            label="Current Outlay"
+            value={formatCurrency(totalSpent)}
+            subtitle={`${totalBudget > 0 ? ((totalSpent / totalBudget) * 100).toFixed(0) : 0}% Utilized`}
+            glow={totalSpent > totalBudget ? "rose" : "amber"}
+            icon={<PieChart className="h-4 w-4 text-amber-400" />}
+          />
+          <SpatialMetric
+            label="Available Buffer"
+            value={formatCurrency(totalRemaining)}
+            subtitle={totalRemaining >= 0 ? "Under Threshold" : "Overrun Detected"}
+            glow={totalRemaining >= 0 ? "emerald" : "rose"}
+            trend={totalRemaining >= 0 ? "up" : "down"}
+            icon={<Wallet className="h-4 w-4 text-emerald-400" />}
+          />
         </div>
       ) : null}
 
+      {/* Add Budget Drawer */}
+      {showForm && (
+        <GlassPanel glow="cyan" hudCorners className="p-6">
+          <div className="flex items-center justify-between pb-3 border-b border-white/5 mb-4">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-cyan-400">{t("addBudget")}</h3>
+            <SpatialBadge variant="cyan">NEW ALLOCATION</SpatialBadge>
+          </div>
+          <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <Label className="text-xs text-text-secondary">{t("category")}</Label>
+              <select
+                value={form.category}
+                onChange={(e) => setForm({ ...form, category: e.target.value })}
+                className="w-full h-10 mt-1 rounded-xl border border-cyan-500/20 bg-surface-container px-3 text-xs text-text-primary focus:outline-none focus:ring-1 focus:ring-cyan-400"
+                required
+              >
+                <option value="" disabled>{t("categoryPlaceholder")}</option>
+                {CATEGORIES.filter((c) => c !== "income").map((c) => (
+                  <option key={c} value={c}>{c.replace(/_/g, " ")}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <Label className="text-xs text-text-secondary">{t("limit")}</Label>
+              <Input className="mt-1 bg-surface-container border-cyan-500/20 font-mono" type="number" min="0" step="0.01" value={form.limit_amount} onChange={(e) => setForm({ ...form, limit_amount: e.target.value })} required />
+            </div>
+            <div className="flex gap-3 sm:col-span-2 pt-2">
+              <Button type="submit" disabled={createBudget.isPending} className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold px-6">
+                {createBudget.isPending ? "SAVING..." : tc("save")}
+              </Button>
+              <Button type="button" variant="outline" onClick={() => setShowForm(false)} className="border-white/10 text-text-secondary">
+                {tc("cancel")}
+              </Button>
+            </div>
+          </form>
+          {error && <p className="mt-3 text-xs font-mono text-rose-400">{error}</p>}
+        </GlassPanel>
+      )}
+
+      {/* Progress Cards */}
       <ChartCard 
         title={t("title")}
         action={overBudgetCount > 0 ? (
-          <Badge variant="destructive" className="text-[10px]">
-            <AlertTriangle className="mr-1 h-3 w-3" />{overBudgetCount} over budget
-          </Badge>
+          <SpatialBadge variant="rose">
+            <AlertTriangle className="mr-1 h-3 w-3 inline" />{overBudgetCount} OVER BUDGET
+          </SpatialBadge>
         ) : undefined}
       >
         {budget.isLoading ? (
-          <div className="space-y-3">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 w-full" />)}</div>
+          <div className="space-y-3">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 w-full rounded-xl" />)}</div>
         ) : budget.isError ? (
           <PageError message={t("error")} />
         ) : budget.data?.length ? (
@@ -141,14 +167,14 @@ export default function BudgetPage() {
             description={t("noBudgetsDesc")}
             icon={Target}
             action={
-              <Button size="sm" onClick={() => setShowForm(true)}>
+              <Button size="sm" onClick={() => setShowForm(true)} className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold">
                 <Plus className="mr-1.5 h-3.5 w-3.5" />Create Budget
               </Button>
             }
           />
         )}
         {!budget.isLoading && !hasForecastData && budget.data?.length ? (
-          <p className="text-xs text-text-muted text-center pt-2 mt-3">{t("noForecastData")}</p>
+          <p className="text-xs font-mono text-text-muted text-center pt-3 border-t border-white/5 mt-3">{t("noForecastData")}</p>
         ) : null}
       </ChartCard>
     </div>

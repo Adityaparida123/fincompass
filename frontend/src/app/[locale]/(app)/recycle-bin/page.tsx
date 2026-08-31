@@ -3,14 +3,16 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { format } from "date-fns";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/input";
-import { PageHeader, EmptyState } from "@/components/common/shared";
+import { EmptyState } from "@/components/common/shared";
 import { useRecycleBin, useRestoreRecycleItem } from "@/hooks/use-api";
 import { PageError } from "@/components/charts/responsive-charts";
 import { ApiRequestError } from "@/lib/api";
-import { Trash2 } from "lucide-react";
+import { Trash2, RotateCcw, Archive } from "lucide-react";
+import { CommandHeader } from "@/components/spatial/command-header";
+import { GlassPanel } from "@/components/spatial/glass-panel";
+import { SpatialBadge } from "@/components/spatial/spatial-badge";
 
 export default function RecycleBinPage() {
   const t = useTranslations("recycleBin");
@@ -32,38 +34,59 @@ export default function RecycleBinPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <PageHeader title={t("title")} subtitle={`${data?.length ?? 0} items`} />
+    <div className="space-y-6 page-transition">
+      <CommandHeader
+        tag="DECOMMISSIONED ENTITIES"
+        title={t("title")}
+        subtitle={`${data?.length ?? 0} archived telemetry artifacts available for recovery`}
+        action={
+          <div className="flex items-center gap-2">
+            <SpatialBadge variant="neutral">SOFT PURGE</SpatialBadge>
+          </div>
+        }
+      />
 
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      {error && <p className="text-xs font-mono text-rose-400">{error}</p>}
 
       {isLoading ? (
-        <div className="space-y-3">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-24 w-full" />)}</div>
+        <div className="space-y-3">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-20 w-full rounded-2xl" />)}</div>
       ) : isError ? (
         <PageError message={tc("error")} onRetry={() => refetch()} />
       ) : data?.length ? (
-        <div className="space-y-2">
+        <div className="space-y-2.5">
           {data.map((item) => (
-            <Card key={item.id}>
-              <CardContent className="flex items-center justify-between py-4">
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium capitalize">{item.resource_type.replace(/_/g, " ")}</p>
-                  <p className="text-xs text-text-muted">{t("deletedAt")}: {format(new Date(item.deleted_at), "PPp")}</p>
+            <GlassPanel key={item.id} hudCorners className="p-4 flex items-center justify-between">
+              <div className="min-w-0 flex-1 flex items-center gap-3">
+                <div className="rounded-xl bg-surface-container p-2 border border-white/5 text-text-muted">
+                  <Archive className="h-4 w-4" />
                 </div>
-                {confirmId === item.id ? (
-                  <div className="flex gap-2">
-                    <Button size="sm" onClick={() => handleRestore(item.id)} disabled={restore.isPending}>{tc("confirm")}</Button>
-                    <Button size="sm" variant="outline" onClick={() => setConfirmId(null)}>{tc("cancel")}</Button>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs font-semibold text-text-primary capitalize">{item.resource_type.replace(/_/g, " ")}</p>
+                    <span className="text-[10px] font-mono text-text-muted">#{item.id}</span>
                   </div>
-                ) : (
-                  <Button size="sm" variant="outline" onClick={() => setConfirmId(item.id)}>{t("restore")}</Button>
-                )}
-              </CardContent>
-            </Card>
+                  <p className="text-[10px] font-mono text-text-muted mt-0.5">{t("deletedAt")}: {format(new Date(item.deleted_at), "PPp")}</p>
+                </div>
+              </div>
+              {confirmId === item.id ? (
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={() => handleRestore(item.id)} disabled={restore.isPending} className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-3 text-xs">
+                    {tc("confirm")}
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => setConfirmId(null)} className="border-white/10 text-xs text-text-secondary">
+                    {tc("cancel")}
+                  </Button>
+                </div>
+              ) : (
+                <Button size="sm" variant="outline" onClick={() => setConfirmId(item.id)} className="border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/10 text-xs font-mono">
+                  <RotateCcw className="mr-1.5 h-3 w-3" />{t("restore")}
+                </Button>
+              )}
+            </GlassPanel>
           ))}
         </div>
       ) : (
-        <EmptyState title={t("noItems")} description="Deleted items will appear here and can be restored within a limited time." icon={Trash2} />
+        <EmptyState title={t("noItems")} description="Deleted records and models will appear here and can be recovered within a 30-day window." icon={Trash2} />
       )}
     </div>
   );

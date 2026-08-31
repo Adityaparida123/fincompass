@@ -12,17 +12,17 @@ import { computeYDomain, computeWeeklyYDomain, computeForecastYDomain, formatCom
 
 // ─── Design Tokens ──────────────────────────────────────────────
 const CHART_COLORS = {
-  teal: "#2dd4bf",
+  teal: "#00f2fe",
   indigo: "#818cf8",
-  amber: "#f59e0b",
-  coral: "#f87171",
-  purple: "#a78bfa",
-  cyan: "#22d3ee",
+  amber: "#fbbf24",
+  coral: "#f43f5e",
+  purple: "#c084fc",
+  cyan: "#38bdf8",
   emerald: "#34d399",
   orange: "#fb923c",
 } as const;
 
-const SERIES = [CHART_COLORS.teal, CHART_COLORS.indigo, CHART_COLORS.amber, CHART_COLORS.coral, CHART_COLORS.purple, CHART_COLORS.cyan];
+const SERIES = [CHART_COLORS.teal, CHART_COLORS.indigo, CHART_COLORS.cyan, CHART_COLORS.emerald, CHART_COLORS.amber, CHART_COLORS.purple];
 
 // ─── Chart Card Container ───────────────────────────────────────
 export function ChartCard({
@@ -43,11 +43,14 @@ export function ChartCard({
   contentClassName?: string;
 }) {
   return (
-    <div className={cn("chart-card rounded-xl border border-border bg-surface-card overflow-hidden", className)}>
+    <div className={cn("chart-card glass-panel hud-corner relative overflow-hidden transition-all duration-200", className)}>
       <div className="flex items-start justify-between px-5 pt-5 pb-3">
         <div className="min-w-0">
-          <h3 className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">{title}</h3>
-          {subtitle && <p className="text-xs text-text-muted/70 mt-0.5">{subtitle}</p>}
+          <h3 className="text-xs font-bold uppercase tracking-[0.08em] text-cyan-300/90 flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 inline-block shadow-[0_0_6px_#00f2fe]" />
+            {title}
+          </h3>
+          {subtitle && <p className="text-xs text-text-muted mt-0.5">{subtitle}</p>}
         </div>
         <div className="flex items-center gap-2 shrink-0 ml-3">
           {badge}
@@ -70,21 +73,21 @@ function ChartTooltipContent({ active, payload, label, formatter }: {
 }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="chart-tooltip popover-enter rounded-xl border border-border/80 bg-surface-card px-3.5 py-2.5 shadow-lg min-w-[140px]">
+    <div className="chart-tooltip popover-enter rounded-xl border border-cyan-500/30 bg-surface-card/95 backdrop-blur-xl px-3.5 py-2.5 shadow-[0_8px_32px_rgba(0,0,0,0.5)] min-w-[140px]">
       {label && (
-        <p className="mb-1.5 text-[11px] font-semibold text-text-muted/80 tracking-wide uppercase">{label}</p>
+        <p className="mb-1.5 text-[10px] font-mono font-semibold text-cyan-300 uppercase tracking-wider">{label}</p>
       )}
       <div className="space-y-1">
         {payload.map((entry, i) => (
           <div key={i} className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-1.5">
               <span
-                className="h-2 w-2 rounded-full shrink-0 ring-2 ring-offset-1 ring-offset-surface-card"
-                style={{ backgroundColor: entry.color, boxShadow: `0 0 0 2px ${entry.color}40` }}
+                className="h-2 w-2 rounded-full shrink-0 ring-1 ring-white/20"
+                style={{ backgroundColor: entry.color, boxShadow: `0 0 8px ${entry.color}` }}
               />
               <span className="text-xs text-text-muted">{entry.name}</span>
             </div>
-            <span className="text-xs font-semibold font-[family-name:var(--font-jetbrains-mono)] text-text-primary tabular-nums">
+            <span className="text-xs font-mono font-bold text-text-primary tabular-nums">
               {formatter ? formatter(entry.value, entry.name) : entry.value.toLocaleString()}
             </span>
           </div>
@@ -102,9 +105,9 @@ function PieTooltipContent({ active, payload, formatter }: {
   if (!active || !payload?.length) return null;
   const entry = payload[0];
   return (
-    <div className="chart-tooltip popover-enter rounded-xl border border-border/80 bg-surface-card px-3.5 py-2.5 shadow-lg">
-      <p className="text-xs font-medium text-text-primary">{entry.name}</p>
-      <p className="text-xs font-semibold font-[family-name:var(--font-jetbrains-mono)] text-primary mt-0.5">
+    <div className="chart-tooltip popover-enter rounded-xl border border-cyan-500/30 bg-surface-card/95 backdrop-blur-xl px-3.5 py-2.5 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
+      <p className="text-xs font-medium text-text-secondary">{entry.name}</p>
+      <p className="text-sm font-mono font-bold text-cyan-300 mt-0.5">
         {formatter ? formatter(entry.value) : entry.value.toLocaleString()}
       </p>
     </div>

@@ -3,10 +3,8 @@
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { format } from "date-fns";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input, Label, Skeleton, Badge } from "@/components/ui/input";
-import { PageHeader, StatCard } from "@/components/common/shared";
+import { Input, Label, Skeleton } from "@/components/ui/input";
 import {
   useExpensesMonthly,
   useDebts,
@@ -16,8 +14,13 @@ import {
 import { formatCurrency, toNumber, formatPercent, cn } from "@/lib/utils";
 import {
   Activity, Lightbulb, Store, Calculator as CalcIcon, Package,
-  TrendingDown, TrendingUp, ShieldAlert, Info, Plus, Trash2, Landmark,
+  TrendingDown, TrendingUp, ShieldAlert, Info, Plus, Trash2, Landmark, Sparkles,
 } from "lucide-react";
+import { CommandHeader } from "@/components/spatial/command-header";
+import { GlassPanel } from "@/components/spatial/glass-panel";
+import { SpatialMetric } from "@/components/spatial/spatial-metric";
+import { SpatialBadge } from "@/components/spatial/spatial-badge";
+import { AIOrb } from "@/components/3d/ai-orb";
 
 type TabKey = "health" | "structure" | "plan" | "pricing" | "expand";
 
@@ -41,24 +44,35 @@ export default function BusinessAdvisoryPage() {
   ];
 
   return (
-    <div className="space-y-6">
-      <PageHeader title={t("title")} subtitle={t("subtitle")} />
+    <div className="space-y-6 page-transition">
+      <CommandHeader
+        tag="ADVISORY MATRIX"
+        title={t("title")}
+        subtitle={t("subtitle")}
+        action={
+          <div className="flex items-center gap-2">
+            <AIOrb size={40} />
+            <SpatialBadge variant="cyan" pulse>NEURAL ENGINE</SpatialBadge>
+          </div>
+        }
+      />
 
-      <div className="flex flex-wrap gap-1.5">
+      {/* Futuristic Command Tabs */}
+      <div className="flex flex-wrap gap-2 p-1.5 rounded-2xl bg-surface-card/60 border border-cyan-500/20 backdrop-blur-xl">
         {tabs.map(({ key, label, icon: Icon }) => (
           <button
             key={key}
             type="button"
             onClick={() => setTab(key)}
             className={cn(
-              "flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-medium transition-colors",
+              "flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer",
               tab === key
-                ? "border-primary/40 bg-primary/10 text-primary"
-                : "border-border bg-surface-card text-text-muted hover:bg-surface-container-high hover:text-text-primary",
+                ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-[0_0_15px_rgba(0,242,254,0.2)]"
+                : "text-text-muted hover:text-text-primary hover:bg-white/[0.04] border border-transparent",
             )}
           >
-            <Icon className="h-3.5 w-3.5" />
-            {label}
+            <Icon className={cn("h-3.5 w-3.5", tab === key ? "text-cyan-400" : "text-text-muted")} />
+            <span>{label}</span>
           </button>
         ))}
       </div>
@@ -81,7 +95,7 @@ export default function BusinessAdvisoryPage() {
         />
       )}
 
-      <p className="text-[10px] uppercase tracking-[0.06em] text-text-muted/60">
+      <p className="text-[10px] font-mono uppercase tracking-wider text-text-muted/60">
         {tc("estimateLabel")} · {tc("forecastDisclaimer")}
       </p>
     </div>
@@ -133,55 +147,53 @@ function HealthSection({ monthly, loading }: { monthly?: MonthlyData; loading: b
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label={t("revenue")} value={loading ? "" : formatCurrency(income)} subtitle={t("thisMonth")} icon={TrendingUp} loading={loading} />
-        <StatCard label={t("expenses")} value={loading ? "" : formatCurrency(expenses)} subtitle={t("thisMonth")} icon={TrendingDown} loading={loading} />
-        <StatCard label={t("profit")} value={loading ? "" : formatCurrency(profit)} subtitle={profit >= 0 ? t("keptThisMonth") : t("spentMoreThanEarned")} icon={CalcIcon} loading={loading} />
-        <StatCard label={t("transactions")} value={String(count)} subtitle={t("recordedThisMonth")} icon={Activity} loading={loading} />
+        <SpatialMetric label={t("revenue")} value={loading ? "" : formatCurrency(income)} subtitle={t("thisMonth")} icon={TrendingUp} loading={loading} glow="cyan" />
+        <SpatialMetric label={t("expenses")} value={loading ? "" : formatCurrency(expenses)} subtitle={t("thisMonth")} icon={TrendingDown} loading={loading} glow="indigo" />
+        <SpatialMetric label={t("profit")} value={loading ? "" : formatCurrency(profit)} subtitle={profit >= 0 ? t("keptThisMonth") : t("spentMoreThanEarned")} icon={CalcIcon} loading={loading} glow={profit >= 0 ? "emerald" : "rose"} />
+        <SpatialMetric label={t("transactions")} value={String(count)} subtitle={t("recordedThisMonth")} icon={Activity} loading={loading} glow="cyan" />
       </div>
 
-      <Card>
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted flex items-center gap-1.5">
-              <Lightbulb className="h-3.5 w-3.5 text-primary" />{t("whatFinaiSees")}
-            </CardTitle>
-            <Badge variant="outline">{t("basedOnYourData")}</Badge>
-          </div>
-        </CardHeader>
-        <CardContent>
+      <GlassPanel glow="cyan" hudCorners className="p-5">
+        <div className="flex items-center justify-between pb-3 border-b border-white/5">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-cyan-400" />
+            <span>{t("whatFinaiSees")}</span>
+          </h3>
+          <SpatialBadge variant="cyan">{t("basedOnYourData")}</SpatialBadge>
+        </div>
+
+        <div className="mt-4">
           {loading ? (
-            <Skeleton className="h-16 w-full" />
+            <Skeleton className="h-16 w-full rounded-xl" />
           ) : count === 0 ? (
             <p className="text-sm text-text-muted">{t("noTransactionsYet")}</p>
           ) : (
             <ul className="space-y-2">
               {findings.map((f, i) => (
-                <li key={i} className="flex items-start gap-2 rounded-lg bg-surface-container px-3 py-2 text-sm text-text-secondary leading-relaxed">
-                  <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
-                  {f}
+                <li key={i} className="flex items-start gap-2.5 rounded-xl bg-surface-container/80 border border-white/5 px-3.5 py-2.5 text-xs text-text-secondary leading-relaxed">
+                  <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-cyan-400 shrink-0 shadow-[0_0_6px_#00f2fe]" />
+                  <span>{f}</span>
                 </li>
               ))}
             </ul>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </GlassPanel>
 
       {topCategories.length > 0 && (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">{t("topCategories")}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
+        <GlassPanel className="p-5">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-text-secondary mb-3">{t("topCategories")}</h3>
+          <div className="space-y-2.5">
             {topCategories.map((c) => (
-              <div key={c.name} className="flex items-center justify-between text-xs">
-                <span className="capitalize text-text-secondary">{c.name}</span>
-                <span className="font-medium font-[family-name:var(--font-jetbrains-mono)] tabular-nums text-text-primary">
-                  {formatCurrency(c.amount)} · {formatPercent(c.share, 0)}
+              <div key={c.name} className="flex items-center justify-between text-xs p-2 rounded-xl bg-surface-container/50 border border-white/5">
+                <span className="capitalize text-text-secondary font-medium">{c.name}</span>
+                <span className="font-mono font-bold tabular-nums text-text-primary">
+                  {formatCurrency(c.amount)} · <span className="text-cyan-400">{formatPercent(c.share, 0)}</span>
                 </span>
               </div>
             ))}
-          </CardContent>
-        </Card>
+          </div>
+        </GlassPanel>
       )}
     </div>
   );
@@ -232,29 +244,28 @@ function StructureSection({
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <StatCard label={t("monthlySurplus")} value={loading ? "" : formatCurrency(surplus)} subtitle={t("afterAllCosts")} icon={TrendingUp} loading={loading} />
-        <StatCard label={t("debtPayments")} value={loading ? "" : formatCurrency(debtPayments)} subtitle={t("perMonth")} icon={Landmark} loading={loading} />
-        <StatCard label={t("reserveBalance")} value={loading ? "" : formatCurrency(savingsTotal)} subtitle={t("inGoals")} icon={ShieldAlert} loading={loading} />
+        <SpatialMetric label={t("monthlySurplus")} value={loading ? "" : formatCurrency(surplus)} subtitle={t("afterAllCosts")} icon={TrendingUp} loading={loading} glow="cyan" />
+        <SpatialMetric label={t("debtPayments")} value={loading ? "" : formatCurrency(debtPayments)} subtitle={t("perMonth")} icon={Landmark} loading={loading} glow="rose" />
+        <SpatialMetric label={t("reserveBalance")} value={loading ? "" : formatCurrency(savingsTotal)} subtitle={t("inGoals")} icon={ShieldAlert} loading={loading} glow="emerald" />
       </div>
 
-      <Card>
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted flex items-center gap-1.5">
-              <Info className="h-3.5 w-3.5 text-primary" />{t("structureTitle")}
-            </CardTitle>
-            <Badge variant="outline">{t("basedOnYourData")}</Badge>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-2">
+      <GlassPanel glow="cyan" className="p-5">
+        <div className="flex items-center justify-between pb-3 border-b border-white/5">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-2">
+            <Info className="h-4 w-4 text-cyan-400" />
+            <span>{t("structureTitle")}</span>
+          </h3>
+          <SpatialBadge variant="cyan">{t("basedOnYourData")}</SpatialBadge>
+        </div>
+        <div className="mt-3 space-y-2.5">
           {rows.map((r) => (
-            <div key={r.title} className="rounded-lg border border-border p-3">
-              <p className="text-sm font-medium text-text-primary">{r.title}</p>
-              <p className="mt-1 text-xs text-text-muted leading-relaxed">{r.body}</p>
+            <div key={r.title} className="rounded-xl border border-white/5 bg-surface-container/60 p-3.5">
+              <p className="text-xs font-bold text-text-primary uppercase tracking-wider">{r.title}</p>
+              <p className="mt-1 text-xs text-text-secondary leading-relaxed">{r.body}</p>
             </div>
           ))}
-        </CardContent>
-      </Card>
+        </div>
+      </GlassPanel>
     </div>
   );
 }
@@ -291,38 +302,37 @@ function PlanIdeaSection() {
 
   return (
     <div className="space-y-4">
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted flex items-center gap-1.5">
-            <Store className="h-3.5 w-3.5 text-primary" />{t("planInputs")}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <GlassPanel hudCorners className="p-5">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-cyan-400 mb-4 flex items-center gap-2">
+          <Store className="h-4 w-4 text-cyan-400" />
+          <span>{t("planInputs")}</span>
+        </h3>
+        <div className="space-y-4">
           <div>
-            <Label>{t("ideaName")}</Label>
-            <Input value={ideaName} onChange={(e) => setIdeaName(e.target.value)} placeholder={t("phIdeaName")} />
+            <Label className="text-xs text-text-secondary">{t("ideaName")}</Label>
+            <Input className="mt-1 bg-surface-container border-cyan-500/20" value={ideaName} onChange={(e) => setIdeaName(e.target.value)} placeholder={t("phIdeaName")} />
           </div>
 
           <div>
-            <Label>{t("startupItems")}</Label>
+            <Label className="text-xs text-text-secondary">{t("startupItems")}</Label>
             <div className="flex flex-col sm:flex-row gap-2 mt-1">
-              <Input className="flex-1" value={itemLabel} onChange={(e) => setItemLabel(e.target.value)} placeholder={t("phItemLabel")} />
-              <Input className="sm:w-36" type="number" min="0" value={itemAmount} onChange={(e) => setItemAmount(e.target.value)} placeholder={t("phAmount")} />
-              <Button type="button" variant="outline" onClick={addItem} aria-label={t("addItem")}>
+              <Input className="flex-1 bg-surface-container border-cyan-500/20" value={itemLabel} onChange={(e) => setItemLabel(e.target.value)} placeholder={t("phItemLabel")} />
+              <Input className="sm:w-36 bg-surface-container border-cyan-500/20" type="number" min="0" value={itemAmount} onChange={(e) => setItemAmount(e.target.value)} placeholder={t("phAmount")} />
+              <Button type="button" variant="outline" className="border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/10" onClick={addItem} aria-label={t("addItem")}>
                 <Plus className="h-4 w-4" />{t("addItem")}
               </Button>
             </div>
             {items.length > 0 && (
-              <ul className="mt-2 space-y-1">
+              <ul className="mt-2 space-y-1.5">
                 {items.map((i) => (
-                  <li key={i.id} className="flex items-center justify-between rounded-lg bg-surface-container px-3 py-1.5 text-xs">
+                  <li key={i.id} className="flex items-center justify-between rounded-xl bg-surface-container border border-white/5 px-3 py-2 text-xs">
                     <span className="text-text-secondary">{i.label}</span>
-                    <span className="flex items-center gap-2 font-[family-name:var(--font-jetbrains-mono)] tabular-nums text-text-primary">
+                    <span className="flex items-center gap-2 font-mono font-bold tabular-nums text-text-primary">
                       {formatCurrency(i.amount)}
                       <button
                         type="button"
                         onClick={() => setItems((list) => list.filter((x) => x.id !== i.id))}
-                        className="text-text-muted hover:text-destructive"
+                        className="text-text-muted hover:text-rose-400 transition-colors"
                         aria-label={`${t("remove")} ${i.label}`}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
@@ -336,27 +346,25 @@ function PlanIdeaSection() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <Label>{t("monthlyOperating")}</Label>
-              <Input type="number" min="0" value={monthlyOperating} onChange={(e) => setMonthlyOperating(e.target.value)} placeholder={t("phAmount")} />
+              <Label className="text-xs text-text-secondary">{t("monthlyOperating")}</Label>
+              <Input className="mt-1 bg-surface-container border-cyan-500/20" type="number" min="0" value={monthlyOperating} onChange={(e) => setMonthlyOperating(e.target.value)} placeholder={t("phAmount")} />
             </div>
             <div>
-              <Label>{t("expectedRevenue")}</Label>
-              <Input type="number" min="0" value={expectedRevenue} onChange={(e) => setExpectedRevenue(e.target.value)} placeholder={t("phExpected")} />
+              <Label className="text-xs text-text-secondary">{t("expectedRevenue")}</Label>
+              <Input className="mt-1 bg-surface-container border-cyan-500/20" type="number" min="0" value={expectedRevenue} onChange={(e) => setExpectedRevenue(e.target.value)} placeholder={t("phExpected")} />
             </div>
           </div>
-          <p className="text-[11px] text-text-muted">{t("planAssumptionNote")}</p>
-        </CardContent>
-      </Card>
+          <p className="text-[11px] text-text-muted font-mono">{t("planAssumptionNote")}</p>
+        </div>
+      </GlassPanel>
 
       {(items.length > 0 || opCost > 0 || revenue > 0) && (
-        <Card>
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">{t("planResults")}{ideaName ? ` — ${ideaName}` : ""}</CardTitle>
-              <Badge variant="outline">{t("yourEstimate")}</Badge>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
+        <GlassPanel glow="cyan" className="p-5">
+          <div className="flex items-center justify-between pb-3 border-b border-white/5 mb-3">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-cyan-400">{t("planResults")}{ideaName ? ` — ${ideaName}` : ""}</h3>
+            <SpatialBadge variant="cyan">{t("yourEstimate")}</SpatialBadge>
+          </div>
+          <div className="space-y-2 text-sm">
             <Row label={t("initialCapital")} value={formatCurrency(initialCapital)} />
             <Row label={t("firstMonthCash")} value={formatCurrency(firstMonthCash)} hint={t("firstMonthCashHint")} />
             <Row label={t("monthlyProfitEstimate")} value={formatCurrency(monthlyProfit)} tone={monthlyProfit >= 0 ? "positive" : "negative"} />
@@ -370,9 +378,9 @@ function PlanIdeaSection() {
             {breakEvenMonths != null && breakEvenMonths > 12 && (
               <Warning text={t("warningSlowPayback")} />
             )}
-            <p className="pt-1 text-[10px] uppercase tracking-[0.06em] text-text-muted/60">{t("estimateDisclaimer")}</p>
-          </CardContent>
-        </Card>
+            <p className="pt-2 text-[10px] font-mono uppercase tracking-wider text-text-muted/60">{t("estimateDisclaimer")}</p>
+          </div>
+        </GlassPanel>
       )}
     </div>
   );
@@ -401,48 +409,45 @@ function PricingSection() {
 
   return (
     <div className="space-y-4">
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted flex items-center gap-1.5">
-            <CalcIcon className="h-3.5 w-3.5 text-primary" />{t("pricingInputs")}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <GlassPanel hudCorners className="p-5">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-cyan-400 mb-4 flex items-center gap-2">
+          <CalcIcon className="h-4 w-4 text-cyan-400" />
+          <span>{t("pricingInputs")}</span>
+        </h3>
+        <div className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <Label>{t("costPerUnit")}</Label>
-              <Input type="number" min="0" value={unitCost} onChange={(e) => setUnitCost(e.target.value)} placeholder={t("phAmount")} />
+              <Label className="text-xs text-text-secondary">{t("costPerUnit")}</Label>
+              <Input className="mt-1 bg-surface-container border-cyan-500/20" type="number" min="0" value={unitCost} onChange={(e) => setUnitCost(e.target.value)} placeholder={t("phAmount")} />
             </div>
             <div>
-              <Label>{t("otherUnitCost")}</Label>
-              <Input type="number" min="0" value={otherUnitCost} onChange={(e) => setOtherUnitCost(e.target.value)} placeholder={t("phPackaging")} />
+              <Label className="text-xs text-text-secondary">{t("otherUnitCost")}</Label>
+              <Input className="mt-1 bg-surface-container border-cyan-500/20" type="number" min="0" value={otherUnitCost} onChange={(e) => setOtherUnitCost(e.target.value)} placeholder={t("phPackaging")} />
             </div>
             <div>
-              <Label>{t("monthlyOverheads")}</Label>
-              <Input type="number" min="0" value={overheads} onChange={(e) => setOverheads(e.target.value)} placeholder={t("phOverheads")} />
+              <Label className="text-xs text-text-secondary">{t("monthlyOverheads")}</Label>
+              <Input className="mt-1 bg-surface-container border-cyan-500/20" type="number" min="0" value={overheads} onChange={(e) => setOverheads(e.target.value)} placeholder={t("phOverheads")} />
             </div>
             <div>
-              <Label>{t("unitsPerMonth")}</Label>
-              <Input type="number" min="0" value={unitsPerMonth} onChange={(e) => setUnitsPerMonth(e.target.value)} placeholder={t("phUnits")} />
+              <Label className="text-xs text-text-secondary">{t("unitsPerMonth")}</Label>
+              <Input className="mt-1 bg-surface-container border-cyan-500/20" type="number" min="0" value={unitsPerMonth} onChange={(e) => setUnitsPerMonth(e.target.value)} placeholder={t("phUnits")} />
             </div>
             <div>
-              <Label>{t("targetMargin")}</Label>
-              <Input type="number" min="0" max="300" value={margin} onChange={(e) => setMargin(e.target.value)} />
+              <Label className="text-xs text-text-secondary">{t("targetMargin")}</Label>
+              <Input className="mt-1 bg-surface-container border-cyan-500/20" type="number" min="0" max="300" value={margin} onChange={(e) => setMargin(e.target.value)} />
             </div>
           </div>
-          <p className="text-[11px] text-text-muted">{t("pricingAssumptionNote")}</p>
-        </CardContent>
-      </Card>
+          <p className="text-[11px] font-mono text-text-muted">{t("pricingAssumptionNote")}</p>
+        </div>
+      </GlassPanel>
 
       {hasAny && (
-        <Card>
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">{t("pricingResults")}</CardTitle>
-              <Badge variant="outline">{t("yourEstimate")}</Badge>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
+        <GlassPanel glow="cyan" className="p-5">
+          <div className="flex items-center justify-between pb-3 border-b border-white/5 mb-3">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-cyan-400">{t("pricingResults")}</h3>
+            <SpatialBadge variant="cyan">{t("yourEstimate")}</SpatialBadge>
+          </div>
+          <div className="space-y-2 text-sm">
             <Row label={t("floorPrice")} value={formatCurrency(totalUnitCost)} hint={t("floorPriceHint")} />
             <Row label={t("suggestedPrice")} value={formatCurrency(Math.round(suggestedPrice))} tone="positive" />
             <Row label={t("profitPerUnit")} value={formatCurrency(profitPerUnit)} />
@@ -450,9 +455,9 @@ function PricingSection() {
             {units > 0 && overhead > 0 && (
               <p className="text-xs text-text-muted">{t("overheadShareNote", { amount: formatCurrency(overheadPerUnit) })}</p>
             )}
-            <p className="pt-1 text-[10px] uppercase tracking-[0.06em] text-text-muted/60">{t("estimateDisclaimer")}</p>
-          </CardContent>
-        </Card>
+            <p className="pt-2 text-[10px] font-mono uppercase tracking-wider text-text-muted/60">{t("estimateDisclaimer")}</p>
+          </div>
+        </GlassPanel>
       )}
     </div>
   );
@@ -495,53 +500,55 @@ function ExpandSection({ netCashFlow, loading }: { netCashFlow: number | null; l
 
   return (
     <div className="space-y-4">
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted flex items-center gap-1.5">
-            <Package className="h-3.5 w-3.5 text-primary" />{t("expandInputs")}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <GlassPanel hudCorners className="p-5">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-cyan-400 mb-4 flex items-center gap-2">
+          <Package className="h-4 w-4 text-cyan-400" />
+          <span>{t("expandInputs")}</span>
+        </h3>
+        <div className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <Label>{t("purchaseCost")}</Label>
-              <Input type="number" min="0" value={cost} onChange={(e) => setCost(e.target.value)} placeholder={t("phAmount")} />
+              <Label className="text-xs text-text-secondary">{t("purchaseCost")}</Label>
+              <Input className="mt-1 bg-surface-container border-cyan-500/20" type="number" min="0" value={cost} onChange={(e) => setCost(e.target.value)} placeholder={t("phAmount")} />
             </div>
             <div>
-              <Label>{t("expectedExtraIncome")}</Label>
-              <Input type="number" min="0" value={extraIncome} onChange={(e) => setExtraIncome(e.target.value)} placeholder={t("phExpected")} />
+              <Label className="text-xs text-text-secondary">{t("expectedExtraIncome")}</Label>
+              <Input className="mt-1 bg-surface-container border-cyan-500/20" type="number" min="0" value={extraIncome} onChange={(e) => setExtraIncome(e.target.value)} placeholder={t("phExpected")} />
             </div>
             <div>
-              <Label>{t("interestRate")}</Label>
-              <Input type="number" min="0" step="0.1" value={rate} onChange={(e) => setRate(e.target.value)} />
+              <Label className="text-xs text-text-secondary">{t("interestRate")}</Label>
+              <Input className="mt-1 bg-surface-container border-cyan-500/20" type="number" min="0" step="0.1" value={rate} onChange={(e) => setRate(e.target.value)} />
             </div>
             <div>
-              <Label>{t("tenureMonths")}</Label>
-              <Input type="number" min="1" value={tenure} onChange={(e) => setTenure(e.target.value)} />
+              <Label className="text-xs text-text-secondary">{t("tenureMonths")}</Label>
+              <Input className="mt-1 bg-surface-container border-cyan-500/20" type="number" min="1" value={tenure} onChange={(e) => setTenure(e.target.value)} />
             </div>
           </div>
-          <div className="rounded-lg border border-border bg-surface-container px-3 py-2 text-xs text-text-muted">
+          <div className="rounded-xl border border-white/5 bg-surface-container/80 px-3.5 py-2.5 text-xs text-text-muted">
             {loading || surplusKnown == null
               ? t("checkingCashflow")
               : surplus > 0
                 ? t("currentSurplusPositive", { amount: formatCurrency(surplus) })
                 : t("currentSurplusNegative", { amount: formatCurrency(Math.abs(surplus)) })}
           </div>
-          <Button type="button" onClick={() => void evaluate()} disabled={emi.isPending || purchaseCost <= 0}>
+          <Button
+            type="button"
+            className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold"
+            onClick={() => void evaluate()}
+            disabled={emi.isPending || purchaseCost <= 0}
+          >
             {emi.isPending ? t("calculating") : t("evaluateAffordability")}
           </Button>
-        </CardContent>
-      </Card>
+        </div>
+      </GlassPanel>
 
       {result && (
-        <Card>
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">{t("affordabilityResults")}</CardTitle>
-              <Badge variant="outline">{t("basedOnYourData")}</Badge>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
+        <GlassPanel glow="cyan" className="p-5">
+          <div className="flex items-center justify-between pb-3 border-b border-white/5 mb-3">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-cyan-400">{t("affordabilityResults")}</h3>
+            <SpatialBadge variant="cyan">{t("basedOnYourData")}</SpatialBadge>
+          </div>
+          <div className="space-y-2 text-sm">
             <Row label={t("estimatedEmi")} value={formatCurrency(result.emi)} />
             {extra > 0 && <Row label={t("netImpactWithExtraIncome")} value={formatCurrency(extra - result.emi)} tone={extra - result.emi >= 0 ? "positive" : "negative"} />}
             {!affordableBySurplus && surplusKnown && surplus >= 0 && (
@@ -556,9 +563,9 @@ function ExpandSection({ netCashFlow, loading }: { netCashFlow: number | null; l
             {surplusKnown && extra > 0 && extra - result.emi > 0 && (
               <p className="text-xs text-text-muted">{t("positiveIfRealized", { amount: formatCurrency(extra - result.emi) })}</p>
             )}
-            <p className="pt-1 text-[10px] uppercase tracking-[0.06em] text-text-muted/60">{t("estimateDisclaimer")}</p>
-          </CardContent>
-        </Card>
+            <p className="pt-2 text-[10px] font-mono uppercase tracking-wider text-text-muted/60">{t("estimateDisclaimer")}</p>
+          </div>
+        </GlassPanel>
       )}
     </div>
   );
@@ -566,15 +573,15 @@ function ExpandSection({ netCashFlow, loading }: { netCashFlow: number | null; l
 
 function Row({ label, value, hint, tone }: { label: string; value: string; hint?: string; tone?: "positive" | "negative" }) {
   return (
-    <div className="flex items-start justify-between gap-4 border-b border-border pb-2 last:border-b-0 last:pb-0">
+    <div className="flex items-start justify-between gap-4 border-b border-white/5 pb-2.5 last:border-b-0 last:pb-0">
       <div className="min-w-0">
-        <p className="text-text-secondary">{label}</p>
+        <p className="text-text-secondary text-xs">{label}</p>
         {hint && <p className="text-[11px] text-text-muted">{hint}</p>}
       </div>
       <span
         className={cn(
-          "shrink-0 font-medium font-[family-name:var(--font-jetbrains-mono)] tabular-nums",
-          tone === "positive" ? "text-primary" : tone === "negative" ? "text-destructive" : "text-text-primary",
+          "shrink-0 font-mono font-bold tabular-nums text-sm",
+          tone === "positive" ? "text-cyan-300" : tone === "negative" ? "text-rose-400" : "text-text-primary",
         )}
       >
         {value}
@@ -585,8 +592,8 @@ function Row({ label, value, hint, tone }: { label: string; value: string; hint?
 
 function Warning({ text }: { text: string }) {
   return (
-    <div className="flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2">
-      <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+    <div className="flex items-start gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3.5 py-2.5">
+      <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
       <p className="text-xs text-text-secondary leading-relaxed">{text}</p>
     </div>
   );

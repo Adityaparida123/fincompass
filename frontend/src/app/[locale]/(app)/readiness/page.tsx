@@ -2,21 +2,23 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input, Label, Skeleton, Badge, Textarea } from "@/components/ui/input";
-import { PageHeader } from "@/components/common/shared";
+import { Input, Label, Skeleton, Textarea } from "@/components/ui/input";
 import { useReadiness, useCorrectReadiness } from "@/hooks/use-api";
 import { ApiRequestError } from "@/lib/api";
 import { useChatStore } from "@/stores/chat-store";
 import type { ReadinessFactor, ScoreCorrectionResult } from "@/types";
-import { Gauge, ChevronDown, ChevronUp, Info, AlertTriangle, RefreshCw, MessageCircle } from "lucide-react";
+import { ChevronDown, ChevronUp, Info, AlertTriangle, RefreshCw, MessageCircle, ShieldCheck, Sparkles, Sliders } from "lucide-react";
+import { CommandHeader } from "@/components/spatial/command-header";
+import { GlassPanel } from "@/components/spatial/glass-panel";
+import { SpatialBadge } from "@/components/spatial/spatial-badge";
+import { CreditScore3D } from "@/components/3d/credit-score-3d";
 
-function scoreTier(score: number, t: (key: string) => string): { label: string; variant: "success" | "secondary" | "destructive" } {
-  if (score >= 80) return { label: t("tierStrong"), variant: "success" };
-  if (score >= 60) return { label: t("tierGood"), variant: "success" };
-  if (score >= 40) return { label: t("tierFair"), variant: "secondary" };
-  return { label: t("tierNeedsWork"), variant: "destructive" };
+function scoreTier(score: number, t: (key: string) => string): { label: string; variant: "cyan" | "emerald" | "amber" | "rose" } {
+  if (score >= 80) return { label: t("tierStrong"), variant: "emerald" };
+  if (score >= 60) return { label: t("tierGood"), variant: "cyan" };
+  if (score >= 40) return { label: t("tierFair"), variant: "amber" };
+  return { label: t("tierNeedsWork"), variant: "rose" };
 }
 
 const FACTOR_LABEL_KEYS: Record<string, string> = {
@@ -33,25 +35,6 @@ function factorLabel(name: string, t: (key: string) => string): string {
   const key = FACTOR_LABEL_KEYS[name];
   if (key) return t(key);
   return name.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
-function ScoreGauge({ score }: { score: number }) {
-  const circumference = 2 * Math.PI * 54;
-  const offset = circumference - (score / 100) * circumference;
-  const color = score >= 80 ? "#14b8a6" : score >= 60 ? "#14b8a6" : score >= 40 ? "#f59e0b" : "#f87171";
-
-  return (
-    <div className="relative flex items-center justify-center">
-      <svg width="140" height="140" viewBox="0 0 120 120">
-        <circle cx="60" cy="60" r="54" fill="none" stroke="var(--surface-container)" strokeWidth="8" />
-        <circle cx="60" cy="60" r="54" fill="none" stroke={color} strokeWidth="8" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={offset} transform="rotate(-90 60 60)" className="transition-all duration-700" />
-      </svg>
-      <div className="absolute text-center">
-        <p className="text-3xl font-bold">{score}</p>
-        <p className="text-xs text-text-muted">/100</p>
-      </div>
-    </div>
-  );
 }
 
 export default function ReadinessPage() {
@@ -93,150 +76,221 @@ export default function ReadinessPage() {
   const tier = scoreTier(score, t);
 
   return (
-    <div className="space-y-6">
-      <PageHeader title={t("title")} subtitle={t("subtitle")} />
+    <div className="space-y-6 page-transition">
+      <CommandHeader
+        tag="AI CREDIT READINESS"
+        title={t("title")}
+        subtitle={t("subtitle")}
+        action={
+          <div className="flex items-center gap-2">
+            <SpatialBadge variant={tier.variant} pulse>
+              TIER: {tier.label.toUpperCase()}
+            </SpatialBadge>
+          </div>
+        }
+      />
 
-      <Card>
-        <CardContent className="pt-6">
-          {readiness.isLoading ? (
-            <div className="flex justify-center"><Skeleton className="h-36 w-36 rounded-full" /></div>
-          ) : readiness.isError ? (
-            <div className="flex flex-col items-center gap-3 py-8 text-center">
-              <AlertTriangle className="h-8 w-8 text-destructive" />
-              <p className="text-sm font-medium">{t("errorTitle")}</p>
-              <p className="text-sm text-text-muted">{t("errorDesc")}</p>
-              <Button variant="outline" size="sm" onClick={() => readiness.refetch()}>
-                <RefreshCw className="mr-1 h-3 w-3" /> {tc("retry")}
-              </Button>
+      {/* Main 3D Gauge & Summary Hero */}
+      <GlassPanel glow={tier.variant === "emerald" ? "emerald" : "cyan"} hudCorners className="p-6 md:p-8">
+        {readiness.isLoading ? (
+          <div className="flex justify-center py-8"><Skeleton className="h-44 w-44 rounded-full" /></div>
+        ) : readiness.isError ? (
+          <div className="flex flex-col items-center gap-3 py-8 text-center">
+            <AlertTriangle className="h-8 w-8 text-rose-400" />
+            <p className="text-sm font-semibold text-rose-300">{t("errorTitle")}</p>
+            <p className="text-xs text-text-muted">{t("errorDesc")}</p>
+            <Button variant="outline" size="sm" onClick={() => readiness.refetch()} className="border-rose-500/30 text-rose-300 hover:bg-rose-500/10">
+              <RefreshCw className="mr-1.5 h-3.5 w-3.5" /> {tc("retry")}
+            </Button>
+          </div>
+        ) : hasInsufficientData ? (
+          <div className="flex flex-col items-center gap-3 py-10 text-center">
+            <ShieldCheck className="h-10 w-10 text-cyan-400/40" />
+            <p className="text-sm font-semibold text-text-primary">{t("insufficientTitle")}</p>
+            <p className="text-xs text-text-muted max-w-md">
+              {t("insufficientDesc")}
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-col lg:flex-row items-center gap-8">
+            <div className="flex flex-col items-center">
+              <CreditScore3D score={score} size={220} />
             </div>
-          ) : hasInsufficientData ? (
-            <div className="flex flex-col items-center gap-3 py-8 text-center">
-              <Gauge className="h-8 w-8 text-text-muted/50" />
-              <p className="text-sm font-medium">{t("insufficientTitle")}</p>
-              <p className="text-xs text-text-muted max-w-sm">
-                {t("insufficientDesc")}
-              </p>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-8">
-              <ScoreGauge score={score} />
-              <div className="flex-1 text-center sm:text-left">
-                <p className="text-sm text-text-muted">{readiness.data?.summary}</p>
-                <div className="mt-3 flex flex-wrap items-center gap-2 justify-center sm:justify-start">
-                  <Badge variant={tier.variant}>
-                    {tier.label}
-                  </Badge>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDraft(t("askDraft", { score: `${score}`, tier: tier.label }));
-                      setOpen(true);
-                    }}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[11px] font-medium text-primary transition-colors hover:bg-primary/20"
-                  >
-                    <MessageCircle className="h-3 w-3" />
-                    {th("askFinai")}
-                  </button>
+
+            <div className="flex-1 space-y-4 text-center lg:text-left">
+              <div>
+                <div className="flex items-center justify-center lg:justify-start gap-2 mb-2">
+                  <SpatialBadge variant={tier.variant}>{tier.label}</SpatialBadge>
+                  <span className="text-[11px] font-mono uppercase tracking-wider text-text-muted">Real-Time Underwriting Metric</span>
                 </div>
+                <p className="text-sm md:text-base text-text-secondary leading-relaxed max-w-2xl">{readiness.data?.summary}</p>
               </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
 
-      {result && (
-        <Card className="border-primary/30 bg-primary/5">
-          <CardHeader className="pb-3"><CardTitle className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">{t("whatChanged")}</CardTitle></CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex flex-wrap gap-6 text-sm">
-              <div>
-                <p className="text-xs text-text-muted">{t("previousScore")}</p>
-                <p className="text-2xl font-bold font-[family-name:var(--font-jetbrains-mono)]">{result.previous_score}</p>
-              </div>
-              <div>
-                <p className="text-xs text-text-muted">{t("newScore")}</p>
-                <p className="text-2xl font-bold text-primary font-[family-name:var(--font-jetbrains-mono)]">{result.updated_score}</p>
+              <div className="flex flex-wrap items-center gap-3 justify-center lg:justify-start pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDraft(t("askDraft", { score: `${score}`, tier: tier.label }));
+                    setOpen(true);
+                  }}
+                  className="inline-flex items-center gap-2 rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-4 py-2 text-xs font-mono font-semibold text-cyan-300 transition-all hover:bg-cyan-500/20 hover:shadow-[0_0_15px_rgba(0,242,254,0.2)]"
+                >
+                  <Sparkles className="h-3.5 w-3.5 text-cyan-400" />
+                  <span>{th("askFinai")}</span>
+                </button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowForm(!showForm)}
+                  className="border-white/10 text-xs font-mono text-text-secondary hover:bg-surface-container"
+                >
+                  <Sliders className="h-3.5 w-3.5 mr-1.5" />
+                  {t("somethingWrong")}
+                </Button>
               </div>
             </div>
-            {result.changed_factors.map((f, i) => (
-              <div key={i} className="rounded-lg border border-border p-3">
-                <p className="font-medium text-sm">{factorLabel(f.name, tf)}</p>
-                <p className="text-xs text-text-muted">{f.explanation}</p>
+          </div>
+        )}
+      </GlassPanel>
+
+      {/* Recalibration Result Panel */}
+      {result && (
+        <GlassPanel glow="cyan" hudCorners className="p-6">
+          <div className="flex items-center justify-between pb-3 border-b border-white/5 mb-4">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-cyan-400" />
+              <span>{t("whatChanged")}</span>
+            </h3>
+            <SpatialBadge variant="cyan">UPDATED</SpatialBadge>
+          </div>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="p-3 rounded-xl bg-surface-container border border-white/5">
+                <p className="text-xs text-text-muted">{t("previousScore")}</p>
+                <p className="text-2xl font-mono font-bold text-text-secondary">{result.previous_score}</p>
               </div>
-            ))}
-          </CardContent>
-        </Card>
+              <div className="p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/30">
+                <p className="text-xs text-cyan-300">{t("newScore")}</p>
+                <p className="text-2xl font-mono font-bold text-cyan-400">{result.updated_score}</p>
+              </div>
+            </div>
+            <div className="grid gap-2">
+              {result.changed_factors.map((f, i) => (
+                <div key={i} className="rounded-xl border border-white/5 bg-surface-container/60 p-3">
+                  <p className="font-semibold text-xs text-text-primary">{factorLabel(f.name, tf)}</p>
+                  <p className="text-xs text-text-muted mt-0.5">{f.explanation}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </GlassPanel>
       )}
 
+      {/* Factors Accordion Grid */}
       {!hasInsufficientData && !readiness.isError && (
-        <Card>
-          <CardHeader className="pb-3"><CardTitle className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">{t("factors")}</CardTitle></CardHeader>
-          <CardContent className="space-y-2">
+        <GlassPanel className="p-6 space-y-3">
+          <div className="flex items-center justify-between pb-2 border-b border-white/5">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-text-secondary">{t("factors")}</h3>
+            <span className="text-[11px] font-mono text-text-muted">7 MULTIVARIATE PARAMETERS</span>
+          </div>
+
+          <div className="space-y-2.5 pt-2">
             {readiness.isLoading ? (
-              <div className="space-y-2">{[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
+              <div className="space-y-2">{[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-12 w-full rounded-xl" />)}</div>
             ) : readiness.data?.factors.map((f) => (
               <button
                 key={f.name}
                 type="button"
                 onClick={() => setSelectedFactor(selectedFactor?.name === f.name ? null : f)}
-                className="w-full rounded-lg border border-border p-3 text-left transition-colors hover:bg-surface-container"
+                className={`w-full rounded-xl border p-4 text-left transition-all ${
+                  selectedFactor?.name === f.name
+                    ? "border-cyan-500/40 bg-cyan-500/5 shadow-[0_0_15px_rgba(0,242,254,0.05)]"
+                    : "border-white/5 bg-surface-container/60 hover:bg-surface-container hover:border-white/10"
+                }`}
               >
                 <div className="flex items-center justify-between">
-                  <span className="font-medium text-sm">{factorLabel(f.name, tf)}</span>
-                  <div className="flex items-center gap-2">
-                    <Badge variant={f.direction === "positive" ? "success" : f.direction === "negative" ? "destructive" : "secondary"} className="text-[10px]">
-                      {f.impact > 0 ? "+" : ""}{f.impact}
-                    </Badge>
+                  <div className="flex items-center gap-2.5">
+                    <div className={`h-2 w-2 rounded-full ${f.direction === "positive" ? "bg-emerald-400 shadow-[0_0_8px_#34d399]" : f.direction === "negative" ? "bg-rose-400 shadow-[0_0_8px_#f87171]" : "bg-amber-400"}`} />
+                    <span className="font-medium text-sm text-text-primary">{factorLabel(f.name, tf)}</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <SpatialBadge variant={f.direction === "positive" ? "emerald" : f.direction === "negative" ? "rose" : "amber"}>
+                      {f.impact > 0 ? "+" : ""}{f.impact} PTS
+                    </SpatialBadge>
                     {selectedFactor?.name === f.name ? <ChevronUp className="h-4 w-4 text-text-muted" /> : <ChevronDown className="h-4 w-4 text-text-muted" />}
                   </div>
                 </div>
                 {selectedFactor?.name === f.name && (
-                  <div className="mt-2 space-y-1">
+                  <div className="mt-3 pt-3 border-t border-white/5 space-y-1.5 animate-fadeIn">
                     <p className="text-xs text-text-muted italic">{tf.has(`desc_${FACTOR_LABEL_KEYS[f.name] ?? ""}`) ? tf(`desc_${FACTOR_LABEL_KEYS[f.name]}`) : t("factorGenericDesc")}</p>
-                    <p className="text-sm text-text-muted leading-relaxed">{f.explanation}{f.value ? ` (${f.value})` : ""}</p>
+                    <p className="text-xs text-cyan-200/90 leading-relaxed font-mono">{f.explanation}{f.value ? ` (${f.value})` : ""}</p>
                   </div>
                 )}
               </button>
             ))}
-          </CardContent>
-        </Card>
+          </div>
+        </GlassPanel>
       )}
 
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center gap-2">
-            <Info className="h-4 w-4 text-text-muted" />
-            <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">{t("transparency")}</CardTitle>
+      {/* Manual Recalibration Dialog */}
+      {showForm && (
+        <GlassPanel glow="cyan" hudCorners className="p-6">
+          <div className="flex items-center justify-between pb-3 border-b border-white/5 mb-4">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-cyan-400">{t("correctData")}</h3>
+            <span className="text-[11px] font-mono text-text-muted">MANUAL OVERRIDE</span>
           </div>
-        </CardHeader>
-        <CardContent><p className="text-xs text-text-muted leading-relaxed">{t("transparencyDesc")}</p></CardContent>
-      </Card>
+          <form onSubmit={handleCorrect} className="grid gap-4 sm:grid-cols-2">
+            {([
+              { key: "income", label: t("fieldIncome") },
+              { key: "total_expenses", label: t("fieldTotalExpenses") },
+              { key: "essential_monthly_expenses", label: t("fieldEssentialExpenses") },
+              { key: "debt_payments", label: t("fieldDebtPayments") },
+              { key: "savings", label: t("fieldSavings") },
+            ] as const).map((field) => (
+              <div key={field.key}>
+                <Label className="text-xs text-text-secondary">{field.label}</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  className="mt-1 bg-surface-container border-cyan-500/20 font-mono"
+                  value={correction[field.key]}
+                  onChange={(e) => setCorrection({ ...correction, [field.key]: e.target.value })}
+                  required
+                />
+              </div>
+            ))}
+            <div className="sm:col-span-2">
+              <Label className="text-xs text-text-secondary">{t("fieldReason")}</Label>
+              <Textarea
+                rows={2}
+                className="mt-1 bg-surface-container border-cyan-500/20"
+                value={correction.reason}
+                onChange={(e) => setCorrection({ ...correction, reason: e.target.value })}
+                required
+              />
+            </div>
+            <div className="flex gap-3 sm:col-span-2 pt-2">
+              <Button type="submit" disabled={correct.isPending} className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold px-6">
+                {correct.isPending ? "COMPUTING..." : tc("save")}
+              </Button>
+              <Button type="button" variant="outline" onClick={() => setShowForm(false)} className="border-white/10 text-text-secondary">
+                {tc("cancel")}
+              </Button>
+            </div>
+          </form>
+          {error && <p className="mt-3 text-xs font-mono text-rose-400">{error}</p>}
+        </GlassPanel>
+      )}
 
-      <Card>
-        <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between pb-3">
-          <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">{t("correctData")}</CardTitle>
-          <Button variant="outline" size="sm" onClick={() => setShowForm(!showForm)}>{t("somethingWrong")}</Button>
-        </CardHeader>
-        {showForm && (
-          <CardContent>
-            <form onSubmit={handleCorrect} className="grid gap-4 sm:grid-cols-2">
-              {([
-                { key: "income", label: t("fieldIncome") },
-                { key: "total_expenses", label: t("fieldTotalExpenses") },
-                { key: "essential_monthly_expenses", label: t("fieldEssentialExpenses") },
-                { key: "debt_payments", label: t("fieldDebtPayments") },
-                { key: "savings", label: t("fieldSavings") },
-              ] as const).map((field) => (
-                <div key={field.key}><Label>{field.label}</Label>
-                  <Input type="number" min="0" value={correction[field.key]} onChange={(e) => setCorrection({ ...correction, [field.key]: e.target.value })} required /></div>
-              ))}
-              <div className="sm:col-span-2"><Label>{t("fieldReason")}</Label><Textarea value={correction.reason} onChange={(e) => setCorrection({ ...correction, reason: e.target.value })} required /></div>
-              <div className="flex gap-2 sm:col-span-2"><Button type="submit" disabled={correct.isPending}>{tc("save")}</Button><Button type="button" variant="outline" onClick={() => setShowForm(false)}>{tc("cancel")}</Button></div>
-            </form>
-            {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
-          </CardContent>
-        )}
-      </Card>
+      {/* Algorithmic Transparency Panel */}
+      <GlassPanel className="p-5">
+        <div className="flex items-center gap-2 mb-2">
+          <Info className="h-4 w-4 text-cyan-400" />
+          <h4 className="text-xs font-bold uppercase tracking-wider text-text-secondary">{t("transparency")}</h4>
+        </div>
+        <p className="text-xs text-text-muted leading-relaxed">{t("transparencyDesc")}</p>
+      </GlassPanel>
     </div>
   );
 }
