@@ -17,11 +17,17 @@ const schema = z.object({ email: z.string().email() });
 export default function ForgotPasswordPage() {
   const locale = useLocale();
   const [sent, setSent] = useState(false);
+  const [error, setError] = useState("");
   const { register, handleSubmit, formState: { isSubmitting } } = useForm({ resolver: zodResolver(schema) });
 
   const onSubmit = async (data: z.infer<typeof schema>) => {
-    await api.post("/auth/forgot-password", data, { skipAuth: true });
-    setSent(true);
+    setError("");
+    try {
+      await api.post("/auth/forgot-password", data, { skipAuth: true });
+      setSent(true);
+    } catch {
+      setSent(true);
+    }
   };
 
   return (
@@ -31,7 +37,7 @@ export default function ForgotPasswordPage() {
           <CardHeader><CardTitle className="text-lg">Forgot password</CardTitle></CardHeader>
           <CardContent>
             {sent ? (
-              <p className="text-sm text-text-muted">If that email exists, a reset link has been issued.</p>
+              <p className="text-sm text-text-muted">If that email exists, a reset link has been sent. Check your inbox.</p>
             ) : (
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
                 <div>
@@ -39,6 +45,7 @@ export default function ForgotPasswordPage() {
                   <Input type="email" {...register("email")} className="mt-2" />
                 </div>
                 <Button type="submit" className="w-full" disabled={isSubmitting}>Send reset link</Button>
+                {error && <p className="text-sm text-destructive">{error}</p>}
               </form>
             )}
             <Link href={`/${locale}/login`} className="mt-6 block text-center text-sm text-primary hover:underline">Back to login</Link>

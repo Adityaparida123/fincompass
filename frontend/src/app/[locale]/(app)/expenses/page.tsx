@@ -244,25 +244,26 @@ export default function ExpensesPage() {
                 ) : items.length ? items.map((tx) => {
                   const scope = resolveScope(tx.category, tx.expense_scope);
                   return (
-                    <div key={tx.id} className="flex items-center gap-3 rounded-lg border border-border px-4 py-3 transition-colors hover:bg-surface-container">
-                      <div className={`h-8 w-1 rounded-full ${tx.transaction_type === "income" ? "bg-income" : "bg-expense"}`} />
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium">{tx.description}</p>
-                        <div className="flex items-center gap-2 text-xs text-text-muted">
-                          <span>{tx.date}</span>
-                          <span>·</span>
-                          <span className="capitalize">{tx.category}</span>
+                    <div key={tx.id} className="flex flex-col gap-2 rounded-lg border border-border px-4 py-3 transition-colors hover:bg-surface-container sm:flex-row sm:items-center sm:gap-3">
+                      <div className="flex items-center gap-3 sm:min-w-0 sm:flex-1">
+                        <div className={`h-8 w-1 shrink-0 rounded-full ${tx.transaction_type === "income" ? "bg-income" : "bg-expense"}`} />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium">{tx.description}</p>
+                          <p className="text-xs text-text-muted sm:hidden">{tx.date}</p>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className={`text-sm font-semibold font-[family-name:var(--font-jetbrains-mono)] ${tx.transaction_type === "income" ? "text-income" : ""}`}>
+                        <span className={`shrink-0 text-sm font-semibold font-[family-name:var(--font-jetbrains-mono)] ${tx.transaction_type === "income" ? "text-income" : ""}`}>
                           {tx.transaction_type === "income" ? "+" : "-"}{formatCurrency(toNumber(tx.amount))}
                         </span>
-                        <Badge variant={tx.transaction_type === "income" ? "success" : "secondary"} className="text-[10px]">{tx.transaction_type}</Badge>
-                        <Badge variant="outline" className={`text-[10px] capitalize ${scope === "business" ? "border-primary/40 text-primary" : scope === "mixed" ? "border-warning/40 text-warning" : ""}`}>
-                          {scope === "mixed" ? t("possiblyMixed") : t(scope)}
-                        </Badge>
-                        <Button size="sm" variant="ghost" className="h-7 px-2 text-xs text-destructive hover:text-destructive" onClick={() => handleDelete(tx.id)} disabled={deleteTx.isPending}>
+                      </div>
+                      <div className="flex items-center gap-2 sm:shrink-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="hidden text-xs text-text-muted sm:inline">{tx.date}</span>
+                          <Badge variant={tx.transaction_type === "income" ? "success" : "secondary"} className="text-[10px]">{tx.transaction_type}</Badge>
+                          <Badge variant="outline" className={`text-[10px] capitalize ${scope === "business" ? "border-primary/40 text-primary" : scope === "mixed" ? "border-warning/40 text-warning" : ""}`}>
+                            {scope === "mixed" ? t("possiblyMixed") : t(scope)}
+                          </Badge>
+                        </div>
+                        <Button size="sm" variant="ghost" className="h-7 shrink-0 px-2 text-xs text-destructive hover:text-destructive" onClick={() => handleDelete(tx.id)} disabled={deleteTx.isPending}>
                           {tc("delete")}
                         </Button>
                       </div>

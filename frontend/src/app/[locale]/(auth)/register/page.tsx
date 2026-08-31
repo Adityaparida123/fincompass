@@ -13,6 +13,7 @@ import { GuestGuard } from "@/components/auth/auth-guard";
 import { LoginAnimatedBackground } from "@/components/auth/login-animated-background";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuthStore } from "@/stores/auth-store";
 import { ApiRequestError, isTransientNetworkError } from "@/lib/api";
@@ -81,12 +82,12 @@ export default function RegisterPage() {
                 </div>
                 <div>
                   <Label>{t("password")}</Label>
-                  <Input type="password" {...register("password")} className="mt-2" />
+                  <PasswordInput {...register("password")} className="mt-2" autoComplete="new-password" />
                   {errors.password && <p className="mt-1.5 text-xs text-destructive">{errors.password.message}</p>}
                 </div>
                 <div>
                   <Label>{t("confirmPassword")}</Label>
-                  <Input type="password" {...register("confirmPassword")} className="mt-2" />
+                  <PasswordInput {...register("confirmPassword")} className="mt-2" autoComplete="new-password" />
                   {errors.confirmPassword && <p className="mt-1.5 text-xs text-destructive">{errors.confirmPassword.message}</p>}
                 </div>
                 <label className="flex items-start gap-2 text-sm">
