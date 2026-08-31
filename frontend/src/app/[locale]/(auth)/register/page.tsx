@@ -1,3 +1,10 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Create your FinCompass account",
+  description: "Start tracking cash flow, setting savings goals, and improving business health — sign up for free financial guidance.",
+};
+
 "use client";
 
 import Link from "next/link";

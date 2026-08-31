@@ -190,10 +190,10 @@ async def trends(
     db: MongoDatabase = Depends(get_session),
 ) -> ExpenseTrends:
     await _ensure_consent(db, user.id)
-    end = date.today()
-    start = end
-    for _ in range(months):
-        prev = start.replace(day=1) - timedelta(days=1)
+    _, end = month_bounds(date.today().year, date.today().month)  # End of current month (e.g., 2026-09-01)
+    start = date.today().replace(day=1)
+    for _ in range(months - 1):
+        prev = start - timedelta(days=1)
         start = prev.replace(day=1)
     series = await expense_series(db, user.id, start, end, granularity)
     inc = await income_series(db, user.id, start, end, granularity)
