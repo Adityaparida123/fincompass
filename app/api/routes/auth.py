@@ -128,6 +128,7 @@ async def forgot_password(
     db: MongoDatabase = Depends(get_session),
     _: None = Depends(rate_limit_forgot_password),
 ) -> dict:
+    logger.info("PASSWORD RESET DEBUG — Route handler invoked: email_domain=%s", data.email.split("@")[-1] if "@" in data.email else "invalid")
     await auth_service.forgot_password(db, data.email)
     await db.commit()
     return {"message": "If that email exists, a reset link has been issued."}

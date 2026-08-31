@@ -8,6 +8,7 @@ from typing import Any
 
 from app.core.config import settings
 from app.core.exceptions import ConflictError, InvalidInputError, UnauthorizedError
+from app.core.logging import get_logger
 from app.core.security import (
     TokenError,
     create_token,
@@ -19,6 +20,8 @@ from app.services.audit import log_audit
 from app.services.auth.password import hash_password, verify_password
 from app.services.auth.token_flow import issue_and_persist_tokens
 from app.services.email import get_email_service
+
+logger = get_logger(__name__)
 
 RESET_TOKEN_EXPIRE_MINUTES = 30
 
@@ -120,16 +123,24 @@ def create_reset_token(user_id: int) -> str:
 
 
 async def forgot_password(db: MongoDatabase, email: str) -> str | None:
-    """Generate a reset token.
+    """Generate a reset token and attempt email delivery.
 
     Returns the raw token only when no mail transport is configured
     (development convenience). In production this is routed through an
     email provider and never returned to the API caller.
     """
+    logger.info("PASSWORD RESET DEBUG — Request received: email_domain=%s", email.split("@")[-1] if "@" in email else "invalid")
+
     user = await get_user_by_email(db, email)
     if user is None:
+        logger.info("PASSWORD RESET DEBUG — User lookup completed: found=False")
         return None
+
+    logger.info("PASSWORD RESET DEBUG — User lookup completed: found=True")
+
     token = create_reset_token(user.id)
+    logger.info("PASSWORD RESET DEBUG — Reset token generated: YES")
+
     await log_audit(
         db,
         action="auth.forgot_password",
@@ -137,8 +148,16 @@ async def forgot_password(db: MongoDatabase, email: str) -> str | None:
         user_id=user.id,
         resource_id=user.id,
     )
+
     email_service = get_email_service()
-    await email_service.send_password_reset(user.email, token)
+    logger.info("PASSWORD RESET DEBUG — Email service obtained: provider=%s", type(email_service._provider).__name__)
+
+    try:
+        await email_service.send_password_reset(user.email, token)
+        logger.info("PASSWORD RESET DEBUG — Provider response: SUCCESS")
+    except Exception as exc:
+        logger.error("PASSWORD RESET DEBUG — Provider response: ERROR — %s", str(exc))
+
     return token
 
 
