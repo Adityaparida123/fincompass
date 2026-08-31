@@ -1,6 +1,7 @@
 """Email provider implementations."""
 
 from abc import ABC, abstractmethod
+from email.message import EmailMessage
 
 from app.core.config import settings
 from app.core.logging import get_logger
@@ -52,13 +53,20 @@ class SMTPProvider(EmailProvider):
 
     async def send(self, to: str, subject: str, body: str) -> None:
         import smtplib
-        from email.message import EmailMessage
+        import asyncio
 
         msg = EmailMessage()
         msg["From"] = self.from_addr or self.username or "noreply@fincompass.app"
         msg["Subject"] = subject
         msg["To"] = to
         msg.set_content(body)
+        
+        # Use asyncio.to_thread to run blocking SMTP operations in a thread pool
+        await asyncio.to_thread(self._send_sync, msg)
+
+    def _send_sync(self, msg: EmailMessage) -> None:
+        """Synchronous SMTP send that runs in a thread pool."""
+        import smtplib
         with smtplib.SMTP(self.host, self.port, timeout=15) as server:
             if self.username and self.password:
                 server.starttls()

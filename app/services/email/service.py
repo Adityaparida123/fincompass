@@ -73,18 +73,26 @@ def get_email_service() -> EmailService:
             missing.append("SMTP_FROM")
         if missing:
             logger.warning(
-                "EMAIL SERVICE INIT — SMTP selected but missing: %s",
+                "EMAIL SERVICE INIT — SMTP selected but missing required credentials: %s. Falling back to ConsoleEmailProvider.",
                 ", ".join(missing),
             )
-
-        provider = SMTPProvider(
-            smtp_host,
-            settings.SMTP_PORT,
-            settings.SMTP_USERNAME,
-            settings.SMTP_PASSWORD,
-            settings.SMTP_FROM,
-        )
-        logger.info("EMAIL SERVICE INIT — using SMTPProvider host=%s port=%s", smtp_host, settings.SMTP_PORT)
+            if settings.is_production:
+                logger.warning(
+                    "EMAIL SERVICE INIT — using ConsoleEmailProvider in PRODUCTION. "
+                    "Emails will NOT be delivered. Configure SMTP credentials in Render environment variables."
+                )
+            else:
+                logger.info("EMAIL SERVICE INIT — using ConsoleEmailProvider (development)")
+            provider = ConsoleEmailProvider()
+        else:
+            provider = SMTPProvider(
+                smtp_host,
+                settings.SMTP_PORT,
+                settings.SMTP_USERNAME,
+                settings.SMTP_PASSWORD,
+                settings.SMTP_FROM,
+            )
+            logger.info("EMAIL SERVICE INIT — using SMTPProvider host=%s port=%s", smtp_host, settings.SMTP_PORT)
     else:
         if settings.is_production:
             logger.warning(
