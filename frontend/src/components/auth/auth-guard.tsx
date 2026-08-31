@@ -37,24 +37,19 @@ export function GuestGuard({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isHydrated } = useAuthStore();
   const router = useRouter();
   const locale = useLocale();
-  const [verifying, setVerifying] = useState(false);
   const verifyingRef = useRef(false);
 
   useEffect(() => {
     if (!isHydrated || !isAuthenticated || verifyingRef.current) return;
     verifyingRef.current = true;
-    setVerifying(true);
     api.verifySession().then((valid) => {
       if (valid) {
         router.replace(`/${locale}/home`);
       } else {
         useAuthStore.getState().clearAuth();
       }
-      setVerifying(false);
     });
   }, [isHydrated, isAuthenticated, router, locale]);
 
-  if (!isHydrated || verifying) return null;
-  if (isAuthenticated) return null;
   return <>{children}</>;
 }
