@@ -136,10 +136,10 @@ async def forgot_password(db: MongoDatabase, email: str) -> str | None:
         logger.info("PASSWORD RESET DEBUG — User lookup completed: found=False")
         return None
 
-    logger.info("PASSWORD RESET DEBUG — User lookup completed: found=True")
+    logger.info("PASSWORD RESET DEBUG — User lookup completed: found=True user_id=%s", user.id)
 
     token = create_reset_token(user.id)
-    logger.info("PASSWORD RESET DEBUG — Reset token generated: YES")
+    logger.info("PASSWORD RESET DEBUG — Reset token generated: YES token_length=%s", len(token))
 
     await log_audit(
         db,
@@ -150,7 +150,10 @@ async def forgot_password(db: MongoDatabase, email: str) -> str | None:
     )
 
     email_service = get_email_service()
-    logger.info("PASSWORD RESET DEBUG — Email service obtained: provider=%s", type(email_service._provider).__name__)
+    provider_type = type(email_service._provider).__name__
+    logger.info("PASSWORD RESET DEBUG — Email service obtained: provider=%s smtp_configured=%s", 
+                provider_type, 
+                "SMTP" in provider_type and email_service._provider.username is not None)
 
     try:
         await email_service.send_password_reset(user.email, token)
