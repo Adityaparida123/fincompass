@@ -84,6 +84,9 @@ export function FinAIChat() {
     const assistantTurn = messages.filter((m) => m.role === "assistant").length;
 
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 120_000);
+
       const res = await fetch(`${API_BASE}/chat/stream`, {
         method: "POST",
         headers: {
@@ -92,7 +95,9 @@ export function FinAIChat() {
         },
         credentials: "include",
         body: JSON.stringify({ message: text, session_id: sessionId, language: locale, detail: aiDetail, focus: aiFocus }),
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
 
       if (!res.ok || !res.body) {
         let errorMsg = "FinAI is temporarily unavailable. Please try again.";
@@ -140,27 +145,34 @@ export function FinAIChat() {
       const assistantId = crypto.randomUUID();
       let streamDone = false;
       let lineBuffer = "";
+      const streamTimeout = setTimeout(() => {
+        reader.cancel("Stream timeout").catch(() => {});
+      }, 120_000);
 
-      while (!streamDone) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        lineBuffer += decoder.decode(value, { stream: true });
-        const lines = lineBuffer.split("\n");
-        lineBuffer = lines.pop() ?? "";
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (!trimmed.startsWith("data: ")) continue;
-          const payload = trimmed.slice(6);
-          if (payload === "[DONE]") {
-            streamDone = true;
-            break;
+      try {
+        while (!streamDone) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          lineBuffer += decoder.decode(value, { stream: true });
+          const lines = lineBuffer.split("\n");
+          lineBuffer = lines.pop() ?? "";
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed.startsWith("data: ")) continue;
+            const payload = trimmed.slice(6);
+            if (payload === "[DONE]") {
+              streamDone = true;
+              break;
+            }
+            try {
+              const parsed = JSON.parse(payload);
+              if (parsed.delta) assistantText += parsed.delta;
+              if (parsed.session_id) setSessionId(parsed.session_id);
+            } catch { /* skip malformed chunks */ }
           }
-          try {
-            const parsed = JSON.parse(payload);
-            if (parsed.delta) assistantText += parsed.delta;
-            if (parsed.session_id) setSessionId(parsed.session_id);
-          } catch { /* skip malformed chunks */ }
         }
+      } finally {
+        clearTimeout(streamTimeout);
       }
 
       const finalReply = assistantText || "I wasn't able to generate a response. Please try rephrasing your question.";
@@ -171,10 +183,14 @@ export function FinAIChat() {
       lastFollowUpsRef.current = next;
       setFollowUps(next);
     } catch (err) {
-      const msg = err instanceof TypeError && err.message.includes("fetch")
-        ? "Unable to connect to FinAI. Please check your connection."
-        : "Unable to reach FinAI. Please try again.";
-      addMessage({ id: crypto.randomUUID(), role: "assistant", content: msg, timestamp: new Date() });
+      if (err instanceof DOMException && err.name === "AbortError") {
+        addMessage({ id: crypto.randomUUID(), role: "assistant", content: "The request timed out. Please try again.", timestamp: new Date() });
+      } else {
+        const msg = err instanceof TypeError && err.message.includes("fetch")
+          ? "Unable to connect to FinAI. Please check your connection."
+          : "Unable to reach FinAI. Please try again.";
+        addMessage({ id: crypto.randomUUID(), role: "assistant", content: msg, timestamp: new Date() });
+      }
     } finally {
       setLoading(false);
     }

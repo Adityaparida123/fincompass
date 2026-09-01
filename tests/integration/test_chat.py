@@ -172,11 +172,17 @@ async def test_chat_general_without_consent(client, auth_headers, monkeypatch):
 
 
 async def test_chat_personal_sends_minimal_context(client, consented_headers, monkeypatch):
+    from datetime import date
+    from app.utils.dates import month_bounds
+    today = date.today()
+    start, _ = month_bounds(today.year, today.month)
+    test_date = start.strftime("%Y-%m-%d")
+
     tx = await client.post(
         "/api/v1/transactions",
         headers=consented_headers,
         json={
-            "date": "2026-08-01",
+            "date": test_date,
             "description": "swiggy dinner",
             "amount": "450.00",
             "transaction_type": "expense",
