@@ -30,6 +30,69 @@ export interface BusinessProfile {
   demo_synthetic?: boolean;
 }
 
+export interface BusinessSaleItem {
+  name: string;
+  quantity: number;
+  unit: string;
+  unit_price: number;
+  total: number;
+}
+
+export interface BusinessSale {
+  id: number;
+  user_id: number;
+  customer_id: number | null;
+  customer_name: string | null;
+  items: BusinessSaleItem[];
+  total_amount: number;
+  paid_amount: number;
+  due_amount: number;
+  payment_method: string;
+  date: string;
+  notes: string | null;
+}
+
+export interface BusinessCustomer {
+  id: number;
+  user_id: number;
+  name: string;
+  phone: string | null;
+  address: string | null;
+  total_purchased: number;
+  total_paid: number;
+  total_due: number;
+}
+
+export interface BusinessPurchaseItem {
+  name: string;
+  quantity: number;
+  unit: string;
+  unit_price: number;
+  total: number;
+}
+
+export interface BusinessPurchase {
+  id: number;
+  user_id: number;
+  items: BusinessPurchaseItem[];
+  total_amount: number;
+  date: string;
+  supplier_name: string | null;
+  notes: string | null;
+}
+
+export interface BusinessSummary {
+  total_sales: number;
+  total_purchases: number;
+  estimated_profit: number;
+  profit_margin: number;
+  customer_due: number;
+  total_paid: number;
+  sales_count: number;
+  purchase_count: number;
+  customer_count: number;
+}
+
 export interface TokenPair {
   access_token: string;
   refresh_token: string;
