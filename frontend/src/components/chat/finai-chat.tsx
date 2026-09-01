@@ -202,7 +202,7 @@ export function FinAIChat() {
     <>
       {!isOpen && (
         <button
-          className="fab-chat fixed bottom-[calc(4rem+env(safe-area-inset-bottom))] right-4 z-[60] h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-lg lg:bottom-5 flex items-center justify-center"
+          className="fab-chat fixed bottom-5 right-5 z-[60] h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-lg lg:bottom-6 lg:right-6 flex items-center justify-center"
           onClick={() => setOpen(true)}
           aria-label={t("title")}
         >
@@ -220,8 +220,8 @@ export function FinAIChat() {
             className={cn(
               "fixed z-[60] flex flex-col glass-panel shadow-lg",
               isFullscreen
-                ? "inset-0 rounded-none"
-                : "bottom-[calc(4rem+env(safe-area-inset-bottom))] right-4 left-4 h-[min(70vh,32rem)] rounded-2xl lg:bottom-5 lg:left-auto lg:w-96",
+                ? "inset-4 rounded-2xl"
+                : "bottom-5 right-5 w-96 h-[min(70vh,650px)] rounded-2xl sm:bottom-6 sm:right-6 sm:w-[400px] sm:h-[min(75vh,650px)]",
             )}
           >
             <div className="flex items-center justify-between border-b border-border-subtle px-4 py-2.5">

@@ -16,7 +16,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <Sidebar />
         <div className="flex flex-1 flex-col min-w-0 z-10">
           <TopBar />
-          <main className="relative z-10 flex-1 overflow-y-auto pt-6 px-4 md:px-6 lg:px-8 pb-28 lg:pb-8 min-h-screen">
+          <main className="relative z-10 flex-1 overflow-y-auto pt-6 px-4 md:px-6 lg:px-8 pb-8 lg:pb-8 min-h-screen">
             <div className="page-transition max-w-[1600px] mx-auto w-full">{children}</div>
           </main>
         </div>
