@@ -35,21 +35,12 @@
     "estimateLabel": "AI estimate"
   },
   "nav": {
-    "home": "Home",
-    "advisory": "Business Advisory",
-    "businessProfile": "Business Profile",
-    "expenses": "Expenses",
+    "dashboard": "Dashboard",
+    "transactions": "Transactions",
     "cashflow": "Cash Flow",
-    "savings": "Savings",
-    "budget": "Budget & Planning",
-    "debt": "Debt",
-    "borrowing": "Borrowing",
-    "readiness": "Business Credit",
-    "recommendations": "AI Recommendations",
-    "schemes": "Schemes for You",
-    "finai": "FinAI",
-    "notifications": "Notifications",
-    "recoverTransaction": "Recover Transaction",
+    "financialPlanning": "Financial Planning",
+    "creditDebt": "Credit & Debt",
+    "finaiAdvisor": "FinAI Advisor",
     "settings": "Settings"
   },
   "landing": {

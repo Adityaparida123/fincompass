@@ -4,9 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations, useLocale } from "next-intl";
 import {
-  Home, Store, Stethoscope, Receipt, TrendingUp, PiggyBank, Wallet,
-  CreditCard, HandCoins, Gauge, Lightbulb, Landmark,
-  Trash2, Settings, Menu, X, Compass, Activity,
+  Home, Receipt, TrendingUp, Wallet, CreditCard, Lightbulb,
+  Menu, X, Compass, Activity,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
@@ -14,59 +13,40 @@ import { Button } from "@/components/ui/button";
 
 const navGroups = [
   {
-    label: "Command Center",
+    label: "COMMAND CENTER",
     items: [
-      { key: "home", href: "/home", icon: Home },
+      { key: "dashboard", href: "/home", icon: Home },
     ],
   },
   {
-    label: "Intelligence",
+    label: "FINANCIAL INTELLIGENCE",
     items: [
-      { key: "advisory", href: "/advisory", icon: Stethoscope },
-      { key: "businessProfile", href: "/business", icon: Store },
-    ],
-  },
-  {
-    label: "Financial Core",
-    items: [
-      { key: "expenses", href: "/expenses", icon: Receipt },
+      { key: "transactions", href: "/expenses", icon: Receipt },
       { key: "cashflow", href: "/cashflow", icon: TrendingUp },
-      { key: "savings", href: "/savings", icon: PiggyBank },
-      { key: "budget", href: "/budget", icon: Wallet },
+      { key: "financialPlanning", href: "/budget", icon: Wallet },
     ],
   },
   {
-    label: "Capital & Credit",
+    label: "CAPITAL & CREDIT",
     items: [
-      { key: "debt", href: "/debt", icon: CreditCard },
-      { key: "borrowing", href: "/borrowing", icon: HandCoins },
-      { key: "readiness", href: "/readiness", icon: Gauge },
+      { key: "creditDebt", href: "/debt", icon: CreditCard },
     ],
   },
   {
-    label: "Ecosystem",
+    label: "AI",
     items: [
-      { key: "recommendations", href: "/recommendations", icon: Lightbulb },
-      { key: "schemes", href: "/schemes", icon: Landmark },
-    ],
-  },
-  {
-    label: "System Vault",
-    items: [
-      { key: "recoverTransaction", href: "/recycle-bin", icon: Trash2 },
-      { key: "settings", href: "/settings", icon: Settings },
+      { key: "finaiAdvisor", href: "/advisory", icon: Lightbulb },
     ],
   },
 ];
 
 const allNavItems = navGroups.flatMap((g) => g.items as { key: string; href: string; icon: React.ElementType }[]);
 
-function NavGroup({ group, locale, pathname, t, onClick }: {
+function NavGroup({ group, locale, pathname, t }: {
   group: { label: string; items: readonly { key: string; href: string; icon: React.ElementType }[] };
   locale: string;
   pathname: string;
   t: ReturnType<typeof useTranslations>;
-  onClick?: () => void;
 }) {
   return (
     <div>
@@ -89,7 +69,6 @@ function NavGroup({ group, locale, pathname, t, onClick }: {
                   ? "bg-cyan-500/10 text-cyan-300 font-semibold border-l-2 border-cyan-400 shadow-[inset_0_0_12px_rgba(0,242,254,0.08)]"
                   : "text-text-secondary hover:text-text-primary hover:bg-white/[0.04] border-l-2 border-transparent",
               )}
-              onClick={onClick}
             >
               <Icon
                 className={cn(
@@ -195,7 +174,6 @@ export function Sidebar() {
                   locale={locale}
                   pathname={pathname}
                   t={t}
-                  onClick={() => setSidebarOpen(false)}
                 />
               ))}
             </nav>
@@ -210,7 +188,7 @@ export function MobileNav() {
   const t = useTranslations("nav");
   const locale = useLocale();
   const pathname = usePathname();
-  const preferred = ["/home", "/advisory", "/expenses", "/cashflow"];
+  const preferred = ["/home", "/expenses", "/cashflow", "/budget", "/debt", "/advisory"];
   const mobileItems = preferred
     .map((href) => allNavItems.find((item) => item.href === href))
     .filter((item): item is { key: string; href: string; icon: React.ElementType } => Boolean(item));

@@ -35,21 +35,12 @@
     "estimateLabel": "AI अनुमान"
   },
   "nav": {
-    "home": "होम",
-    "advisory": "व्यापार सलाह",
-    "businessProfile": "व्यापार प्रोफ़ाइल",
-    "expenses": "खर्च",
+    "dashboard": "डैशबोर्ड",
+    "transactions": "लेन-देन",
     "cashflow": "कैश फ्लो",
-    "savings": "बचत",
-    "budget": "बजट और योजना",
-    "debt": "ऋण",
-    "borrowing": "उधार",
-    "readiness": "व्यापार क्रेडिट",
-    "recommendations": "AI सुझाव",
-    "schemes": "आपके लिए योजनाएं",
-    "finai": "FinAI",
-    "notifications": "सूचनाएं",
-    "recoverTransaction": "लेन-देन पुनर्प्राप्ति",
+    "financialPlanning": "वित्तीय योजना",
+    "creditDebt": "क्रेडिट और ऋण",
+    "finaiAdvisor": "FinAI सलाहकार",
     "settings": "सेटिंग्स"
   },
   "landing": {
