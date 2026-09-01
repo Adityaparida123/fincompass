@@ -69,7 +69,7 @@ export default function ProfilePage() {
         subtitle="Manage credentials, locale preferences, and financial reporting units"
         action={
           <div className="flex items-center gap-2">
-            <SpatialBadge variant="cyan" pulse>OPERATOR ID #{user.id?.slice(0, 6)}</SpatialBadge>
+            <SpatialBadge variant="cyan" pulse>OPERATOR ID #{String(user.id).slice(0, 6)}</SpatialBadge>
           </div>
         }
       />
@@ -141,10 +141,10 @@ export default function ProfilePage() {
                 <span className="text-text-muted">Multi-factor Auth</span>
                 <span className="text-emerald-400 font-semibold">Active (JWT)</span>
               </div>
-              <div className="flex items-center justify-between p-2.5 rounded-xl bg-surface-container border border-white/5">
-                <span className="text-text-muted">Role</span>
-                <span className="text-cyan-300 font-semibold">{user.role ?? "user"}</span>
-              </div>
+<div className="flex items-center justify-between p-2.5 rounded-xl bg-surface-container border border-white/5">
+  <span className="text-text-muted">Role</span>
+  <span className="text-cyan-300 font-semibold">user</span>
+</div>
             </div>
           </GlassPanel>
         </div>

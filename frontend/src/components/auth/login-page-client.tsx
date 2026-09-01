@@ -8,7 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { motion } from "framer-motion";
 import { useState } from "react";
-import { Eye, EyeOff, Compass } from "lucide-react";
+import { Eye, EyeOff, Compass, Sparkles, ShieldCheck } from "lucide-react";
 import { GuestGuard } from "@/components/auth/auth-guard";
 import { LoginAnimatedBackground } from "@/components/auth/login-animated-background";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,8 @@ import { Input, Label } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuthStore } from "@/stores/auth-store";
 import { ApiRequestError, authLog, isTransientNetworkError } from "@/lib/api";
+import { GlassPanel } from "@/components/spatial/glass-panel";
+import { SpatialBadge } from "@/components/spatial/spatial-badge";
 
 const schema = z.object({
   email: z.string().email(),
@@ -73,21 +75,32 @@ export function LoginPageClient() {
             </div>
             <span className="text-2xl font-semibold text-primary tracking-tight">FinCompass</span>
           </motion.div>
-          <Card className="login-card-glass">
-            <CardHeader>
-              <CardTitle className="text-lg">{t("loginTitle")}</CardTitle>
-            </CardHeader>
-            <CardContent>
+          
+          <GlassPanel glow="cyan" hudCorners hologramEdge elevated className="page-transition">
+            <div className="space-y-6">
+              <div className="text-center">
+                <div className="mb-4 flex items-center justify-center gap-2">
+                  <SpatialBadge variant="cyan" pulse icon={<Sparkles className="h-3 w-3" />}>
+                    {t("telemetryLive")}
+                  </SpatialBadge>
+                  <SpatialBadge variant="emerald" icon={<ShieldCheck className="h-3 w-3" />}>
+                    {t("secureAccess")}
+                  </SpatialBadge>
+                </div>
+                <h1 className="text-2xl font-bold tracking-tight text-text-primary">{t("loginTitle")}</h1>
+                <p className="mt-2 text-sm text-text-muted">{t("loginSubtitle")}</p>
+              </div>
+
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
                 <div>
                   <Label htmlFor="email">{t("email")}</Label>
-                  <Input id="email" type="email" {...register("email")} className="mt-2" />
+                  <Input id="email" type="email" {...register("email")} className="mt-2 input-premium" />
                   {errors.email && <p className="mt-1.5 text-xs text-destructive">{errors.email.message}</p>}
                 </div>
                 <div>
                   <Label htmlFor="password">{t("password")}</Label>
                   <div className="relative mt-2">
-                    <Input id="password" type={showPassword ? "text" : "password"} {...register("password")} />
+                    <Input id="password" type={showPassword ? "text" : "password"} {...register("password")} className="input-premium" />
                     <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-foreground transition-colors" onClick={() => setShowPassword(!showPassword)}>
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
@@ -99,16 +112,16 @@ export function LoginPageClient() {
                   {t("rememberMe")}
                 </label>
                 {error && <p className="text-sm text-destructive">{error}</p>}
-                <Button type="submit" className="login-submit w-full" disabled={isSubmitting}>
+                <Button type="submit" className="login-submit w-full btn-press" disabled={isSubmitting}>
                   {t("loginButton")}
                 </Button>
               </form>
               <div className="mt-6 flex flex-col gap-3 text-center text-sm">
                 <Link href={`/${locale}/forgot-password`} className="text-primary hover:underline">{t("forgotPassword")}</Link>
-                <p className="text-text-muted">{t("noAccount")} <Link href={`/${locale}/register`} className="text-primary hover:underline">Register</Link></p>
+                <p className="text-text-muted">{t("noAccount")} <Link href={`/${locale}/register`} className="text-primary hover:underline">{t("register")}</Link></p>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </GlassPanel>
         </motion.div>
       </div>
     </GuestGuard>

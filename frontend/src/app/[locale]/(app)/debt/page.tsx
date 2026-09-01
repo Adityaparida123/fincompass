@@ -221,7 +221,7 @@ export default function DebtPage() {
             <div>
               <div className="flex items-center justify-between pb-2 border-b border-white/5">
                 <div>
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-text-muted">LOAN REF #{d.id?.slice(0, 6)}</span>
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-text-muted">LOAN REF #{String(d.id).slice(0, 6)}</span>
                   <h4 className="text-sm font-semibold text-text-primary mt-0.5">{d.name}</h4>
                 </div>
                 {d.due_date && (

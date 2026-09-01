@@ -46,7 +46,7 @@ function SavingsGoalCard({ goal }: { goal: SavingsGoal }) {
       <div>
         <div className="flex items-start justify-between gap-2 pb-2 border-b border-white/5">
           <div>
-            <span className="text-[10px] font-mono uppercase tracking-wider text-text-muted">VAULT #{goal.id?.slice(0, 6)}</span>
+            <span className="text-[10px] font-mono uppercase tracking-wider text-text-muted">VAULT #{String(goal.id).slice(0, 6)}</span>
             <h4 className="text-sm font-semibold text-text-primary mt-0.5">{goal.name}</h4>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">

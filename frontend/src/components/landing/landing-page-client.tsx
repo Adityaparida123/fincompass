@@ -10,6 +10,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AnimatedFinanceBackground } from "@/components/animated-finance-background";
+import { FinancialGlobe } from "@/components/3d/financial-globe";
+import { FinancialOrb } from "@/components/3d/financial-orb";
 import { useAuthStore } from "@/stores/auth-store";
 
 const features = [
@@ -98,56 +100,70 @@ export function LandingPageClient() {
 
       <main className="relative z-10">
         <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24 lg:py-32">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mx-auto max-w-3xl text-center"
-          >
-            <h1 className="whitespace-pre-line text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
-              {t("heroTitle")}
-            </h1>
-            <div className="mt-2 flex items-center justify-center gap-2">
-              <Compass className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium text-primary">Your compass for every money decision</span>
-              <Compass className="h-4 w-4 text-primary" />
-            </div>
-            <p className="mt-4 text-base text-text-muted sm:text-lg">
-              {t("heroSubtitle")}
-            </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
-              {isAuthenticated ? (
-                <Link href={`/${locale}/home`}>
-                  <Button size="lg" className="w-full sm:w-auto">
-                    <Home className="mr-1.5 h-4 w-4" />
-                    {t("home")} <ArrowRight className="h-4 w-4" />
-                  </Button>
-                </Link>
-              ) : (
-                <>
-                  <Link href={`/${locale}/register`}>
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center lg:text-left"
+            >
+              <h1 className="whitespace-pre-line text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
+                {t("heroTitle")}
+              </h1>
+              <div className="mt-2 flex items-center justify-center lg:justify-start gap-2">
+                <Compass className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium text-primary">Your compass for every money decision</span>
+                <Compass className="h-4 w-4 text-primary" />
+              </div>
+              <p className="mt-4 text-base text-text-muted sm:text-lg">
+                {t("heroSubtitle")}
+              </p>
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center lg:justify-start">
+                {isAuthenticated ? (
+                  <Link href={`/${locale}/home`}>
                     <Button size="lg" className="w-full sm:w-auto">
-                      {t("getStarted")} <ArrowRight className="h-4 w-4" />
+                      <Home className="mr-1.5 h-4 w-4" />
+                      {t("home")} <ArrowRight className="h-4 w-4" />
                     </Button>
                   </Link>
-                  <Link href={`/${locale}/login`}>
-                    <Button size="lg" variant="outline" className="w-full sm:w-auto">
-                      {t("login")}
-                    </Button>
-                  </Link>
-                </>
-              )}
-            </div>
-            <div className="mt-4 text-center">
-              <button 
-                className="text-sm text-primary hover:underline focus:outline-none"
-                onClick={() => {
-                  document.getElementById('dashboard-preview')?.scrollIntoView({ behavior: 'smooth' });
-                }}
-              >
-                See how your health score works →
-              </button>
-            </div>
-          </motion.div>
+                ) : (
+                  <>
+                    <Link href={`/${locale}/register`}>
+                      <Button size="lg" className="w-full sm:w-auto">
+                        {t("getStarted")} <ArrowRight className="h-4 w-4" />
+                      </Button>
+                    </Link>
+                    <Link href={`/${locale}/login`}>
+                      <Button size="lg" variant="outline" className="w-full sm:w-auto">
+                        {t("login")}
+                      </Button>
+                    </Link>
+                  </>
+                )}
+              </div>
+              <div className="mt-4 text-center lg:text-left">
+                <button 
+                  className="text-sm text-primary hover:underline focus:outline-none"
+                  onClick={() => {
+                    document.getElementById('dashboard-preview')?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                >
+                  See how your health score works →
+                </button>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.2 }}
+              className="relative"
+            >
+              <div className="relative aspect-square max-w-md mx-auto lg:max-w-none">
+                <FinancialGlobe size={280} className="absolute inset-0" />
+                <FinancialOrb status="good" score={78} size={180} className="absolute inset-0" />
+              </div>
+            </motion.div>
+          </div>
         </section>
 
         <section id="dashboard-preview" className="py-16 sm:py-20 bg-gradient-to-b from-background-page to-surface-container/20">
@@ -244,10 +260,10 @@ export function LandingPageClient() {
             <p className="mt-4 text-center text-text-muted max-w-2xl mx-auto">{t("featuresSubtitle")}</p>
             <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {features.map(({ icon: Icon, title, description }) => (
-                <Card key={title} className="border-border-subtle hover:border-primary/30 transition-all duration-300 hover:shadow-lg">
+                <Card key={title} className="border-border-subtle hover:border-primary/30 transition-all duration-300 hover:shadow-lg group">
                   <CardHeader>
                     <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors duration-300">
                         <Icon className="h-5 w-5 text-primary" />
                       </div>
                       <CardTitle className="text-lg font-semibold">{title}</CardTitle>

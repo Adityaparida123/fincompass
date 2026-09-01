@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode } from "react";
+import React, { type ReactNode, isValidElement, type ReactElement } from "react";
 import { cn } from "@/lib/utils";
 import { TrendingUp, TrendingDown, Minus, type LucideIcon } from "lucide-react";
 import { Skeleton } from "@/components/ui/input";
@@ -9,11 +9,11 @@ interface SpatialMetricProps {
   label: string;
   value: string;
   subtitle?: string;
-  icon?: LucideIcon;
+  icon?: React.ReactNode;
   loading?: boolean;
   trend?: "up" | "down" | "flat";
   trendValue?: string;
-  glow?: "cyan" | "indigo" | "emerald" | "rose" | "none";
+  glow?: "cyan" | "indigo" | "emerald" | "rose" | "amber" | "none";
   badge?: ReactNode;
   className?: string;
 }
@@ -22,7 +22,7 @@ export function SpatialMetric({
   label,
   value,
   subtitle,
-  icon: Icon,
+  icon,
   loading = false,
   trend,
   trendValue,
@@ -32,12 +32,20 @@ export function SpatialMetric({
 }: SpatialMetricProps) {
   const TrendIcon = trend === "up" ? TrendingUp : trend === "down" ? TrendingDown : Minus;
 
-  const glowStyles = {
+  const glowStyles: Record<string, string> = {
     cyan: "border-cyan-500/20 hover:border-cyan-400/40 hover:shadow-[0_0_20px_rgba(0,242,254,0.12)]",
     indigo: "border-indigo-500/20 hover:border-indigo-400/40 hover:shadow-[0_0_20px_rgba(129,140,248,0.12)]",
     emerald: "border-emerald-500/20 hover:border-emerald-400/40 hover:shadow-[0_0_20px_rgba(52,211,153,0.12)]",
     rose: "border-rose-500/20 hover:border-rose-400/40 hover:shadow-[0_0_20px_rgba(244,63,94,0.12)]",
+    amber: "border-amber-500/20 hover:border-amber-400/40 hover:shadow-[0_0_20px_rgba(245,158,11,0.12)]",
     none: "border-border/60",
+  };
+
+  const renderIcon = (iconNode: React.ReactNode) => {
+    if (isValidElement(iconNode)) {
+      return React.cloneElement(iconNode as ReactElement<{ className?: string }>, { className: "h-4 w-4" });
+    }
+    return iconNode;
   };
 
   return (
@@ -57,9 +65,9 @@ export function SpatialMetric({
         </div>
         {badge ? (
           badge
-        ) : Icon ? (
+        ) : icon ? (
           <div className="rounded-lg bg-primary/10 p-1.5 text-primary transition-all duration-200 group-hover:bg-primary/20 group-hover:scale-110">
-            <Icon className="h-4 w-4" />
+            {renderIcon(icon)}
           </div>
         ) : null}
       </div>

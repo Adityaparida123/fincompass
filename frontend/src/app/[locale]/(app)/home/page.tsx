@@ -382,7 +382,7 @@ export default function HomePage() {
             subtitle={format(new Date(), "d MMMM")}
             loading={monthly.isLoading}
             glow="cyan"
-            icon={TrendingUp}
+            icon={<TrendingUp />}
           />
         )}
         <SpatialMetric
@@ -391,7 +391,7 @@ export default function HomePage() {
           subtitle={t("thisMonth")}
           loading={monthly.isLoading}
           glow="cyan"
-          icon={TrendingUp}
+          icon={<TrendingUp />}
         />
         <SpatialMetric
           label={t("monthlyExpenses")}
@@ -399,7 +399,7 @@ export default function HomePage() {
           subtitle={t("thisMonth")}
           loading={monthly.isLoading}
           glow="indigo"
-          icon={Receipt}
+          icon={<Receipt />}
         />
         <SpatialMetric
           label={t("estimatedProfit")}
@@ -409,7 +409,7 @@ export default function HomePage() {
           glow={netCashFlow >= 0 ? "emerald" : "rose"}
           trend={netCashFlow >= 0 ? "up" : "down"}
           trendValue={changePercent != null ? `${changePercent > 0 ? "+" : ""}${changePercent}%` : undefined}
-          icon={Wallet}
+          icon={<Wallet />}
         />
       </div>
 

@@ -114,7 +114,7 @@ export default function CashflowPage() {
               <span className="text-[11px] font-mono uppercase tracking-wider text-cyan-400">Stream Dynamics</span>
               <Activity className="h-3.5 w-3.5 text-cyan-400 animate-pulse" />
             </div>
-            <CashFlowStream income={income} expense={expenses} size={190} />
+            <CashFlowStream income={income} expenses={expenses} height={190} />
             <div className="flex items-center justify-between w-full pt-3 mt-1 border-t border-white/5 text-[11px] font-mono">
               <span className="text-emerald-400">INFLOW: {formatCurrency(income)}</span>
               <span className="text-rose-400">OUTFLOW: {formatCurrency(expenses)}</span>

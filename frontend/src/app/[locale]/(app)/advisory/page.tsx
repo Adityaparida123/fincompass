@@ -147,10 +147,10 @@ function HealthSection({ monthly, loading }: { monthly?: MonthlyData; loading: b
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <SpatialMetric label={t("revenue")} value={loading ? "" : formatCurrency(income)} subtitle={t("thisMonth")} icon={TrendingUp} loading={loading} glow="cyan" />
-        <SpatialMetric label={t("expenses")} value={loading ? "" : formatCurrency(expenses)} subtitle={t("thisMonth")} icon={TrendingDown} loading={loading} glow="indigo" />
-        <SpatialMetric label={t("profit")} value={loading ? "" : formatCurrency(profit)} subtitle={profit >= 0 ? t("keptThisMonth") : t("spentMoreThanEarned")} icon={CalcIcon} loading={loading} glow={profit >= 0 ? "emerald" : "rose"} />
-        <SpatialMetric label={t("transactions")} value={String(count)} subtitle={t("recordedThisMonth")} icon={Activity} loading={loading} glow="cyan" />
+        <SpatialMetric label={t("revenue")} value={loading ? "" : formatCurrency(income)} subtitle={t("thisMonth")} icon={<TrendingUp />} loading={loading} glow="cyan" />
+        <SpatialMetric label={t("expenses")} value={loading ? "" : formatCurrency(expenses)} subtitle={t("thisMonth")} icon={<TrendingDown />} loading={loading} glow="indigo" />
+        <SpatialMetric label={t("profit")} value={loading ? "" : formatCurrency(profit)} subtitle={profit >= 0 ? t("keptThisMonth") : t("spentMoreThanEarned")} icon={<CalcIcon />} loading={loading} glow={profit >= 0 ? "emerald" : "rose"} />
+        <SpatialMetric label={t("transactions")} value={String(count)} subtitle={t("recordedThisMonth")} icon={<Activity />} loading={loading} glow="cyan" />
       </div>
 
       <GlassPanel glow="cyan" hudCorners className="p-5">
@@ -244,9 +244,9 @@ function StructureSection({
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <SpatialMetric label={t("monthlySurplus")} value={loading ? "" : formatCurrency(surplus)} subtitle={t("afterAllCosts")} icon={TrendingUp} loading={loading} glow="cyan" />
-        <SpatialMetric label={t("debtPayments")} value={loading ? "" : formatCurrency(debtPayments)} subtitle={t("perMonth")} icon={Landmark} loading={loading} glow="rose" />
-        <SpatialMetric label={t("reserveBalance")} value={loading ? "" : formatCurrency(savingsTotal)} subtitle={t("inGoals")} icon={ShieldAlert} loading={loading} glow="emerald" />
+        <SpatialMetric label={t("monthlySurplus")} value={loading ? "" : formatCurrency(surplus)} subtitle={t("afterAllCosts")} icon={<TrendingUp />} loading={loading} glow="cyan" />
+        <SpatialMetric label={t("debtPayments")} value={loading ? "" : formatCurrency(debtPayments)} subtitle={t("perMonth")} icon={<Landmark />} loading={loading} glow="rose" />
+        <SpatialMetric label={t("reserveBalance")} value={loading ? "" : formatCurrency(savingsTotal)} subtitle={t("inGoals")} icon={<ShieldAlert />} loading={loading} glow="emerald" />
       </div>
 
       <GlassPanel glow="cyan" className="p-5">

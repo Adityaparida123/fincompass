@@ -8,7 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { motion } from "framer-motion";
 import { useState } from "react";
-import { Compass } from "lucide-react";
+import { Compass, Sparkles, ShieldCheck, Target, ArrowRight } from "lucide-react";
 import { GuestGuard } from "@/components/auth/auth-guard";
 import { LoginAnimatedBackground } from "@/components/auth/login-animated-background";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,8 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuthStore } from "@/stores/auth-store";
 import { ApiRequestError, isTransientNetworkError } from "@/lib/api";
+import { GlassPanel } from "@/components/spatial/glass-panel";
+import { SpatialBadge } from "@/components/spatial/spatial-badge";
 
 const schema = z.object({
   fullName: z.string().min(2),
@@ -66,28 +68,41 @@ export function RegisterPageClient() {
             </div>
             <span className="text-2xl font-semibold text-primary tracking-tight">FinCompass</span>
           </div>
-          <Card>
-            <CardHeader><CardTitle className="text-lg">{t("registerTitle")}</CardTitle></CardHeader>
-            <CardContent>
+          
+          <GlassPanel glow="cyan" hudCorners hologramEdge elevated className="page-transition">
+            <div className="space-y-6">
+              <div className="text-center">
+                <div className="mb-4 flex items-center justify-center gap-2">
+                  <SpatialBadge variant="cyan" pulse icon={<Sparkles className="h-3 w-3" />}>
+                    {t("telemetryLive")}
+                  </SpatialBadge>
+                  <SpatialBadge variant="emerald" icon={<ShieldCheck className="h-3 w-3" />}>
+                    {t("secureAccess")}
+                  </SpatialBadge>
+                </div>
+                <h1 className="text-2xl font-bold tracking-tight text-text-primary">{t("registerTitle")}</h1>
+                <p className="mt-2 text-sm text-text-muted">{t("registerSubtitle")}</p>
+              </div>
+
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
                 <div>
                   <Label>{t("fullName")}</Label>
-                  <Input {...register("fullName")} className="mt-2" />
+                  <Input {...register("fullName")} className="mt-2 input-premium" />
                   {errors.fullName && <p className="mt-1.5 text-xs text-destructive">{errors.fullName.message}</p>}
                 </div>
                 <div>
                   <Label>{t("email")}</Label>
-                  <Input type="email" {...register("email")} className="mt-2" />
+                  <Input type="email" {...register("email")} className="mt-2 input-premium" />
                   {errors.email && <p className="mt-1.5 text-xs text-destructive">{errors.email.message}</p>}
                 </div>
                 <div>
                   <Label>{t("password")}</Label>
-                  <PasswordInput {...register("password")} className="mt-2" autoComplete="new-password" />
+                  <PasswordInput {...register("password")} className="mt-2 input-premium" autoComplete="new-password" />
                   {errors.password && <p className="mt-1.5 text-xs text-destructive">{errors.password.message}</p>}
                 </div>
                 <div>
                   <Label>{t("confirmPassword")}</Label>
-                  <PasswordInput {...register("confirmPassword")} className="mt-2" autoComplete="new-password" />
+                  <PasswordInput {...register("confirmPassword")} className="mt-2 input-premium" autoComplete="new-password" />
                   {errors.confirmPassword && <p className="mt-1.5 text-xs text-destructive">{errors.confirmPassword.message}</p>}
                 </div>
                 <label className="flex items-start gap-2 text-sm">
@@ -95,11 +110,25 @@ export function RegisterPageClient() {
                   {t("termsAgree")}
                 </label>
                 {error && <p className="text-sm text-destructive">{error}</p>}
-                <Button type="submit" className="w-full" disabled={isSubmitting}>{t("registerButton")}</Button>
+                <Button type="submit" className="w-full btn-press" disabled={isSubmitting}>{t("registerButton")}</Button>
               </form>
-              <p className="mt-6 text-center text-sm text-text-muted">{t("hasAccount")} <Link href={`/${locale}/login`} className="text-primary hover:underline">Login</Link></p>
-            </CardContent>
-          </Card>
+              <p className="mt-6 text-center text-sm text-text-muted">{t("hasAccount")} <Link href={`/${locale}/login`} className="text-primary hover:underline">{t("login")}</Link></p>
+              
+              <div className="mt-6 pt-4 border-t border-border/30">
+                <div className="flex flex-wrap items-center justify-center gap-2 text-xs text-text-muted">
+                  <SpatialBadge variant="neutral" icon={<Target className="h-2.5 w-2.5" />}>
+                    AI Insights
+                  </SpatialBadge>
+                  <SpatialBadge variant="neutral" icon={<ArrowRight className="h-2.5 w-2.5" />}>
+                    Cash Flow
+                  </SpatialBadge>
+                  <SpatialBadge variant="neutral" icon={<ArrowRight className="h-2.5 w-2.5" />}>
+                    Schemes
+                  </SpatialBadge>
+                </div>
+              </div>
+            </div>
+          </GlassPanel>
         </motion.div>
       </div>
     </GuestGuard>
