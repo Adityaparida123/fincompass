@@ -4,9 +4,11 @@ import Link from "next/link";
 import { useTranslations, useLocale } from "next-intl";
 import { motion } from "framer-motion";
 import {
-  Compass, Shield, TrendingUp, PiggyBank, Wallet, Store,
-  HandCoins, Landmark, MessageCircle, ArrowRight, Home, Calculator,
-  CheckCircle, TrendingDown
+  Compass, TrendingUp, PieChart, Target, BarChart3,
+  Wallet, PiggyBank, CreditCard, Building, FileText,
+  Shield, ArrowRight, ChevronRight, Home,
+  BarChart, LineChart, TrendingDown, Calendar,
+  Landmark, Clock, CheckCircle, ArrowUpRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,50 +20,40 @@ import { GlassPanel } from "@/components/spatial/glass-panel";
 import { SpatialMetric } from "@/components/spatial/spatial-metric";
 import { useAuthStore } from "@/stores/auth-store";
 
-const features = [
-  { 
-    icon: TrendingUp, 
-    title: "Cash-flow analysis",
-    description: "See exactly where money comes in and goes out each month, with plain-language flags before you run short."
-  },
-  { 
-    icon: Store, 
-    title: "Business health check",
-    description: "Get an overall health score and targeted recommendations to improve financial stability and growth potential."
-  },
-  { 
-    icon: Calculator, 
-    title: "Pricing & planning tools",
-    description: "Set optimal prices, forecast revenue, and plan budgets with scenario-based modeling tools."
-  },
-  { 
-    icon: Wallet, 
-    title: "Expense tracking",
-    description: "Automatically categorize expenses, spot spending trends, and identify areas for cost optimization."
-  },
-  { 
-    icon: PiggyBank, 
-    title: "Business savings goals",
-    description: "Set and track progress toward savings targets for taxes, emergencies, and business expansion."
-  },
-  { 
-    icon: HandCoins, 
-    title: "Responsible borrowing",
-    description: "Understand loan options, calculate affordable EMI, and plan debt repayment without straining cash flow."
-  },
-  { 
-    icon: Landmark, 
-    title: "Government schemes",
-    description: "Discover and apply for relevant government subsidies, grants, and support programs for your business."
-  },
-  { 
-    icon: MessageCircle, 
-    title: "FinAI business advisor",
-    description: "Get personalized financial guidance and answers to money questions in simple, actionable language."
-  },
+const financialDomains = [
+  { icon: TrendingDown, title: "expensesDomain", color: "rose" },
+  { icon: BarChart, title: "cashflowDomain", color: "cyan" },
+  { icon: PiggyBank, title: "savingsDomain", color: "emerald" },
+  { icon: Calendar, title: "budgetDomain", color: "indigo" },
+  { icon: CreditCard, title: "debtDomain", color: "amber" },
+  { icon: Building, title: "borrowingDomain", color: "violet" },
+  { icon: Target, title: "readinessDomain", color: "teal" },
+  { icon: Landmark, title: "schemesDomain", color: "blue" },
 ];
 
-export function LandingPageClient() {
+const processSteps = [
+  { number: "01", title: "connect", icon: Shield, color: "cyan" },
+  { number: "02", title: "understand", icon: BarChart3, color: "indigo" },
+  { number: "03", title: "plan", icon: Target, color: "emerald" },
+  { number: "04", title: "improve", icon: TrendingUp, color: "amber" },
+];
+
+const valuePropositions = [
+  { title: "understandValue", icon: PieChart, color: "cyan" },
+  { title: "planValue", icon: Target, color: "indigo" },
+  { title: "improveValue", icon: TrendingUp, color: "emerald" },
+  { title: "discoverValue", icon: Landmark, color: "amber" },
+];
+
+const journeySteps = [
+  "dataStep",
+  "analysisStep",
+  "insightsStep",
+  "recommendationsStep",
+  "decisionsStep",
+];
+
+export function LandingPageRedesign() {
   const t = useTranslations("landing");
   const locale = useLocale();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -116,7 +108,14 @@ export function LandingPageClient() {
                   हिं
                 </Link>
               </div>
-              {!isAuthenticated ? (
+              {isAuthenticated ? (
+                <Link href={`/${locale}/home`}>
+                  <Button variant="ghost" className="hidden sm:inline-flex">
+                    <Home className="mr-1.5 h-4 w-4" />
+                    Dashboard
+                  </Button>
+                </Link>
+              ) : (
                 <>
                   <Link href={`/${locale}/login`}>
                     <Button variant="ghost" className="hidden sm:inline-flex">
@@ -129,13 +128,6 @@ export function LandingPageClient() {
                     </Button>
                   </Link>
                 </>
-              ) : (
-                <Link href={`/${locale}/home`}>
-                  <Button variant="ghost" className="hidden sm:inline-flex">
-                    <Home className="mr-1.5 h-4 w-4" />
-                    Dashboard
-                  </Button>
-                </Link>
               )}
             </div>
           </div>
@@ -180,7 +172,7 @@ export function LandingPageClient() {
                       <Link href="#what-is-fincompass">
                         <Button size="lg" variant="outline" className="w-full sm:w-auto">
                           {t("secondaryCta")}
-                          <ArrowRight className="ml-2 h-5 w-5" />
+                          <ChevronRight className="ml-2 h-5 w-5" />
                         </Button>
                       </Link>
                     </>
@@ -230,7 +222,7 @@ export function LandingPageClient() {
                   <GlassPanel className="p-4">
                     <div className="flex items-center gap-3">
                       <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10">
-                        <TrendingUp className="h-5 w-5 text-emerald-400" />
+                        <Target className="h-5 w-5 text-emerald-400" />
                       </div>
                       <div>
                         <h3 className="font-semibold text-text-primary">Actionable Insights</h3>
@@ -292,12 +284,7 @@ export function LandingPageClient() {
               {/* Desktop Timeline */}
               <div className="hidden lg:block">
                 <div className="grid grid-cols-4 gap-8">
-                  {[
-                    { number: "01", title: "connect", color: "cyan", icon: Shield },
-                    { number: "02", title: "understand", color: "indigo", icon: Store },
-                    { number: "03", title: "plan", color: "emerald", icon: Calculator },
-                    { number: "04", title: "improve", color: "amber", icon: TrendingUp }
-                  ].map((step, index) => (
+                  {processSteps.map((step, index) => (
                     <motion.div
                       key={step.number}
                       initial={{ opacity: 0, y: 20 }}
@@ -319,7 +306,7 @@ export function LandingPageClient() {
                         </p>
                         {index < 3 && (
                           <div className="absolute top-1/2 -right-4 transform -translate-y-1/2">
-                            <ArrowRight className="h-6 w-6 text-border" />
+                            <ChevronRight className="h-6 w-6 text-border" />
                           </div>
                         )}
                       </GlassPanel>
@@ -330,12 +317,7 @@ export function LandingPageClient() {
 
               {/* Mobile Timeline */}
               <div className="lg:hidden space-y-8">
-                {[
-                  { number: "01", title: "connect", color: "cyan", icon: Shield },
-                  { number: "02", title: "understand", color: "indigo", icon: Store },
-                  { number: "03", title: "plan", color: "emerald", icon: Calculator },
-                  { number: "04", title: "improve", color: "amber", icon: TrendingUp }
-                ].map((step, index) => (
+                {processSteps.map((step, index) => (
                   <motion.div
                     key={step.number}
                     initial={{ opacity: 0, y: 20 }}
@@ -386,16 +368,7 @@ export function LandingPageClient() {
             </div>
 
             <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-6">
-              {[
-                { title: "expensesDomain", color: "rose", icon: TrendingDown },
-                { title: "cashflowDomain", color: "cyan", icon: Store },
-                { title: "savingsDomain", color: "emerald", icon: PiggyBank },
-                { title: "budgetDomain", color: "indigo", icon: Calculator },
-                { title: "debtDomain", color: "amber", icon: Wallet },
-                { title: "borrowingDomain", color: "violet", icon: HandCoins },
-                { title: "readinessDomain", color: "teal", icon: Shield },
-                { title: "schemesDomain", color: "blue", icon: Landmark }
-              ].map((domain, index) => (
+              {financialDomains.map((domain, index) => (
                 <motion.div
                   key={domain.title}
                   initial={{ opacity: 0, y: 20 }}
@@ -433,12 +406,7 @@ export function LandingPageClient() {
             </div>
 
             <div className="mt-16 grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {[
-                { title: "understandValue", color: "cyan", icon: Store },
-                { title: "planValue", color: "indigo", icon: Calculator },
-                { title: "improveValue", color: "emerald", icon: TrendingUp },
-                { title: "discoverValue", color: "amber", icon: Landmark }
-              ].map((value, index) => (
+              {valuePropositions.map((value, index) => (
                 <motion.div
                   key={value.title}
                   initial={{ opacity: 0, y: 20 }}
@@ -480,13 +448,7 @@ export function LandingPageClient() {
                 <div className="relative">
                   <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-gradient-to-r from-cyan-500 via-indigo-500 to-emerald-500 -translate-y-1/2" />
                   <div className="relative flex justify-between">
-                    {[
-                      "dataStep",
-                      "analysisStep", 
-                      "insightsStep",
-                      "recommendationsStep",
-                      "decisionsStep"
-                    ].map((step, index) => (
+                    {journeySteps.map((step, index) => (
                       <div key={step} className="relative">
                         <div className="flex flex-col items-center">
                           <div className={`flex h-12 w-12 items-center justify-center rounded-full border-4 border-background-page ${
@@ -514,13 +476,7 @@ export function LandingPageClient() {
 
               {/* Mobile Journey */}
               <div className="lg:hidden space-y-8">
-                {[
-                  "dataStep",
-                  "analysisStep", 
-                  "insightsStep",
-                  "recommendationsStep",
-                  "decisionsStep"
-                ].map((step, index) => (
+                {journeySteps.map((step, index) => (
                   <div key={step} className="flex items-start gap-4">
                     <div className={`flex-shrink-0 flex h-10 w-10 items-center justify-center rounded-full ${
                       index === 0 ? 'bg-cyan-500' :
