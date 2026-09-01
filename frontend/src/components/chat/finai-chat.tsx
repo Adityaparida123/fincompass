@@ -51,11 +51,19 @@ function ChatPanel({
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 20, scale: 0.95 }}
       transition={{ duration: 0.2, ease: "easeOut" }}
+      style={{
+        position: 'fixed',
+        right: '24px',
+        bottom: '24px',
+        zIndex: 99999,
+        left: 'auto',
+        top: 'auto',
+      }}
       className={cn(
-        "fixed z-[9999] flex flex-col glass-panel shadow-lg",
+        "flex flex-col glass-panel shadow-lg",
         isFullscreen
           ? "inset-4 rounded-2xl max-w-[calc(100vw-32px)] max-h-[calc(100vh-32px)]"
-          : "bottom-6 right-6 w-[400px] h-[600px] max-w-[calc(100vw-48px)] max-h-[calc(100vh-48px)] rounded-2xl sm:bottom-6 sm:right-6",
+          : "w-[400px] h-[600px] max-w-[calc(100vw-48px)] max-h-[calc(100vh-48px)] rounded-2xl",
       )}
     >
       <div className="flex items-center justify-between border-b border-border-subtle px-4 py-2.5">
