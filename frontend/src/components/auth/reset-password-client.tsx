@@ -7,15 +7,13 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { motion } from "framer-motion";
-import { Compass, Sparkles, ShieldCheck, Lock, KeyRound, ArrowRight, CheckCircle } from "lucide-react";
+import { Compass, KeyRound, ArrowRight, CheckCircle } from "lucide-react";
 import { GuestGuard } from "@/components/auth/auth-guard";
 import { LoginAnimatedBackground } from "@/components/auth/login-animated-background";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { api } from "@/lib/api";
 import { GlassPanel } from "@/components/spatial/glass-panel";
-import { SpatialBadge } from "@/components/spatial/spatial-badge";
 
 const schema = z.object({
   new_password: z.string().min(8),
@@ -60,18 +58,9 @@ export function ResetPasswordClient() {
             <span className="text-2xl font-semibold text-primary tracking-tight">FinCompass</span>
           </motion.div>
 
-          <GlassPanel glow="cyan" hudCorners hologramEdge elevated className="page-transition">
+          <GlassPanel className="page-transition">
             <div className="space-y-6">
               <div className="text-center">
-                <div className="mb-4 flex items-center justify-center gap-2">
-                  <SpatialBadge variant="cyan" pulse icon={<Sparkles className="h-3 w-3" />}>
-                    {t("telemetryLive")}
-                  </SpatialBadge>
-                  <SpatialBadge variant="emerald" icon={<ShieldCheck className="h-3 w-3" />}>
-                    {t("secureAccess")}
-                  </SpatialBadge>
-                </div>
-                
                 {done ? (
                   <>
                     <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-500/15 flex items-center justify-center">

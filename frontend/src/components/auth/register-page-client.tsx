@@ -8,17 +8,15 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { motion } from "framer-motion";
 import { useState } from "react";
-import { Compass, Sparkles, ShieldCheck, Target, ArrowRight } from "lucide-react";
+import { Compass, Target, ArrowRight } from "lucide-react";
 import { GuestGuard } from "@/components/auth/auth-guard";
 import { LoginAnimatedBackground } from "@/components/auth/login-animated-background";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuthStore } from "@/stores/auth-store";
 import { ApiRequestError, isTransientNetworkError } from "@/lib/api";
 import { GlassPanel } from "@/components/spatial/glass-panel";
-import { SpatialBadge } from "@/components/spatial/spatial-badge";
 
 const schema = z.object({
   fullName: z.string().min(2),
@@ -69,20 +67,12 @@ export function RegisterPageClient() {
             <span className="text-2xl font-semibold text-primary tracking-tight">FinCompass</span>
           </div>
           
-          <GlassPanel glow="cyan" hudCorners hologramEdge elevated className="page-transition">
-            <div className="space-y-6">
-              <div className="text-center">
-                <div className="mb-4 flex items-center justify-center gap-2">
-                  <SpatialBadge variant="cyan" pulse icon={<Sparkles className="h-3 w-3" />}>
-                    {t("telemetryLive")}
-                  </SpatialBadge>
-                  <SpatialBadge variant="emerald" icon={<ShieldCheck className="h-3 w-3" />}>
-                    {t("secureAccess")}
-                  </SpatialBadge>
-                </div>
-                <h1 className="text-2xl font-bold tracking-tight text-text-primary">{t("registerTitle")}</h1>
-                <p className="mt-2 text-sm text-text-muted">{t("registerSubtitle")}</p>
-              </div>
+          <GlassPanel className="page-transition">
+    <div className="space-y-6">
+      <div className="text-center">
+        <h1 className="text-2xl font-bold tracking-tight text-text-primary">{t("registerTitle")}</h1>
+        <p className="mt-2 text-sm text-text-muted">{t("registerSubtitle")}</p>
+      </div>
 
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
                 <div>
@@ -114,19 +104,7 @@ export function RegisterPageClient() {
               </form>
               <p className="mt-6 text-center text-sm text-text-muted">{t("hasAccount")} <Link href={`/${locale}/login`} className="text-primary hover:underline">{t("login")}</Link></p>
               
-              <div className="mt-6 pt-4 border-t border-border/30">
-                <div className="flex flex-wrap items-center justify-center gap-2 text-xs text-text-muted">
-                  <SpatialBadge variant="neutral" icon={<Target className="h-2.5 w-2.5" />}>
-                    AI Insights
-                  </SpatialBadge>
-                  <SpatialBadge variant="neutral" icon={<ArrowRight className="h-2.5 w-2.5" />}>
-                    Cash Flow
-                  </SpatialBadge>
-                  <SpatialBadge variant="neutral" icon={<ArrowRight className="h-2.5 w-2.5" />}>
-                    Schemes
-                  </SpatialBadge>
-                </div>
-              </div>
+
             </div>
           </GlassPanel>
         </motion.div>

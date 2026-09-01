@@ -8,16 +8,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { motion } from "framer-motion";
 import { useState } from "react";
-import { Eye, EyeOff, Compass, Sparkles, ShieldCheck } from "lucide-react";
+import { Eye, EyeOff, Compass } from "lucide-react";
 import { GuestGuard } from "@/components/auth/auth-guard";
 import { LoginAnimatedBackground } from "@/components/auth/login-animated-background";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuthStore } from "@/stores/auth-store";
 import { ApiRequestError, authLog, isTransientNetworkError } from "@/lib/api";
 import { GlassPanel } from "@/components/spatial/glass-panel";
-import { SpatialBadge } from "@/components/spatial/spatial-badge";
 
 const schema = z.object({
   email: z.string().email(),
@@ -76,20 +74,12 @@ export function LoginPageClient() {
             <span className="text-2xl font-semibold text-primary tracking-tight">FinCompass</span>
           </motion.div>
           
-          <GlassPanel glow="cyan" hudCorners hologramEdge elevated className="page-transition">
-            <div className="space-y-6">
-              <div className="text-center">
-                <div className="mb-4 flex items-center justify-center gap-2">
-                  <SpatialBadge variant="cyan" pulse icon={<Sparkles className="h-3 w-3" />}>
-                    {t("telemetryLive")}
-                  </SpatialBadge>
-                  <SpatialBadge variant="emerald" icon={<ShieldCheck className="h-3 w-3" />}>
-                    {t("secureAccess")}
-                  </SpatialBadge>
-                </div>
-                <h1 className="text-2xl font-bold tracking-tight text-text-primary">{t("loginTitle")}</h1>
-                <p className="mt-2 text-sm text-text-muted">{t("loginSubtitle")}</p>
-              </div>
+  <GlassPanel className="page-transition">
+    <div className="space-y-6">
+      <div className="text-center">
+        <h1 className="text-2xl font-bold tracking-tight text-text-primary">{t("loginTitle")}</h1>
+        <p className="mt-2 text-sm text-text-muted">{t("loginSubtitle")}</p>
+      </div>
 
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
                 <div>
