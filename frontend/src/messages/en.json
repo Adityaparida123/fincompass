@@ -307,14 +307,27 @@
       "debtBurden": "Existing Debt Burden",
       "repaymentAffordability": "Repayment Affordability",
       "expenseVolatility": "Expense Volatility",
+      "cfoOperatingStrength": "CFO - Operating Strength",
+      "cfiInvestmentActivity": "CFI - Investment Activity",
+      "cffFinancingPosition": "CFF - Financing Position",
       "desc_cashFlowStability": "How stable your income minus expenses and debt is month to month.",
       "desc_incomeConsistency": "How consistent your income has been across recent months.",
       "desc_savingsCapacity": "Your ability to save based on income and spending patterns.",
       "desc_emergencyBuffer": "How many months of essential expenses your savings could cover.",
       "desc_debtBurden": "How much of your income goes toward existing debt payments.",
       "desc_repaymentAffordability": "Available room in your budget after essentials and debt for new repayments.",
-      "desc_expenseVolatility": "How much your monthly expenses fluctuate over time."
-    }
+      "desc_expenseVolatility": "How much your monthly expenses fluctuate over time.",
+      "desc_cfoOperatingStrength": "Cash generated from core operations relative to revenue. Higher indicates stronger ability to service debt.",
+      "desc_cfiInvestmentActivity": "Cash used for business investments (equipment, assets). Negative often means productive investment.",
+      "desc_cffFinancingPosition": "Net financing from loans, repayments, and owner contributions. Shows financing structure."
+    },
+    "cashFlowAnalysis": "Cash Flow Analysis",
+    "cfoTitle": "CFO — Cash Flow from Operations",
+    "cfiTitle": "CFI — Cash Flow from Investing",
+    "cffTitle": "CFF — Cash Flow from Financing",
+    "cfoWhyMatters": "Why this matters for credit: Strong CFO means the business generates enough operating cash to reliably repay loans.",
+    "cfiWhyMatters": "Why this matters for credit: Negative CFI often signals productive investment in growth assets, not financial distress.",
+    "cffWhyMatters": "Why this matters for credit: Reveals existing financing obligations and capacity to take on additional debt."
   },
   "chat": {
     "title": "FinAI Business Advisor",

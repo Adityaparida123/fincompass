@@ -41,13 +41,25 @@ disability, political affiliation, or any other protected attribute):
 7. expense_volatility        [-10, 0]     (0 when no history)
    CV of monthly expenses; high CV is worse.
    cv <= 0.10 -> 0, cv >= 0.50 -> -10, linear between.
+
+8. cfo_operating_strength    [-15, +15]
+   CFO / revenue ratio; higher indicates stronger operations.
+   cfo >= 0.20 -> +15, cfo <= 0 -> -15, linear between.
+
+9. cfi_investment_activity   [-5, +5]
+   CFI context: negative CFI often means productive investment.
+   cfi >= 0 -> +5 (generating from investments), cfi < 0 -> 0 (investing, not penalized)
+
+10. cff_financing_position   [-10, +10]
+    Net financing position; positive = raising capital, negative = repaying.
+    cff >= 0 -> +10 (capacity to raise), cff <= -0.20 -> -10 (heavy repayment), linear between.
 """
 
 from dataclasses import dataclass, field
 from decimal import Decimal
 from statistics import mean, pstdev
 
-from app.schemas.readiness import ReadinessFactorOut, ReadinessResult
+from app.schemas.readiness import CashFlowAnalysis, ReadinessFactorOut, ReadinessResult
 
 ZERO = Decimal("0")
 BASELINE = 50
@@ -63,6 +75,11 @@ class ReadinessInput:
     savings: Decimal = ZERO
     income_months: list[Decimal] = field(default_factory=list)
     expense_months: list[Decimal] = field(default_factory=list)
+    # Cash Flow Analysis (CFO/CFI/CFF)
+    cfo: Decimal = ZERO
+    cfi: Decimal = ZERO
+    cff: Decimal = ZERO
+    revenue: Decimal = ZERO
 
 
 def _clamp(value: Decimal, low: Decimal, high: Decimal) -> Decimal:
@@ -243,6 +260,69 @@ def compute_readiness(data: ReadinessInput) -> ReadinessResult:
             )
         )
 
+    # CFO - Cash Flow from Operations (Operating Strength)
+    if data.revenue > 0 and data.cfo != ZERO:
+        cfo_ratio = data.cfo / data.revenue
+        cfo_impact = _round_int(_linear(cfo_ratio, ZERO, Decimal("0.20"), Decimal("-15"), Decimal("15")))
+        factors.append(
+            _factor(
+                "cfo_operating_strength",
+                cfo_impact,
+                (
+                    "Operating cash flow is strong relative to revenue."
+                    if cfo_impact > 0
+                    else "Operating cash flow is weak relative to revenue."
+                ),
+                value=f"CFO/Revenue {cfo_ratio * 100:.1f}%",
+            )
+        )
+    else:
+        factors.append(
+            _factor("cfo_operating_strength", 0, "Insufficient data to assess operating cash flow strength.")
+        )
+
+    # CFI - Cash Flow from Investing (Investment Activity)
+    if data.cfi != ZERO:
+        # Negative CFI often means productive investment - don't penalize
+        cfi_impact = 5 if data.cfi >= 0 else 0
+        factors.append(
+            _factor(
+                "cfi_investment_activity",
+                cfi_impact,
+                (
+                    "Business is generating cash from investments."
+                    if cfi_impact > 0
+                    else "Business is investing in assets (negative CFI may indicate productive investment)."
+                ),
+                value=f"CFI {data.cfo + data.cfi + data.cff:,.2f}" if data.cfo + data.cfi + data.cff != ZERO else f"CFI {data.cfi:,.2f}",
+            )
+        )
+    else:
+        factors.append(
+            _factor("cfi_investment_activity", 0, "No investing cash flow data available.")
+        )
+
+    # CFF - Cash Flow from Financing (Financing Position)
+    if data.cff != ZERO:
+        # Positive CFF = raising capital, Negative CFF = repaying
+        cff_impact = _round_int(_linear(data.cff / data.revenue if data.revenue > 0 else ZERO, Decimal("-0.20"), ZERO, Decimal("-10"), Decimal("10")))
+        factors.append(
+            _factor(
+                "cff_financing_position",
+                cff_impact,
+                (
+                    "Financing position shows capacity to raise capital."
+                    if cff_impact > 0
+                    else "Heavy repayment obligations in financing activities."
+                ),
+                value=f"CFF {data.cff:,.2f}",
+            )
+        )
+    else:
+        factors.append(
+            _factor("cff_financing_position", 0, "No financing cash flow data available.")
+        )
+
     score = BASELINE + sum(f.impact for f in factors)
     score = max(0, min(100, score))
 
@@ -254,12 +334,23 @@ def compute_readiness(data: ReadinessInput) -> ReadinessResult:
     has_debt = data.debt_payments > 0
     insufficient = not (has_income or has_expenses or has_savings or has_debt)
 
+    # Build Cash Flow Analysis
+    cash_flow_analysis = CashFlowAnalysis(
+        cfo=data.cfo,
+        cfi=data.cfi,
+        cff=data.cff,
+        cfo_explanation="Cash generated from core business operations. A strong CFO indicates the business can sustain itself and service debt.",
+        cfi_explanation="Cash used for or generated from investments (equipment, assets). Negative CFI often means productive business investment.",
+        cff_explanation="Loans received, repaid, and owner contributions. Shows the business's financing structure and obligations.",
+    )
+
     return ReadinessResult(
         score=score,
         version=VERSION,
         factors=[_to_out(f) for f in factors],
         summary=summary,
         insufficient_data=insufficient,
+        cash_flow_analysis=cash_flow_analysis,
     )
 
 
