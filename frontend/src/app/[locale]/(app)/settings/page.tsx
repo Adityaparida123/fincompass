@@ -4,10 +4,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
-import { Check, ArrowRight, Shield, Trash2, KeyRound, LogOut, Sparkles, Bell, Palette, Globe2, Lock } from "lucide-react";
+import { Check, ArrowRight, Shield, Trash2, KeyRound, LogOut, Sparkles, Bell, Palette, Globe2, Lock, User, Phone, Mail, Unlock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Select, Badge } from "@/components/ui/input";
+import { Select, Badge, Input, Label } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { PageHeader } from "@/components/common/shared";
@@ -21,6 +21,18 @@ import type { UserSummary } from "@/types";
 const CURRENCIES = ["INR", "USD", "EUR", "GBP"] as const;
 const TIMEZONES = ["Asia/Kolkata", "Asia/Dubai", "UTC"] as const;
 const CHAT_CONSENT_TYPE = "chat_financial_context";
+
+const CONSENT_LABELS: Record<string, string> = {
+  financial_data_analysis: "financialAnalysis",
+  personalized_recommendations: "recommendations",
+  chat_financial_context: "chatContext",
+};
+
+const CONSENT_DESCRIPTIONS: Record<string, string> = {
+  financial_data_analysis: "Enables expense tracking, cash flow analysis, budget monitoring, and ML-powered forecasts.",
+  personalized_recommendations: "Enables personalized financial recommendations based on your data.",
+  chat_financial_context: "Allows FinAI to access your financial data when answering questions.",
+};
 
 function SettingsRow({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
   return (
@@ -71,9 +83,11 @@ export default function SettingsPage() {
   const chatConsentItem = consents.data?.items?.find((c) => c.consent_type === CHAT_CONSENT_TYPE);
   const personalizedInsights = chatConsentItem?.status === "granted";
 
-  async function patchProfile(field: "preferred_language" | "currency" | "timezone", value: string) {
-    if (!user || user[field] === value) return;
-    const prev = user[field];
+  async function patchProfile(field: "full_name" | "email" | "phone" | "preferred_language" | "currency" | "timezone", value: string | null) {
+    if (!user) return;
+    const currentValue = user[field as keyof typeof user];
+    if (currentValue === value) return;
+    const prev = currentValue;
     setError("");
     setSavedField(null);
     useAuthStore.setState({ user: { ...user, [field]: value } });
@@ -87,11 +101,11 @@ export default function SettingsPage() {
     }
   }
 
-  async function togglePersonalizedInsights(on: boolean) {
+  async function handleConsentToggle(type: string, granted: boolean) {
     setError("");
     try {
-      if (on) await grantConsent.mutateAsync(CHAT_CONSENT_TYPE);
-      else await revokeConsent.mutateAsync(CHAT_CONSENT_TYPE);
+      if (granted) await revokeConsent.mutateAsync(type);
+      else await grantConsent.mutateAsync(type);
     } catch (err) {
       setError(err instanceof ApiRequestError ? err.message : tc("error"));
     }
@@ -137,7 +151,33 @@ export default function SettingsPage() {
         </CardHeader>
         <CardContent className="pt-1">
           <p className="text-xs text-text-muted mb-2">{t("generalDesc")}</p>
-          <div className="grid gap-4 sm:grid-cols-3 max-w-3xl">
+          <div className="grid gap-4 sm:grid-cols-2 max-w-3xl">
+            <div>
+              <label className="text-xs font-medium text-text-secondary mb-1 block">{t("fullName")}</label>
+              <Input
+                value={user.full_name}
+                onChange={(e) => patchProfile("full_name", e.target.value)}
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-text-secondary mb-1 block">{t("email")}</label>
+              <Input
+                type="email"
+                value={user.email}
+                onChange={(e) => patchProfile("email", e.target.value)}
+                className="mt-1"
+                disabled
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-text-secondary mb-1 block">{t("phone")}</label>
+              <Input
+                value={user.phone || ""}
+                onChange={(e) => patchProfile("phone", e.target.value || null)}
+                className="mt-1"
+              />
+            </div>
             <div>
               <label className="text-xs font-medium text-text-secondary mb-1 block">{t("language")}</label>
               <Select
@@ -267,7 +307,7 @@ export default function SettingsPage() {
             ) : (
               <Switch
                 checked={personalizedInsights}
-                onCheckedChange={togglePersonalizedInsights}
+                onCheckedChange={(on) => handleConsentToggle(CHAT_CONSENT_TYPE, !on)}
                 disabled={grantConsent.isPending || revokeConsent.isPending}
                 aria-label={t("personalizedInsights")}
               />
@@ -280,22 +320,54 @@ export default function SettingsPage() {
       <Card>
         <CardHeader className="pb-2 flex-row items-center gap-2 space-y-0">
           <Shield className="h-4 w-4 text-primary" />
-          <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">{t("privacy")}</CardTitle>
+          <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted">{t("consent")}</CardTitle>
         </CardHeader>
         <CardContent className="pt-1 space-y-4">
-          <Link
-            href={`/${locale}/consent`}
-            className="flex items-center gap-3 rounded-lg border border-border p-3 hover:bg-surface-container transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-          >
-            <Lock className="h-4 w-4 shrink-0 text-primary" />
-            <span className="flex-1 min-w-0">
-              <span className="block text-sm font-medium text-text-primary">{t("manageConsents")}</span>
-              <span className="block text-xs text-text-muted mt-0.5">{t("manageConsentsDesc")}</span>
-            </span>
-            <ArrowRight className="h-4 w-4 shrink-0 text-text-muted" />
-          </Link>
+          <p className="text-xs text-text-muted mb-2">{t("consentDesc")}</p>
+          {consents.isLoading ? (
+            <div className="space-y-3">{[1, 2, 3].map((i) => (
+              <div key={i} className="h-24 w-full rounded-xl bg-surface-container/50 animate-pulse" />
+            ))}</div>
+          ) : (
+            <div className="space-y-3">
+              {Object.keys(CONSENT_LABELS).map((consentType) => {
+                const item = consents.data?.items?.find((c) => c.consent_type === consentType);
+                const granted = item?.status === "granted";
+                const labelKey = CONSENT_LABELS[consentType];
+                return (
+                  <div key={consentType} className="rounded-xl border border-border/50 p-4 hover:bg-surface-container/50 transition-colors">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="flex items-start gap-3.5 min-w-0">
+                        <div className={`rounded-xl p-2.5 shrink-0 ${granted ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30" : "bg-surface-container text-text-muted border border-white/5"}`}>
+                          {granted ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h4 className="text-sm font-semibold text-text-primary">{t(labelKey as "financialAnalysis")}</h4>
+                            <Badge variant={granted ? "default" : "secondary"}>
+                              {item ? item.status.toUpperCase() : t("notGranted").toUpperCase()}
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-text-muted mt-1 leading-relaxed">{CONSENT_DESCRIPTIONS[consentType]}</p>
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        className={`shrink-0 font-bold px-4 ${granted ? "border-white/10 text-text-secondary hover:bg-surface-container" : "bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-[0_0_15px_rgba(0,242,254,0.3)]"}`}
+                        variant={granted ? "outline" : "default"}
+                        onClick={() => handleConsentToggle(consentType, granted)}
+                        disabled={grantConsent.isPending || revokeConsent.isPending}
+                      >
+                        {granted ? t("revoke") : t("grant")}
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
-          <div className="rounded-lg border border-border p-3">
+          <div className="rounded-lg border border-border p-3 mt-4">
             <p className="text-sm font-medium text-text-primary">{t("dataUsage")}</p>
             <p className="text-xs text-text-muted mt-1">{t("dataUsageDesc")}</p>
           </div>

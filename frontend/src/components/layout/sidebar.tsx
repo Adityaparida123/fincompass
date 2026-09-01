@@ -6,7 +6,7 @@ import { useTranslations, useLocale } from "next-intl";
 import {
   Home, Store, Stethoscope, Receipt, TrendingUp, PiggyBank, Wallet,
   CreditCard, HandCoins, Gauge, Lightbulb, Landmark,
-  Trash2, Shield, Settings, User, Menu, X, Compass, Activity,
+  Trash2, Settings, Menu, X, Compass, Activity,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
@@ -53,10 +53,8 @@ const navGroups = [
   {
     label: "System Vault",
     items: [
-      { key: "recycleBin", href: "/recycle-bin", icon: Trash2 },
-      { key: "consent", href: "/consent", icon: Shield },
+      { key: "recoverTransaction", href: "/recycle-bin", icon: Trash2 },
       { key: "settings", href: "/settings", icon: Settings },
-      { key: "profile", href: "/profile", icon: User },
     ],
   },
 ];

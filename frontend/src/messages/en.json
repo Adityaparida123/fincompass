@@ -49,9 +49,7 @@
     "schemes": "Schemes for You",
     "finai": "FinAI",
     "notifications": "Notifications",
-    "recycleBin": "Recycle Bin",
-    "consent": "Privacy & Consent",
-    "profile": "Profile",
+    "recoverTransaction": "Recover Transaction",
     "settings": "Settings"
   },
   "landing": {
@@ -618,11 +616,11 @@
     "noNotifications": "No notifications."
   },
   "recycleBin": {
-    "title": "Recycle Bin",
-    "restore": "Restore",
-    "confirmRestore": "Restore this item?",
+    "title": "Recover Transaction",
+    "restore": "Recover",
+    "confirmRestore": "Recover this transaction?",
     "deletedAt": "Deleted",
-    "noItems": "Recycle bin is empty."
+    "noItems": "No deleted transactions to recover."
   },
   "profile": {
     "title": "Profile",
@@ -866,7 +864,25 @@
     "activeSessions": "Active sessions",
     "activeSessionsUnavailable": "Session management is not available yet.",
     "saved": "Changes saved",
-    "saveError": "Could not save your change. Please try again."
+    "saveError": "Could not save your change. Please try again.",
+    "profile": "Profile",
+    "profileDesc": "Manage your personal information and preferences.",
+    "fullName": "Full name",
+    "email": "Email",
+    "phone": "Phone",
+    "language": "Language",
+    "currency": "Currency",
+    "timezone": "Timezone",
+    "profileSaved": "Profile updated.",
+    "consent": "Privacy & Consent",
+    "consentDesc": "Control which financial data FinCompass may analyze.",
+    "financialAnalysis": "Financial analysis",
+    "recommendations": "Personalized recommendations",
+    "chatContext": "FinAI financial context",
+    "grant": "Grant",
+    "revoke": "Revoke",
+    "notGranted": "Not granted",
+    "consentPending": "Loading…"
   },
   "errors": {
     "unauthorized": "Please sign in to continue.",

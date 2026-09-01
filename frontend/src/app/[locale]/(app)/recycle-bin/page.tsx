@@ -36,12 +36,12 @@ export default function RecycleBinPage() {
   return (
     <div className="space-y-6 page-transition">
       <CommandHeader
-        tag="DECOMMISSIONED ENTITIES"
+        tag="RECOVER TRANSACTION"
         title={t("title")}
-        subtitle={`${data?.length ?? 0} archived telemetry artifacts available for recovery`}
+        subtitle={`${data?.length ?? 0} deleted transactions available for recovery`}
         action={
           <div className="flex items-center gap-2">
-            <SpatialBadge variant="neutral">SOFT PURGE</SpatialBadge>
+            <SpatialBadge variant="neutral">SOFT DELETE</SpatialBadge>
           </div>
         }
       />

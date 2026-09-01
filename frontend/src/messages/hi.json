@@ -49,9 +49,7 @@
     "schemes": "आपके लिए योजनाएं",
     "finai": "FinAI",
     "notifications": "सूचनाएं",
-    "recycleBin": "रीसायकल बिन",
-    "consent": "गोपनीयता और सहमति",
-    "profile": "प्रोफ़ाइल",
+    "recoverTransaction": "लेन-देन पुनर्प्राप्ति",
     "settings": "सेटिंग्स"
   },
   "landing": {
@@ -613,11 +611,11 @@
     "noNotifications": "कोई सूचना नहीं।"
   },
   "recycleBin": {
-    "title": "रीसायकल बिन",
-    "restore": "पुनर्स्थापित करें",
-    "confirmRestore": "इस आइटम को पुनर्स्थापित करें?",
+    "title": "लेन-देन पुनर्प्राप्ति",
+    "restore": "पुनर्प्राप्त करें",
+    "confirmRestore": "इस लेन-देन को पुनर्प्राप्त करें?",
     "deletedAt": "हटाया गया",
-    "noItems": "रीसायकल बिन खाली है।"
+    "noItems": "पुनर्प्राप्त करने के लिए कोई हटाए गए लेन-देन नहीं।"
   },
   "profile": {
     "title": "प्रोफ़ाइल",
@@ -861,7 +859,25 @@
     "activeSessions": "सक्रिय सत्र",
     "activeSessionsUnavailable": "सत्र प्रबंधन अभी उपलब्ध नहीं है।",
     "saved": "परिवर्तन सहेजे गए",
-    "saveError": "परिवर्तन सहेजा नहीं जा सका। कृपया पुनः प्रयास करें।"
+    "saveError": "परिवर्तन सहेजा नहीं जा सका। कृपया पुनः प्रयास करें।",
+    "profile": "प्रोफ़ाइल",
+    "profileDesc": "अपनी व्यक्तिगत जानकारी और प्राथमिकताएं प्रबंधित करें।",
+    "fullName": "पूरा नाम",
+    "email": "ईमेल",
+    "phone": "फोन",
+    "language": "भाषा",
+    "currency": "मुद्रा",
+    "timezone": "समय क्षेत्र",
+    "profileSaved": "प्रोफ़ाइल अपडेट की गई।",
+    "consent": "गोपनीयता और सहमति",
+    "consentDesc": "नियंत्रित करें कि FinCompass कौन सा वित्तीय डेटा विश्लेषण कर सकता है।",
+    "financialAnalysis": "वित्तीय विश्लेषण",
+    "recommendations": "वैयक्तिकृत सिफारिशें",
+    "chatContext": "FinAI वित्तीय संदर्भ",
+    "grant": "अनुमति दें",
+    "revoke": "वापस लें",
+    "notGranted": "अनुमति नहीं दी गई",
+    "consentPending": "लोड हो रहा है…"
   },
   "errors": {
     "unauthorized": "कृपया साइन इन करें।",

@@ -33,7 +33,6 @@ export function TopBar() {
     ? user.full_name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)
     : "U";
 
-  const goToProfile = () => router.push(`/${locale}/profile`);
   const goToSettings = () => router.push(`/${locale}/settings`);
 
   return (
@@ -94,9 +93,9 @@ export function TopBar() {
         {/* User profile avatar */}
         <button
           className="h-8 w-8 rounded-xl bg-gradient-to-br from-cyan-500/20 to-indigo-500/20 border border-cyan-500/35 flex items-center justify-center text-[11px] font-mono font-bold text-cyan-300 hover:border-cyan-400 hover:shadow-[0_0_15px_rgba(0,242,254,0.25)] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/50 cursor-pointer ml-1"
-          onClick={goToProfile}
-          title={user?.full_name ?? "Profile"}
-          aria-label="Profile"
+          onClick={goToSettings}
+          title={user?.full_name ?? "Settings"}
+          aria-label="Settings"
         >
           {initials}
         </button>
