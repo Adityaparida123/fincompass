@@ -71,13 +71,19 @@
     "step4Title": "Decide with confidence",
     "step4Desc": "Know what you can afford, what to charge, and which schemes may help.",
     "features": "What you get",
+    "featuresSubtitle": "FinCompass gives you tools for every financial decision — built for small businesses, easy to understand, always privacy-first.",
     "privacy": "Privacy & Trust",
     "privacyDesc": "Only consented data is used. Scores are explainable. Protected characteristics are never used. You can correct your information anytime.",
     "cta": "Run your business with clarity."
   },
   "auth": {
     "loginTitle": "Welcome back",
+    "loginSubtitle": "Sign in to access your business and financial data.",
     "registerTitle": "Create your account",
+    "registerSubtitle": "Sign up to start your financial journey.",
+    "register": "Register",
+    "telemetryLive": "Live telemetry",
+    "secureAccess": "Secure access",
     "email": "Email",
     "password": "Password",
     "confirmPassword": "Confirm password",
@@ -90,7 +96,9 @@
     "loginButton": "Sign in",
     "registerButton": "Create account",
     "serverWakingUp": "The server took too long to respond and may be starting up. Please try again.",
-    "networkError": "Cannot reach the server. Check your internet connection and try again."
+    "networkError": "Cannot reach the server. Check your internet connection and try again.",
+    "getStarted": "Get Started",
+    "login": "Login"
   },
   "home": {
     "greeting_morning": "Good morning",
@@ -305,6 +313,7 @@
   },
   "expenses": {
     "title": "Expenses",
+    "thisMonth": "this month",
     "addTransaction": "Add transaction",
     "importStatement": "Import bank statement",
     "weeklyChart": "Weekly breakdown",
