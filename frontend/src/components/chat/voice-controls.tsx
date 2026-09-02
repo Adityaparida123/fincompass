@@ -38,6 +38,15 @@ export function VoiceInputControl({
     onError: setError,
   });
 
+  const debugEnabled = process.env.NODE_ENV !== "production";
+  const debugStatus = voice.diagnostics.stt === "success"
+    ? `STT: Success (${voice.diagnostics.transcriptLength} chars)`
+    : voice.diagnostics.stt === "processing"
+      ? "STT: Processing"
+      : voice.diagnostics.stt === "error"
+        ? "STT: Error"
+        : "";
+
   const statusText = (() => {
     if (voice.isListening) return labels.listening;
     if (voice.status === "requesting") return labels.requesting;
@@ -70,9 +79,17 @@ export function VoiceInputControl({
           {statusText}
         </span>
       )}
+      {debugEnabled && (voice.diagnostics.recording || voice.diagnostics.audioBytes > 0 || debugStatus) && (
+        <span className="max-w-[160px] truncate text-[9px] text-text-muted/80" role="status">
+          Mic: {voice.diagnostics.microphone === "granted" ? "Connected" : "Unavailable"} · Audio: {voice.diagnostics.audioBytes}B · {debugStatus || "Ready"}
+        </span>
+      )}
       <button
         type="button"
-        onClick={voice.toggle}
+        onClick={() => {
+          if (debugEnabled) console.info("[VOICE DEBUG] button clicked");
+          voice.toggle();
+        }}
         disabled={!voice.isSupported || voice.isProcessing || voice.status === "requesting"}
         className={cn(
           "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",

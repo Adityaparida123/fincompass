@@ -13,7 +13,7 @@ describe("voice configuration", () => {
 
   it("maps browser recognition failures to friendly categories", () => {
     expect(voiceErrorMessage("not-allowed")).toBe("permission");
-    expect(voiceErrorMessage("audio-capture")).toBe("unsupported");
+    expect(voiceErrorMessage("audio-capture")).toBe("no-microphone");
     expect(voiceErrorMessage("no-speech")).toBe("empty");
     expect(voiceErrorMessage(undefined)).toBe("empty");
   });

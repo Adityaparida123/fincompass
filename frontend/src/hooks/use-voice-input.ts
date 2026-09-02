@@ -7,13 +7,26 @@ export const VOICE_LANGUAGES = { en: "en-IN", hi: "hi-IN" } as const;
 export type VoiceInputStatus = "idle" | "requesting" | "listening" | "processing" | "error";
 export type VoiceInputError = "permission" | "no-microphone" | "unsupported" | "empty" | "stt" | "network" | "unavailable";
 
+export interface VoiceDiagnostics {
+  microphone: "idle" | "granted" | "failed";
+  audioTracks: number;
+  trackEnabled: boolean;
+  recording: boolean;
+  mimeType: string;
+  chunks: number;
+  audioBytes: number;
+  stt: "idle" | "processing" | "success" | "error";
+  transcriptLength: number;
+}
+
 export function getVoiceLanguage(locale: string): string {
   return VOICE_LANGUAGES[locale as keyof typeof VOICE_LANGUAGES] ?? VOICE_LANGUAGES.en;
 }
 
 export function voiceErrorMessage(error: unknown): VoiceInputError {
   if (error === "not-allowed" || error === "service-not-allowed") return "permission";
-  if (error === "audio-capture" || error === "network") return "unsupported";
+  if (error === "audio-capture") return "no-microphone";
+  if (error === "network") return "network";
   if (error === "no-speech") return "empty";
   if (error === undefined) return "empty";
   if (error instanceof DOMException && error.name === "NotAllowedError") return "permission";
@@ -63,6 +76,10 @@ export function useVoiceInput({
   const onErrorRef = useRef(onError);
   const [status, setStatus] = useState<VoiceInputStatus>("idle");
   const [isSupported, setIsSupported] = useState(true);
+  const [diagnostics, setDiagnostics] = useState<VoiceDiagnostics>({
+    microphone: "idle", audioTracks: 0, trackEnabled: false, recording: false,
+    mimeType: "", chunks: 0, audioBytes: 0, stt: "idle", transcriptLength: 0,
+  });
 
   useEffect(() => {
     onTranscriptRef.current = onTranscript;
@@ -112,6 +129,7 @@ export function useVoiceInput({
 
     try {
       setStatus("requesting");
+      setDiagnostics((current) => ({ ...current, microphone: "idle", stt: "idle", transcriptLength: 0 }));
       voiceLog("microphone permission requested");
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const tracks = stream.getAudioTracks();
@@ -119,6 +137,7 @@ export function useVoiceInput({
         trackCount: tracks.length,
         trackEnabled: tracks[0]?.enabled ?? false,
       });
+      setDiagnostics((current) => ({ ...current, microphone: "granted", audioTracks: tracks.length, trackEnabled: tracks[0]?.enabled ?? false }));
       if (!tracks.length || !tracks[0]?.enabled) {
         releaseStream();
         setStatus("error");
@@ -127,12 +146,14 @@ export function useVoiceInput({
       }
       const recorder = new MediaRecorder(stream, { mimeType });
       voiceLog("recorder created", { mimeType: recorder.mimeType || mimeType });
+      setDiagnostics((current) => ({ ...current, mimeType: recorder.mimeType || mimeType, recording: false, chunks: 0, audioBytes: 0 }));
       chunksRef.current = [];
       streamRef.current = stream;
       recorderRef.current = recorder;
       recorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
           chunksRef.current.push(event.data);
+          setDiagnostics((current) => ({ ...current, chunks: chunksRef.current.length, audioBytes: current.audioBytes + event.data.size }));
           voiceLog("audio chunk received", { chunks: chunksRef.current.length, bytes: event.data.size });
         }
       };
@@ -147,6 +168,7 @@ export function useVoiceInput({
         recorderRef.current = null;
         const blob = new Blob(chunksRef.current, { type: recorder.mimeType || mimeType });
         voiceLog("recording stopped", { chunks: chunksRef.current.length, bytes: blob.size, mimeType: blob.type });
+        setDiagnostics((current) => ({ ...current, recording: false, chunks: chunksRef.current.length, audioBytes: blob.size }));
         chunksRef.current = [];
         if (!blob.size) {
           setStatus("error");
@@ -154,6 +176,7 @@ export function useVoiceInput({
           return;
         }
         setStatus("processing");
+        setDiagnostics((current) => ({ ...current, stt: "processing" }));
         try {
           const body = new FormData();
           body.append("audio", blob, `finai-voice.${mimeExtension(blob.type || mimeType)}`);
@@ -164,15 +187,18 @@ export function useVoiceInput({
           if (result.text.trim()) {
             voiceLog("updating composer");
             onTranscriptRef.current(result.text.trim());
+            setDiagnostics((current) => ({ ...current, stt: "success", transcriptLength: result.text.trim().length }));
           } else onErrorRef.current("empty");
           setStatus("idle");
         } catch (error) {
           setStatus("error");
+          setDiagnostics((current) => ({ ...current, stt: "error" }));
           onErrorRef.current(voiceErrorMessage(error));
         }
       };
       recorder.start(250);
       voiceLog("recording started", { mimeType: recorder.mimeType || mimeType });
+      setDiagnostics((current) => ({ ...current, recording: true }));
       setStatus("listening");
       timeoutRef.current = setTimeout(() => {
         try {
@@ -185,6 +211,7 @@ export function useVoiceInput({
     } catch (error) {
       releaseStream();
       setStatus("error");
+      setDiagnostics((current) => ({ ...current, microphone: "failed", recording: false, stt: "error" }));
       if (error instanceof DOMException && error.name === "NotAllowedError") onErrorRef.current("permission");
       else if (error instanceof DOMException && error.name === "NotFoundError") onErrorRef.current("no-microphone");
       else if (error instanceof DOMException && error.name === "NotSupportedError") onErrorRef.current("unsupported");
@@ -203,5 +230,5 @@ export function useVoiceInput({
     releaseStream();
   }, [clearTimer, releaseStream]);
 
-  return { status, isListening: status === "listening", isProcessing: status === "processing", isSupported, start, stop, toggle };
+  return { status, isListening: status === "listening", isProcessing: status === "processing", isSupported, diagnostics, start, stop, toggle };
 }

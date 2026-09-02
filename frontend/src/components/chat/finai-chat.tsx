@@ -66,7 +66,7 @@ function ChatPanel({
     speak: t("voice.speak"),
     stop: t("voice.stopReading"),
     loading: t("voice.loading"),
-    unavailable: t("voice.unavailable"),
+    unavailable: t("voice.ttsUnavailable"),
   };
 
   if (!isOpen) return null;

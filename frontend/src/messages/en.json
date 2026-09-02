@@ -369,7 +369,7 @@
       "speak": "Read response aloud",
       "stopReading": "Stop reading",
       "loading": "Preparing audio...",
-      "unavailable": "Read aloud unavailable"
+      "ttsUnavailable": "Read aloud unavailable"
     },
     "suggestions": {
       "save": "How much should I save every month?",
