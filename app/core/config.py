@@ -78,8 +78,8 @@ class Settings(BaseSettings):
     VOICE_TIMEOUT_SECONDS: float = 30.0
 
     CORS_ORIGINS: str | None = (
-        "http://localhost:3000,http://localhost:5173,"
-        "http://127.0.0.1:5173,https://fincompass-three.vercel.app"
+        "http://localhost:3000,http://localhost:3100,http://127.0.0.1:3100,"
+        "http://localhost:5173,http://127.0.0.1:5173,https://fincompass-three.vercel.app"
     )
     # Regex for additional allowed origins (e.g. Vercel preview deployments).
     # Used via CORSMiddleware allow_origin_regex, which echoes the specific
