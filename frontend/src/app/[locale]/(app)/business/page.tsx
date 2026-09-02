@@ -88,8 +88,14 @@ function toDateInput(value: Date) {
 function periodDates(period: Exclude<Period, "custom">) {
   const end = new Date();
   const start = new Date(end);
-  if (period === "week") start.setDate(end.getDate() - 6);
-  if (period === "month") start.setDate(end.getDate() - 29);
+  if (period === "week") {
+    const weekday = end.getDay() || 7;
+    start.setDate(end.getDate() - weekday + 1);
+  }
+  if (period === "month") {
+    start.setDate(1);
+    end.setMonth(end.getMonth() + 1, 0);
+  }
   return { startDate: toDateInput(start), endDate: toDateInput(end) };
 }
 

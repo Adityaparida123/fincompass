@@ -75,6 +75,39 @@ async def _business_metrics_from_transactions(db: MongoDatabase, user_id: int) -
     purchases = [row for row in rows if _is_business_purchase(row)]
     return sales, purchases
 
+
+def _transaction_as_sale(transaction: Doc) -> Doc:
+    amount = _decimal(transaction.get("amount"))
+    return Doc(
+        {
+            "id": transaction["id"],
+            "user_id": transaction["user_id"],
+            "customer_id": None,
+            "customer_name": transaction.get("merchant") or transaction.get("description"),
+            "items": [],
+            "total_amount": amount,
+            "paid_amount": amount,
+            "due_amount": Decimal("0"),
+            "payment_method": "imported",
+            "date": transaction.get("date"),
+            "notes": transaction.get("description"),
+        }
+    )
+
+
+def _transaction_as_purchase(transaction: Doc) -> Doc:
+    return Doc(
+        {
+            "id": transaction["id"],
+            "user_id": transaction["user_id"],
+            "items": [],
+            "total_amount": _decimal(transaction.get("amount")),
+            "date": transaction.get("date"),
+            "supplier_name": transaction.get("merchant") or transaction.get("description"),
+            "notes": transaction.get("description"),
+        }
+    )
+
 def _decimal(value) -> Decimal:
     """Safely convert values to Decimal."""
     if value is None:
@@ -358,7 +391,7 @@ async def list_sales(
     user_id: int,
     limit: int = 100,
 ) -> list[Doc]:
-    return await db.find(
+    manual_sales = await db.find(
         BUSINESS_SALES_COLLECTION,
         {"user_id": user_id},
         sort=[
@@ -367,6 +400,9 @@ async def list_sales(
         ],
         limit=limit,
     )
+    imported_sales, _ = await _business_metrics_from_transactions(db, user_id)
+    imported = [_transaction_as_sale(transaction) for transaction in imported_sales]
+    return sorted(manual_sales + imported, key=lambda sale: str(sale.get("date") or ""), reverse=True)[:limit]
 
 
 # ============================================================
@@ -469,7 +505,7 @@ async def list_purchases(
     user_id: int,
     limit: int = 100,
 ) -> list[Doc]:
-    return await db.find(
+    manual_purchases = await db.find(
         BUSINESS_PURCHASES_COLLECTION,
         {"user_id": user_id},
         sort=[
@@ -478,6 +514,9 @@ async def list_purchases(
         ],
         limit=limit,
     )
+    _, imported_purchases = await _business_metrics_from_transactions(db, user_id)
+    imported = [_transaction_as_purchase(transaction) for transaction in imported_purchases]
+    return sorted(manual_purchases + imported, key=lambda purchase: str(purchase.get("date") or ""), reverse=True)[:limit]
 
 
 # ============================================================
@@ -500,25 +539,16 @@ async def get_business_summary(
     - transaction counts
     """
 
-    transaction_sales, transaction_purchases = await _business_metrics_from_transactions(db, user_id)
     sales = await list_sales(db, user_id, limit=1000)
     purchases = await list_purchases(db, user_id, limit=1000)
     customers = await list_customers(db, user_id, limit=1000)
 
-    if transaction_sales or transaction_purchases:
-        total_sales = sum((_decimal(s.get("amount", 0)) for s in transaction_sales), Decimal("0"))
-        total_purchases = sum((_decimal(p.get("amount", 0)) for p in transaction_purchases), Decimal("0"))
-        total_due = sum((_decimal(c.get("total_due", 0)) for c in customers), Decimal("0"))
-        total_paid = sum((_decimal(s.get("amount", 0)) for s in transaction_sales), Decimal("0"))
-        sales_count = len(transaction_sales)
-        purchase_count = len(transaction_purchases)
-    else:
-        total_sales = sum((_decimal(s.get("total_amount", 0)) for s in sales), Decimal("0"))
-        total_purchases = sum((_decimal(p.get("total_amount", 0)) for p in purchases), Decimal("0"))
-        total_due = sum((_decimal(c.get("total_due", 0)) for c in customers), Decimal("0"))
-        total_paid = sum((_decimal(s.get("paid_amount", 0)) for s in sales), Decimal("0"))
-        sales_count = len(sales)
-        purchase_count = len(purchases)
+    total_sales = sum((_decimal(s.get("total_amount", 0)) for s in sales), Decimal("0"))
+    total_purchases = sum((_decimal(p.get("total_amount", 0)) for p in purchases), Decimal("0"))
+    total_due = sum((_decimal(c.get("total_due", 0)) for c in customers), Decimal("0"))
+    total_paid = sum((_decimal(s.get("paid_amount", 0)) for s in sales), Decimal("0"))
+    sales_count = len(sales)
+    purchase_count = len(purchases)
 
     estimated_profit = total_sales - total_purchases
 
@@ -549,7 +579,6 @@ async def get_business_dashboard(
     end_date: date,
 ) -> dict:
     """Return period metrics and a daily trend for the Business Dashboard."""
-    transaction_sales, transaction_purchases = await _business_metrics_from_transactions(db, user_id)
     sales = await list_sales(db, user_id, limit=1000)
     purchases = await list_purchases(db, user_id, limit=1000)
 
@@ -557,12 +586,8 @@ async def get_business_dashboard(
         recorded_on = _as_date(record.get("date"))
         return recorded_on is not None and start_date <= recorded_on <= end_date
 
-    if transaction_sales or transaction_purchases:
-        period_sales = [sale for sale in transaction_sales if in_period(sale)]
-        period_purchases = [purchase for purchase in transaction_purchases if in_period(purchase)]
-    else:
-        period_sales = [sale for sale in sales if in_period(sale)]
-        period_purchases = [purchase for purchase in purchases if in_period(purchase)]
+    period_sales = [sale for sale in sales if in_period(sale)]
+    period_purchases = [purchase for purchase in purchases if in_period(purchase)]
 
     buckets: dict[str, dict] = {}
     day = start_date
@@ -579,15 +604,14 @@ async def get_business_dashboard(
         sale_date = _as_date(sale.get("date"))
         if sale_date is None or sale_date.isoformat() not in buckets:
             continue
-        buckets[sale_date.isoformat()]["sales"] += _decimal(sale.get("amount"))
-        if sale.get("due_amount") is not None:
-            buckets[sale_date.isoformat()]["due"] += _decimal(sale.get("due_amount"))
+        buckets[sale_date.isoformat()]["sales"] += _decimal(sale.get("total_amount"))
+        buckets[sale_date.isoformat()]["due"] += _decimal(sale.get("due_amount"))
 
     for purchase in period_purchases:
         purchase_date = _as_date(purchase.get("date"))
         if purchase_date is None or purchase_date.isoformat() not in buckets:
             continue
-        buckets[purchase_date.isoformat()]["purchases"] += _decimal(purchase.get("amount"))
+        buckets[purchase_date.isoformat()]["purchases"] += _decimal(purchase.get("total_amount"))
 
     trend = []
     for bucket in buckets.values():
@@ -616,19 +640,8 @@ async def get_profit_ideas(db: MongoDatabase, user_id: int) -> list[dict[str, st
     today = date.today()
     current_start = date.fromordinal(today.toordinal() - 29)
     previous_start = date.fromordinal(today.toordinal() - 59)
-    imported_sales, imported_purchases = await _business_metrics_from_transactions(db, user_id)
     sales = await list_sales(db, user_id, limit=1000)
     purchases = await list_purchases(db, user_id, limit=1000)
-
-    if imported_sales or imported_purchases:
-        sales = [
-            {"date": row.get("date"), "total_amount": row.get("amount"), "due_amount": 0}
-            for row in imported_sales
-        ]
-        purchases = [
-            {"date": row.get("date"), "total_amount": row.get("amount")}
-            for row in imported_purchases
-        ]
 
     def recorded_on(record: Doc) -> date | None:
         value = record.get("date")
