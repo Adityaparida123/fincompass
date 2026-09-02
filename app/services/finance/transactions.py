@@ -8,6 +8,7 @@ from app.core.exceptions import NotFoundError
 from app.db.enums import TransactionSource, TransactionType
 from app.db.mongo import Doc, MongoDatabase
 from app.schemas.transaction import TransactionCreate, TransactionUpdate
+from app.services.ml.service import invalidate_user_ml_cache
 
 
 async def create_transaction(
@@ -31,6 +32,7 @@ async def create_transaction(
         },
     )
     await invalidate_user_financial_cache(user_id)
+    invalidate_user_ml_cache(user_id)
     return tx
 
 
@@ -57,6 +59,7 @@ async def update_transaction(
         updates["source"] = updates["source"].value
     await db.update_one("transactions", {"id": tx.id, "user_id": user_id}, updates)
     await invalidate_user_financial_cache(user_id)
+    invalidate_user_ml_cache(user_id)
     return await get_transaction(db, user_id, transaction_id)
 
 
@@ -71,6 +74,7 @@ async def soft_delete_transaction(
     )
     tx.is_deleted = True
     await invalidate_user_financial_cache(user_id)
+    invalidate_user_ml_cache(user_id)
     return tx
 
 

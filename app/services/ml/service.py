@@ -38,6 +38,11 @@ def _degraded_result(model_name: str, *, message: str = _MODEL_UNAVAILABLE, extr
     return payload
 
 
+def invalidate_user_ml_cache(user_id: int) -> None:
+    """Invalidate in-process predictions after a transaction changes."""
+    get_pipeline().invalidate_cache(str(user_id))
+
+
 async def _fetch_transactions(
     db: MongoDatabase,
     user_id: int,

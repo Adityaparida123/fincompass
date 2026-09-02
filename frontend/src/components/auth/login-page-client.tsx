@@ -45,10 +45,12 @@ export function LoginPageClient() {
       authLog("redirect started", { target: `/${locale}/home` });
       router.push(`/${locale}/home`);
     } catch (e) {
-      console.error("Login request failed:", e);
       if (e instanceof ApiRequestError) setError(e.message);
       else if (isTransientNetworkError(e)) setError(t("serverWakingUp"));
-      else setError(t("networkError"));
+      else {
+        console.error("Login request failed:", e);
+        setError(t("networkError"));
+      }
     }
   };
 
