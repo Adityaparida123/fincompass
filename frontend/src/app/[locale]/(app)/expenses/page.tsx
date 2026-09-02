@@ -88,7 +88,7 @@ export default function ExpensesPage() {
       <CommandHeader
         tag="LEDGER & TRANSACTIONS"
         title={t("title")}
-        subtitle="Telemetry of cash flows, category allocations, and categorized expenses"
+        subtitle="Telemetry of cash flows, category allocations, and categorized transactions"
         action={
           <div className="flex gap-2">
             <Button
@@ -318,11 +318,11 @@ export default function ExpensesPage() {
                 }) : (
                   <EmptyState
                     title={t("noTransactions")}
-                    description="Add your first transaction or import a bank statement to start tracking."
+                    description="Add your first transaction or import multiple transactions to start tracking."
                     icon={FileText}
                     action={
                       <div className="flex gap-2">
-                        <Button size="sm" variant="outline" onClick={() => setShowImport(true)} className="border-cyan-500/30 text-cyan-300">Import statement</Button>
+                        <Button size="sm" variant="outline" onClick={() => setShowImport(true)} className="border-cyan-500/30 text-cyan-300">Import transactions</Button>
                         <Button size="sm" onClick={() => setShowForm(true)} className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold">Add transaction</Button>
                       </div>
                     }
