@@ -133,7 +133,7 @@ export function useAnalyzeStatement() {
         formData,
         {
           timeout: 120_000,
-          errorMessages: { 404: "Bank statement analysis endpoint is unavailable." },
+          errorMessages: { 404: "Multiple transaction analysis endpoint is unavailable." },
         },
       );
     },

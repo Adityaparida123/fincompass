@@ -300,12 +300,22 @@ export interface ReadinessFactor {
   value: string | null;
 }
 
+export interface CashFlowAnalysis {
+  cfo: number;
+  cfi: number;
+  cff: number;
+  cfo_explanation: string;
+  cfi_explanation: string;
+  cff_explanation: string;
+}
+
 export interface ReadinessResult {
   score: number;
   version: string;
   factors: ReadinessFactor[];
   summary: string;
   insufficient_data?: boolean;
+  cash_flow_analysis?: CashFlowAnalysis;
 }
 
 export interface FinancialHealthFactor {

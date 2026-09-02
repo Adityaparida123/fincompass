@@ -31,6 +31,7 @@ import { AIOrb } from "@/components/3d/ai-orb";
 import { GlassPanel } from "@/components/spatial/glass-panel";
 import { SpatialMetric } from "@/components/spatial/spatial-metric";
 import { SpatialBadge } from "@/components/spatial/spatial-badge";
+import { CommandHeader } from "@/components/spatial/command-header";
 
 type HealthStatus = "good" | "stable" | "attention" | "nodata";
 
@@ -242,46 +243,32 @@ export default function HomePage() {
         : health === "attention" ? t("healthAttention")
           : t("healthNoData");
 
+  const commandSubtitle = displayName
+    ? `${greeting}, ${displayName} · ${t("businessCommandCenterSubtitle")}`
+    : `${greeting} · ${t("businessCommandCenterSubtitle")}`;
+
   return (
     <div className="space-y-6 page-transition">
-      {/* Top Command Center Header */}
-      <div className="relative rounded-2xl border border-cyan-500/25 bg-gradient-to-r from-surface-card/90 via-surface-card/70 to-cyan-950/25 p-5 md:p-6 backdrop-blur-2xl overflow-hidden hud-corner shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
-        <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-cyan-500/15 blur-3xl" />
-        <div className="pointer-events-none absolute -left-16 -bottom-16 h-48 w-48 rounded-full bg-indigo-500/15 blur-3xl" />
-
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <SpatialBadge variant="cyan" pulse icon={<Zap className="h-3 w-3" />}>
-                TELEMETRY LIVE
-              </SpatialBadge>
-              {bizContextLine && (
-                <SpatialBadge variant="indigo" icon={<Store className="h-3 w-3" />}>
-                  {bizContextLine}
-                </SpatialBadge>
-              )}
-            </div>
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-text-primary mt-1" suppressHydrationWarning>
-              {displayName ? t("greetingWithName", { greeting, name: displayName }) : greeting}
-            </h1>
-            <p className="text-xs text-text-muted flex items-center gap-2">
-              <span>{format(new Date(), "EEEE, MMMM d, yyyy")}</span>
-              <span>·</span>
-              <span className="text-cyan-400 font-mono">IST LIVE</span>
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2.5 shrink-0">
-            <button
-              onClick={() => setChatOpen(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-semibold text-xs transition-all duration-200 shadow-[0_0_20px_rgba(0,242,254,0.35)] cursor-pointer"
-            >
-              <Sparkles className="h-4 w-4" />
-              <span>CONSULT FINAI</span>
-            </button>
-          </div>
-        </div>
-      </div>
+      <CommandHeader
+        tag={t("businessCommandCenterTag")}
+        title={t("businessCommandCenterTitle")}
+        subtitle={commandSubtitle}
+        badge={bizContextLine ? (
+          <SpatialBadge variant="indigo" icon={<Store className="h-3 w-3" />}>
+            {bizContextLine}
+          </SpatialBadge>
+        ) : undefined}
+        action={(
+          <button
+            type="button"
+            onClick={() => setChatOpen(true)}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-semibold text-xs transition-all duration-200 shadow-[0_0_20px_rgba(0,242,254,0.35)] cursor-pointer"
+          >
+            <Sparkles className="h-4 w-4" />
+            <span>{t("consultFinaiAction")}</span>
+          </button>
+        )}
+      />
 
       {/* Flagship AI Business Health — 3D Command Orb & Diagnostics */}
       <GlassPanel glow="cyan" hudCorners className="relative overflow-hidden p-6">

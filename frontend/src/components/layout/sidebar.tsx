@@ -5,7 +5,11 @@ import { usePathname } from "next/navigation";
 import { useTranslations, useLocale } from "next-intl";
 import {
   Home, Receipt, TrendingUp, Wallet, CreditCard, Lightbulb,
+
   Menu, X, Compass, Activity, Store,
+
+  Menu, X, Compass, Activity, HeartPulse, Settings,
+
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
@@ -33,15 +37,23 @@ const navGroups = [
     ],
   },
   {
-    label: "CAPITAL & CREDIT",
+    label: "BUSINESS FINANCE",
     items: [
-      { key: "creditDebt", href: "/debt", icon: CreditCard },
+      { key: "creditReadiness", href: "/readiness", icon: CreditCard },
+      { key: "businessHealth", href: "/business", icon: HeartPulse },
     ],
   },
   {
     label: "AI",
     items: [
       { key: "finaiAdvisor", href: "/advisory", icon: Lightbulb },
+    ],
+  },
+  {
+    label: "ACCOUNT",
+    items: [
+      { key: "settings", href: "/settings", icon: Settings },
+      { key: "profile", href: "/profile", icon: Compass },
     ],
   },
 ];
@@ -194,7 +206,7 @@ export function MobileNav() {
   const t = useTranslations("nav");
   const locale = useLocale();
   const pathname = usePathname();
-  const preferred = ["/home", "/expenses", "/cashflow", "/budget", "/debt", "/advisory"];
+  const preferred = ["/home", "/expenses", "/cashflow", "/budget", "/readiness", "/business", "/advisory", "/profile", "/settings"];
   const mobileItems = preferred
     .map((href) => allNavItems.find((item) => item.href === href))
     .filter((item): item is { key: string; href: string; icon: React.ElementType } => Boolean(item));

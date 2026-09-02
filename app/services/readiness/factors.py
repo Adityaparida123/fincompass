@@ -10,6 +10,67 @@ from app.services.readiness.engine import ReadinessInput
 
 HISTORY_MONTHS = 3
 
+# Category mappings for Cash Flow Statement
+CFO_INCOME_CATEGORIES = {
+    "sales", "revenue", "service", "consulting", "income", "business_income",
+    "salary", "wages", "commission", "tips", "interest_income", "dividend_income"
+}
+
+CFO_EXPENSE_CATEGORIES = {
+    "rent", "utilities", "wages", "salaries", "payroll", "supplies", "office",
+    "marketing", "advertising", "insurance", "professional_fees", "legal",
+    "accounting", "software", "subscriptions", "internet", "phone", "transport",
+    "travel", "meals", "entertainment", "maintenance", "repairs", "cleaning",
+    "security", "taxes", "licenses", "permits", "bank_fees", "payment_processing",
+    "inventory", "cost_of_goods_sold", "cogs", "raw_materials", "packaging",
+    "shipping", "delivery", "postage", "printing", "stationery"
+}
+
+CFI_CATEGORIES = {
+    "equipment", "machinery", "vehicles", "property", "real_estate", "building",
+    "land", "furniture", "fixtures", "computers", "technology", "software_capital",
+    "capital_expenditure", "capex", "asset_purchase", "investment", "acquisition",
+    "construction", "renovation", "improvements", "tools", "instruments"
+}
+
+CFF_INCOME_CATEGORIES = {
+    "loan_proceeds", "loan_received", "borrowing", "credit_line", "overdraft",
+    "owner_contribution", "capital_injection", "equity_investment", "investor_funding",
+    "grant_received", "subsidy_received"
+}
+
+CFF_EXPENSE_CATEGORIES = {
+    "loan_repayment", "loan_payment", "principal_payment", "debt_repayment",
+    "owner_withdrawal", "drawings", "dividend_paid", "distribution",
+    "interest_payment", "interest_expense", "finance_cost", "loan_interest"
+}
+
+
+def _classify_cash_flow(category: str, transaction_type: TransactionType, amount: Decimal) -> tuple[str, Decimal]:
+    """Classify a transaction into CFO, CFI, or CFF."""
+    cat_lower = category.strip().lower()
+    
+    if transaction_type == TransactionType.income:
+        if cat_lower in CFO_INCOME_CATEGORIES:
+            return "cfo", amount
+        elif cat_lower in CFI_CATEGORIES:
+            return "cfi", amount
+        elif cat_lower in CFF_INCOME_CATEGORIES:
+            return "cff", amount
+        else:
+            # Default income to CFO
+            return "cfo", amount
+    else:  # expense
+        if cat_lower in CFI_CATEGORIES:
+            return "cfi", -amount
+        elif cat_lower in CFF_EXPENSE_CATEGORIES:
+            return "cff", -amount
+        elif cat_lower in CFO_EXPENSE_CATEGORIES:
+            return "cfo", -amount
+        else:
+            # Default expense to CFO
+            return "cfo", -amount
+
 
 async def _monthly_totals(
     db: MongoDatabase,
@@ -29,6 +90,40 @@ async def _monthly_totals(
         key = row.date[:7]
         totals[key] = totals.get(key, Decimal("0")) + row.amount
     return totals
+
+
+async def _monthly_cash_flow_breakdown(
+    db: MongoDatabase,
+    user_id: int,
+    start: date,
+    end: date,
+) -> tuple[Decimal, Decimal, Decimal, Decimal]:
+    """Calculate CFO, CFI, CFF and revenue from transactions."""
+    filt = {
+        "user_id": user_id,
+        "is_deleted": False,
+        "date": {"$gte": start, "$lt": end},
+    }
+    
+    cfo_total = Decimal("0")
+    cfi_total = Decimal("0")
+    cff_total = Decimal("0")
+    revenue_total = Decimal("0")
+    
+    for row in await db.find("transactions", filt):
+        flow_type, amount = _classify_cash_flow(row.category, row.transaction_type, row.amount)
+        if flow_type == "cfo":
+            cfo_total += amount
+        elif flow_type == "cfi":
+            cfi_total += amount
+        elif flow_type == "cff":
+            cff_total += amount
+        
+        # Track revenue (operating income)
+        if row.transaction_type == TransactionType.income and row.category.strip().lower() in CFO_INCOME_CATEGORIES:
+            revenue_total += row.amount
+    
+    return cfo_total, cfi_total, cff_total, revenue_total
 
 
 async def _month_bounds(today: date) -> list[tuple[date, date]]:
@@ -66,6 +161,11 @@ async def build_readiness_input(db: MongoDatabase, user_id: int) -> ReadinessInp
             key = row.date[:7]
             essential_by_month[key] = essential_by_month.get(key, Decimal("0")) + row.amount
 
+    # Calculate cash flow breakdown (CFO, CFI, CFF) and revenue
+    cfo_total, cfi_total, cff_total, revenue_total = await _monthly_cash_flow_breakdown(
+        db, user_id, window_start, window_end
+    )
+
     def _month_key(start: date) -> str:
         return start.isoformat()[:7]
 
@@ -87,4 +187,8 @@ async def build_readiness_input(db: MongoDatabase, user_id: int) -> ReadinessInp
         savings=savings,
         income_months=income_months,
         expense_months=expense_months,
+        cfo=cfo_total,
+        cfi=cfi_total,
+        cff=cff_total,
+        revenue=revenue_total,
     )

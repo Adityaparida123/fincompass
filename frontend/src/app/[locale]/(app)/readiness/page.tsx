@@ -8,7 +8,7 @@ import { useReadiness, useCorrectReadiness } from "@/hooks/use-api";
 import { ApiRequestError } from "@/lib/api";
 import { useChatStore } from "@/stores/chat-store";
 import type { ReadinessFactor, ScoreCorrectionResult } from "@/types";
-import { ChevronDown, ChevronUp, Info, AlertTriangle, RefreshCw, MessageCircle, ShieldCheck, Sparkles, Sliders } from "lucide-react";
+import { ChevronDown, ChevronUp, Info, AlertTriangle, RefreshCw, ShieldCheck, Sparkles, Sliders, TrendingUp, Factory, Coins } from "lucide-react";
 import { CommandHeader } from "@/components/spatial/command-header";
 import { GlassPanel } from "@/components/spatial/glass-panel";
 import { SpatialBadge } from "@/components/spatial/spatial-badge";
@@ -29,12 +29,23 @@ const FACTOR_LABEL_KEYS: Record<string, string> = {
   existing_debt_burden: "debtBurden",
   repayment_affordability: "repaymentAffordability",
   expense_volatility: "expenseVolatility",
+  cfo_operating_strength: "cfoOperatingStrength",
+  cfi_investment_activity: "cfiInvestmentActivity",
+  cff_financing_position: "cffFinancingPosition",
 };
 
 function factorLabel(name: string, t: (key: string) => string): string {
   const key = FACTOR_LABEL_KEYS[name];
   if (key) return t(key);
   return name.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function formatCurrency(value: number): string {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(value);
 }
 
 export default function ReadinessPage() {
@@ -187,12 +198,71 @@ export default function ReadinessPage() {
         </GlassPanel>
       )}
 
+      {/* Cash Flow Analysis Section */}
+      {!hasInsufficientData && !readiness.isError && readiness.data?.cash_flow_analysis && (
+        <GlassPanel className="p-6 space-y-4">
+          <div className="flex items-center justify-between pb-2 border-b border-white/5">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-text-secondary">{t("cashFlowAnalysis")}</h3>
+            <span className="text-[11px] font-mono text-text-muted">CFO • CFI • CFF</span>
+          </div>
+          <div className="grid gap-4 md:grid-cols-3">
+            {/* CFO - Operating Strength */}
+            <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/5 p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="h-8 w-8 rounded-lg bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center">
+                  <TrendingUp className="h-4 w-4 text-cyan-400" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-cyan-300">{t("cfoTitle")}</p>
+                  <p className="text-[10px] text-text-muted">Operating Strength</p>
+                </div>
+              </div>
+              <p className="text-sm font-mono text-text-primary mb-2">{formatCurrency(readiness.data.cash_flow_analysis.cfo)}</p>
+              <p className="text-xs text-text-muted leading-relaxed">{readiness.data.cash_flow_analysis.cfo_explanation}</p>
+              <p className="text-[10px] text-cyan-300 mt-2 font-semibold">{t("cfoWhyMatters")}</p>
+            </div>
+
+            {/* CFI - Investment Activity */}
+            <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="h-8 w-8 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center">
+                  <Factory className="h-4 w-4 text-amber-400" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-amber-300">{t("cfiTitle")}</p>
+                  <p className="text-[10px] text-text-muted">Investment Activity</p>
+                </div>
+              </div>
+              <p className="text-sm font-mono text-text-primary mb-2">{formatCurrency(readiness.data.cash_flow_analysis.cfi)}</p>
+              <p className="text-xs text-text-muted leading-relaxed">{readiness.data.cash_flow_analysis.cfi_explanation}</p>
+              <p className="text-[10px] text-amber-300 mt-2 font-semibold">{t("cfiWhyMatters")}</p>
+            </div>
+
+            {/* CFF - Financing Position */}
+            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="h-8 w-8 rounded-lg bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center">
+                  <Coins className="h-4 w-4 text-emerald-400" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-emerald-300">{t("cffTitle")}</p>
+                  <p className="text-[10px] text-text-muted">Financing Position</p>
+                </div>
+              </div>
+              <p className="text-sm font-mono text-text-primary mb-2">{formatCurrency(readiness.data.cash_flow_analysis.cff)}</p>
+              <p className="text-xs text-text-muted leading-relaxed">{readiness.data.cash_flow_analysis.cff_explanation}</p>
+              <p className="text-[10px] text-emerald-300 mt-2 font-semibold">{t("cffWhyMatters")}</p>
+            </div>
+          </div>
+        </GlassPanel>
+      )}
+
       {/* Factors Accordion Grid */}
       {!hasInsufficientData && !readiness.isError && (
         <GlassPanel className="p-6 space-y-3">
           <div className="flex items-center justify-between pb-2 border-b border-white/5">
             <h3 className="text-xs font-bold uppercase tracking-wider text-text-secondary">{t("factors")}</h3>
-            <span className="text-[11px] font-mono text-text-muted">7 MULTIVARIATE PARAMETERS</span>
+            <span className="text-[11px] font-mono text-text-muted">10 MULTIVARIATE PARAMETERS</span>
           </div>
 
           <div className="space-y-2.5 pt-2">
