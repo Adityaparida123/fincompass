@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import {
   Compass, Shield, TrendingUp, PiggyBank, Wallet, Store,
   HandCoins, Landmark, MessageCircle, ArrowRight, Home, Calculator,
-  CheckCircle, TrendingDown
+  CheckCircle, TrendingDown, FileText
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +15,7 @@ import { FinancialGlobe } from "@/components/3d/financial-globe";
 import { FinancialOrb } from "@/components/3d/financial-orb";
 import { FinancialParticles } from "@/components/3d/financial-particles";
 import { GlassPanel } from "@/components/spatial/glass-panel";
+import { SpatialBadge } from "@/components/spatial/spatial-badge";
 import { SpatialMetric } from "@/components/spatial/spatial-metric";
 import { useAuthStore } from "@/stores/auth-store";
 
@@ -58,6 +59,49 @@ const features = [
     icon: MessageCircle, 
     title: "FinAI business advisor",
     description: "Get personalized financial guidance and answers to money questions in simple, actionable language."
+  },
+];
+
+const howToUseSteps = [
+  {
+    number: "01",
+    label: "Import",
+    title: "Import Your Transactions",
+    description: "Upload multiple financial transactions using a structured Excel or CSV file.",
+    icon: FileText,
+    glow: "cyan" as const,
+  },
+  {
+    number: "02",
+    label: "Organize",
+    title: "Let FinCompass Organize the Data",
+    description: "FinCompass validates, normalizes, categorizes, and separates business and personal transactions so your financial data is ready for analysis.",
+    icon: CheckCircle,
+    glow: "indigo" as const,
+  },
+  {
+    number: "03",
+    label: "Understand",
+    title: "Understand Your Business",
+    description: "Explore revenue, expenses, profit, cash flow, spending patterns, and business performance from one command center.",
+    icon: Store,
+    glow: "emerald" as const,
+  },
+  {
+    number: "04",
+    label: "Plan",
+    title: "Plan Ahead With Confidence",
+    description: "Analyze cash flow, forecast future financial trends, and understand your credit readiness using transparent financial indicators.",
+    icon: Calculator,
+    glow: "amber" as const,
+  },
+  {
+    number: "05",
+    label: "Ask FinAI",
+    title: "Make Better Decisions With FinAI",
+    description: "Ask FinAI questions about your business and get recommendations based on your financial context.",
+    icon: MessageCircle,
+    glow: "rose" as const,
   },
 ];
 
@@ -207,46 +251,118 @@ export function LandingPageClient() {
           </div>
         </section>
 
-        {/* How FinCompass Works */}
-        <section id="how-it-works" className="py-20 lg:py-24 bg-surface-container/30">
+        {/* How to Use FinCompass */}
+        <section id="how-it-works" className="relative overflow-hidden bg-surface-container/30 py-20 lg:py-24">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="text-center">
-              <h2 className="text-3xl font-bold tracking-tight text-text-primary">
-                {t("howWorksTitle")}
+              <SpatialBadge variant="cyan" pulse>PRODUCT WALKTHROUGH</SpatialBadge>
+              <h2 className="mt-4 text-3xl font-bold tracking-tight text-text-primary sm:text-4xl">
+                How to Use FinCompass
               </h2>
-              <p className="mt-4 text-lg text-text-muted max-w-2xl mx-auto">
-                A structured four-step process to transform your financial understanding
+              <p className="mx-auto mt-4 max-w-2xl text-lg text-text-muted">
+                From financial data to clear business decisions — in a few simple steps.
               </p>
             </div>
 
-            <div className="mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-              {[
-                { number: "1", title: "connect", color: "cyan", icon: Shield },
-                { number: "2", title: "understand", color: "indigo", icon: Store },
-                { number: "3", title: "plan", color: "emerald", icon: Calculator },
-                { number: "4", title: "improve", color: "amber", icon: TrendingUp }
-              ].map((step, index) => (
+            <ol className="relative mt-14 grid gap-8 lg:grid-cols-5 lg:gap-4">
+              <div className="absolute bottom-10 left-5 top-10 w-px bg-border lg:bottom-auto lg:left-[10%] lg:right-[10%] lg:top-10 lg:h-px lg:w-auto">
                 <motion.div
-                  key={step.number}
+                  initial={{ scaleY: 0, scaleX: 0 }}
+                  whileInView={{ scaleY: 1, scaleX: 1 }}
+                  viewport={{ once: true, amount: 0.4 }}
+                  transition={{ duration: 1.1, ease: "easeOut" }}
+                  className="h-full origin-top bg-primary/60 lg:origin-left"
+                />
+              </div>
+              {howToUseSteps.map((step, index) => (
+                <motion.li
+                  key={step.label}
                   initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="text-center"
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.2 }}
+                  transition={{ delay: index * 0.08, duration: 0.45 }}
+                  className="relative z-10 flex min-w-0 items-start gap-4 lg:block"
                 >
-                  <div className={`h-12 w-12 flex items-center justify-center rounded-full bg-${step.color}-500/10 mx-auto`}>
-                    <step.icon className={`h-6 w-6 text-${step.color}-400`} />
+                  <div className="flex shrink-0 flex-col items-center lg:mb-4">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full border border-primary/40 bg-surface-card text-sm font-semibold text-primary shadow-[0_0_18px_rgba(20,184,166,0.16)]">
+                      {step.number}
+                    </div>
                   </div>
-                  <div className={`h-8 w-8 flex items-center justify-center rounded-full bg-${step.color}-500 text-white font-medium mx-auto mt-4`}>
-                    {step.number}
-                  </div>
-                  <h3 className="mt-4 font-semibold text-text-primary">
-                    {t(step.title)}
-                  </h3>
-                  <p className="mt-2 text-sm text-text-muted">
-                    {t(`${step.title}Desc`)}
-                  </p>
-                </motion.div>
+                  <GlassPanel glow={step.glow} hudCorners className="w-full p-4 transition-transform duration-200 hover:-translate-y-1 lg:min-h-[296px]">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                        <step.icon className="h-5 w-5" aria-hidden="true" />
+                      </div>
+                      <SpatialBadge variant={step.glow}>{step.label}</SpatialBadge>
+                    </div>
+                    <h3 className="mt-4 text-base font-semibold leading-snug text-text-primary">{step.title}</h3>
+                    <p className="mt-2 text-sm leading-6 text-text-muted">{step.description}</p>
+
+                    {index === 0 && (
+                      <div className="mt-4 rounded-lg border border-border-subtle bg-surface-container-low p-3" aria-label="Illustrative structured data preview">
+                        <div className="mb-2 flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-text-muted">
+                          <span>transactions.csv</span>
+                          <span className="text-emerald-400">.CSV / .XLSX</span>
+                        </div>
+                        <div className="space-y-1.5 text-[11px] text-text-secondary">
+                          <div className="grid grid-cols-3 gap-2 border-b border-border pb-1 font-medium text-text-muted"><span>Date</span><span>Description</span><span>Amount</span></div>
+                          <div className="grid grid-cols-3 gap-2"><span>12 May</span><span>Supplier</span><span>₹ —</span></div>
+                          <div className="grid grid-cols-3 gap-2"><span>13 May</span><span>Sales receipt</span><span>₹ —</span></div>
+                        </div>
+                      </div>
+                    )}
+
+                    {index === 1 && (
+                      <div className="mt-4 flex flex-wrap items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-text-muted">
+                        {['Import', 'Validate', 'Categorize', 'Analyze'].map((stage, stageIndex) => (
+                          <span key={stage} className="inline-flex items-center gap-1.5">
+                            <span className="rounded border border-border-subtle bg-surface-container-low px-1.5 py-1">{stage}</span>
+                            {stageIndex < 3 && <span className="text-primary" aria-hidden="true">→</span>}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {index === 2 && (
+                      <div className="mt-4 grid grid-cols-2 gap-2" aria-label="Illustrative business metrics">
+                        {['Revenue', 'Expenses', 'Profit', 'Cash Flow'].map((metric) => (
+                          <div key={metric} className="rounded-lg border border-border-subtle bg-surface-container-low px-2.5 py-2">
+                            <p className="text-[10px] text-text-muted">{metric}</p>
+                            <p className="mt-1 text-sm font-semibold text-text-primary">—</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {index === 3 && (
+                      <div className="mt-4 space-y-2 rounded-lg border border-border-subtle bg-surface-container-low p-3 text-xs">
+                        <div className="flex items-center justify-between"><span className="text-text-muted">CFO</span><span className="text-text-secondary">Cash Flow from Operations</span></div>
+                        <div className="flex items-center justify-between"><span className="text-text-muted">CFI</span><span className="text-text-secondary">Cash Flow from Investing</span></div>
+                        <div className="flex items-center justify-between"><span className="text-text-muted">CFF</span><span className="text-text-secondary">Cash Flow from Financing</span></div>
+                      </div>
+                    )}
+
+                    {index === 4 && (
+                      <div className="mt-4 space-y-2 text-xs text-text-secondary">
+                        {['What are my biggest financial risks?', 'How can I improve my cash position?', 'Where can I reduce unnecessary spending?'].map((question) => (
+                          <div key={question} className="rounded-lg border border-border-subtle bg-surface-container-low px-3 py-2">{question}</div>
+                        ))}
+                        <p className="pt-1 text-[10px] leading-4 text-text-muted">FinAI interprets your financial context and insights; calculations remain grounded in FinCompass data.</p>
+                      </div>
+                    )}
+                  </GlassPanel>
+                </motion.li>
               ))}
+            </ol>
+
+            <div className="mt-14 text-center">
+              <p className="text-lg font-semibold text-text-primary">Ready to understand your business better?</p>
+              <Link href={`/${locale}/register`} className="mt-5 inline-block">
+                <Button size="lg">
+                  Explore FinCompass
+                  <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
+                </Button>
+              </Link>
             </div>
           </div>
         </section>
