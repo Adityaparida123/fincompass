@@ -161,17 +161,37 @@ Edit `.env` with your values. **Never commit `.env`.**
 | `DEFAULT_CURRENCY` | Default `INR` |
 | `DEFAULT_TIMEZONE` | Default `Asia/Kolkata` |
 
-### Google Cloud voice setup (optional)
+### Voice setup
 
-Voice is an authenticated transport layer around the existing FinAI chat. To enable it:
+Voice input (speech-to-text) is powered by **Sarvam AI**, and read-aloud
+(text-to-speech) by **Google Cloud**. Voice is an authenticated transport layer
+around the existing FinAI chat.
 
-1. Create a Google Cloud project and enable **Speech-to-Text API** and **Text-to-Speech API**.
-2. Configure Application Default Credentials locally, or set `GOOGLE_APPLICATION_CREDENTIALS` to a server-only service-account file path.
-3. For Render, set `GOOGLE_CLOUD_PROJECT_ID` and the secret `GOOGLE_APPLICATION_CREDENTIALS_JSON`; never put either value in `NEXT_PUBLIC_*` variables or commit a key file.
-4. Start the backend and frontend normally. The authenticated endpoints are `POST /api/v1/voice/stt` and `POST /api/v1/voice/tts`.
-5. Test English with the application set to English (`en-IN`), then switch to Hindi and test again (`hi-IN`).
+**Voice input (STT) — Sarvam AI:**
 
-If Google credentials or the SDK are not configured, voice endpoints return a friendly temporary-unavailable response and the existing text FinAI flow continues to work.
+1. Create a Sarvam AI account and obtain an API subscription key.
+2. Set `SARVAM_API_KEY` server-side (local `.env` or Render secrets). It is
+   never exposed to the browser and never logged.
+3. Languages: `en-IN` (English India) and `hi-IN` (Hindi India) map directly to
+   Sarvam's BCP-47 codes. The frontend keeps sending these unchanged.
+
+**Read aloud (TTS) — Google Cloud Text-to-Speech (optional):**
+
+1. Create a Google Cloud project and enable the **Text-to-Speech API**.
+2. Configure Application Default Credentials locally, or set
+   `GOOGLE_APPLICATION_CREDENTIALS` to a server-only service-account file path.
+3. For Render, set `GOOGLE_CLOUD_PROJECT_ID` and the secret
+   `GOOGLE_APPLICATION_CREDENTIALS_JSON`; never put either value in
+   `NEXT_PUBLIC_*` variables or commit a key file.
+
+Start the backend and frontend normally. The authenticated endpoints are
+`POST /api/v1/voice/stt` (Sarvam) and `POST /api/v1/voice/tts` (Google). Test
+English with the application set to English (`en-IN`), then switch to Hindi and
+test again (`hi-IN`).
+
+If `SARVAM_API_KEY` is not configured, voice input returns a friendly
+temporary-unavailable response and the existing text FinAI flow continues to
+work. The same applies to read-aloud if Google Text-to-Speech is unavailable.
 
 ---
 

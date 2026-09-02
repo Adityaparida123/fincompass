@@ -1,9 +1,8 @@
-"""Schemas for authenticated Google Cloud voice transport."""
+"""Schemas for authenticated voice transport."""
 
 from typing import Literal
 
 from pydantic import BaseModel, Field
-
 
 VoiceLanguage = Literal["en-IN", "hi-IN"]
 

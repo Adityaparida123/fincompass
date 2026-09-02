@@ -67,8 +67,16 @@ class Settings(BaseSettings):
     LLM_READ_TIMEOUT_SECONDS: float = 90.0
     LLM_MAX_RETRIES: int = 2
 
-    # Google Cloud voice services. Credentials stay server-side via ADC or the
-    # path in GOOGLE_APPLICATION_CREDENTIALS; these values are never returned.
+    # Voice STT provider: Sarvam AI. Credentials stay server-side via
+    # SARVAM_API_KEY and are never returned to the client or logged.
+    SARVAM_API_KEY: str | None = None
+    SARVAM_STT_URL: str = "https://api.sarvam.ai/speech-to-text"
+    SARVAM_STT_MODEL: str = "saaras:v3"
+    SARVAM_STT_TIMEOUT_SECONDS: float = 30.0
+
+    # TTS provider remains Google Cloud (Text-to-Speech). Credentials stay
+    # server-side via ADC or the path in GOOGLE_APPLICATION_CREDENTIALS; these
+    # values are never returned.
     GOOGLE_CLOUD_PROJECT_ID: str | None = None
     GOOGLE_APPLICATION_CREDENTIALS: str | None = None
     GOOGLE_APPLICATION_CREDENTIALS_JSON: str | None = None

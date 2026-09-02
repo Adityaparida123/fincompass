@@ -32,6 +32,7 @@ xlrd>=2.0,<3
 
 httpx==0.28.1
 
-# Google Cloud voice transport (credentials remain server-side)
-google-cloud-speech==2.33.0
+# Voice transport:
+# - STT (voice input) uses Sarvam AI REST API over httpx (no SDK needed).
+# - TTS (read aloud) uses Google Cloud Text-to-Speech.
 google-cloud-texttospeech==2.27.0

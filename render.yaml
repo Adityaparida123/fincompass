@@ -41,6 +41,11 @@ services:
         sync: false
       - key: LLM_MODEL
         value: openai/gpt-oss-120b
+      # Voice input (STT) uses Sarvam AI; this key is required for voice input.
+      - key: SARVAM_API_KEY
+        sync: false
+      # Voice TTS still uses Google Cloud Text-to-Speech; set these only if
+      # read-aloud is enabled. Voice input does not require them.
       - key: GOOGLE_CLOUD_PROJECT_ID
         sync: false
       - key: GOOGLE_APPLICATION_CREDENTIALS_JSON

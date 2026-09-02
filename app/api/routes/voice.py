@@ -1,4 +1,4 @@
-"""Authenticated Google Cloud voice endpoints."""
+"""Authenticated voice endpoints (Sarvam STT + Google TTS)."""
 
 from fastapi import APIRouter, Depends, File, Form, UploadFile
 from fastapi.responses import Response

@@ -83,6 +83,27 @@ class LLMUnavailableError(AppError):
     status_code = 503
 
 
+class STTConfigError(AppError):
+    """Speech-to-text provider is missing its configuration (e.g. API key)."""
+
+    code = "STT_NOT_CONFIGURED"
+    status_code = 503
+
+
+class STTAuthError(AppError):
+    """Speech-to-text provider rejected the server-side credentials."""
+
+    code = "STT_AUTH_FAILED"
+    status_code = 401
+
+
+class STTUpstreamError(AppError):
+    """Speech-to-text provider returned an error or was unavailable."""
+
+    code = "STT_UNAVAILABLE"
+    status_code = 503
+
+
 def error_body(
     code: str,
     message: str,
