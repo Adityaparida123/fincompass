@@ -517,3 +517,109 @@ async def get_business_summary(
         "purchase_count": len(purchases),
         "customer_count": len(customers),
     }
+
+
+async def get_business_dashboard(
+    db: MongoDatabase,
+    user_id: int,
+    start_date: date,
+    end_date: date,
+) -> dict:
+    """Return period metrics and a daily trend for the Business Dashboard."""
+    sales = await list_sales(db, user_id, limit=1000)
+    purchases = await list_purchases(db, user_id, limit=1000)
+
+    def in_period(record: Doc) -> bool:
+        recorded_on = record.get("date")
+        if isinstance(recorded_on, str):
+            recorded_on = date.fromisoformat(recorded_on)
+        return isinstance(recorded_on, date) and start_date <= recorded_on <= end_date
+
+    period_sales = [sale for sale in sales if in_period(sale)]
+    period_purchases = [purchase for purchase in purchases if in_period(purchase)]
+
+    buckets: dict[str, dict] = {}
+    day = start_date
+    while day <= end_date:
+        buckets[day.isoformat()] = {
+            "date": day.isoformat(),
+            "sales": Decimal("0"),
+            "purchases": Decimal("0"),
+            "due": Decimal("0"),
+        }
+        day = date.fromordinal(day.toordinal() + 1)
+
+    for sale in period_sales:
+        bucket = buckets[sale["date"]]
+        bucket["sales"] += _decimal(sale.get("total_amount"))
+        bucket["due"] += _decimal(sale.get("due_amount"))
+
+    for purchase in period_purchases:
+        buckets[purchase["date"]]["purchases"] += _decimal(purchase.get("total_amount"))
+
+    trend = []
+    for bucket in buckets.values():
+        bucket["profit"] = bucket["sales"] - bucket["purchases"]
+        trend.append(bucket)
+
+    total_sales = sum((item["sales"] for item in trend), Decimal("0"))
+    total_purchases = sum((item["purchases"] for item in trend), Decimal("0"))
+    total_due = sum((item["due"] for item in trend), Decimal("0"))
+    customer_ids = {sale.get("customer_id") for sale in period_sales if sale.get("customer_id") is not None}
+    estimated_profit = total_sales - total_purchases
+
+    return {
+        "total_sales": total_sales,
+        "total_purchases": total_purchases,
+        "estimated_profit": estimated_profit,
+        "customer_due": total_due,
+        "customer_count": len(customer_ids),
+        "transaction_count": len(period_sales) + len(period_purchases),
+        "trend": trend,
+    }
+
+
+async def get_profit_ideas(db: MongoDatabase, user_id: int) -> list[dict[str, str]]:
+    """Generate transparent, data-grounded actions to improve business profit."""
+    today = date.today()
+    current_start = date.fromordinal(today.toordinal() - 29)
+    previous_start = date.fromordinal(today.toordinal() - 59)
+    sales = await list_sales(db, user_id, limit=1000)
+    purchases = await list_purchases(db, user_id, limit=1000)
+
+    def recorded_on(record: Doc) -> date | None:
+        value = record.get("date")
+        if isinstance(value, str):
+            return date.fromisoformat(value)
+        return value if isinstance(value, date) else None
+
+    def total(records: list[Doc], field: str, start: date, end: date) -> Decimal:
+        return sum((_decimal(record.get(field)) for record in records if (day := recorded_on(record)) and start <= day <= end), Decimal("0"))
+
+    monthly_sales = total(sales, "total_amount", current_start, today)
+    monthly_purchases = total(purchases, "total_amount", current_start, today)
+    monthly_due = total(sales, "due_amount", current_start, today)
+    previous_sales = total(sales, "total_amount", previous_start, date.fromordinal(current_start.toordinal() - 1))
+    profit = monthly_sales - monthly_purchases
+    margin = (profit / monthly_sales * 100) if monthly_sales else Decimal("0")
+    ideas: list[dict[str, str]] = []
+
+    if monthly_sales == 0:
+        ideas.append({"title": "Record every sale for one week", "reason": "Profit ideas become more accurate once daily sales and purchase costs are recorded.", "priority": "high"})
+        return ideas
+    if profit <= 0:
+        ideas.append({"title": "Review prices and purchase costs first", "reason": f"Recorded purchases are ₹{monthly_purchases:,.0f} against sales of ₹{monthly_sales:,.0f} this month. Check supplier bills and the price of each item before adding new costs.", "priority": "high"})
+    elif margin < 15:
+        ideas.append({"title": "Improve low-margin items", "reason": f"Your estimated margin is {margin:.1f}%. Review items with frequent sales and consider a small price adjustment or a lower-cost supplier.", "priority": "high"})
+    else:
+        ideas.append({"title": "Protect your current margin", "reason": f"Your estimated margin is {margin:.1f}% this month. Keep recording purchase costs so price or supplier changes do not reduce it.", "priority": "medium"})
+    if monthly_due > monthly_sales * Decimal("0.20"):
+        ideas.append({"title": "Collect credit dues sooner", "reason": f"₹{monthly_due:,.0f} of this month's sales is still due. A clear due date or small reminder can improve cash available for stock.", "priority": "high"})
+    if monthly_purchases > monthly_sales * Decimal("0.70"):
+        ideas.append({"title": "Compare supplier costs", "reason": "Purchase costs use more than 70% of recorded sales. Compare two supplier quotes, buy fast-moving stock carefully, and avoid slow-moving items.", "priority": "medium"})
+    if previous_sales > 0 and monthly_sales < previous_sales * Decimal("0.85"):
+        decline = (1 - monthly_sales / previous_sales) * 100
+        ideas.append({"title": "Bring back recent sales", "reason": f"Sales are {decline:.0f}% below the previous 30 days. Promote fast-moving items, ask regular customers what they need, or bundle complementary products.", "priority": "medium"})
+    if len(ideas) < 3:
+        ideas.append({"title": "Focus on fast-moving products", "reason": "Keep popular items available and review the purchase cost before restocking. Small, repeatable improvements usually increase profit more safely than large new expenses.", "priority": "low"})
+    return ideas[:3]

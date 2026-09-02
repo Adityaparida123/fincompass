@@ -1,6 +1,8 @@
 """Business Hub API routes."""
 
-from fastapi import APIRouter, Depends
+from datetime import date
+
+from fastapi import APIRouter, Depends, Query
 
 from app.api.dependencies import get_current_user
 from app.db.mongo import MongoDatabase
@@ -21,6 +23,8 @@ from app.services.business.services import (
     create_purchase,
     create_sale,
     get_business_profile,
+    get_business_dashboard,
+    get_profit_ideas,
     get_business_summary,
     get_customer,
     get_sale,
@@ -106,12 +110,13 @@ async def add_sale(
     response_model=list[SaleRead],
 )
 async def get_sales(
+    limit: int = Query(default=100, ge=1, le=1000),
     user=Depends(get_current_user),
     db: MongoDatabase = Depends(get_session),
 ):
     sales = await list_sales(
         db,
-        user.id,
+        user.id, limit=limit,
     )
 
     return [
@@ -171,12 +176,13 @@ async def add_customer(
     response_model=list[CustomerRead],
 )
 async def get_customers(
+    limit: int = Query(default=100, ge=1, le=1000),
     user=Depends(get_current_user),
     db: MongoDatabase = Depends(get_session),
 ):
     customers = await list_customers(
         db,
-        user.id,
+        user.id, limit=limit,
     )
 
     return [
@@ -253,6 +259,27 @@ async def get_purchases(
 # ============================================================
 # SUMMARY
 # ============================================================
+
+@router.get("/dashboard")
+async def business_dashboard(
+    start_date: date = Query(...),
+    end_date: date = Query(...),
+    user=Depends(get_current_user),
+    db: MongoDatabase = Depends(get_session),
+):
+    if start_date > end_date:
+        from app.core.exceptions import InvalidInputError
+
+        raise InvalidInputError("Start date must be on or before end date.")
+    return await get_business_dashboard(db, user.id, start_date, end_date)
+
+
+@router.get("/profit-ideas")
+async def profit_ideas(
+    user=Depends(get_current_user),
+    db: MongoDatabase = Depends(get_session),
+):
+    return {"ideas": await get_profit_ideas(db, user.id)}
 
 @router.get(
     "/summary",

@@ -95,7 +95,6 @@ class SaleCreate(BaseModel):
     # multiple items can be added.
     items: list[SaleItem] = Field(
         default_factory=list,
-        max_length=100,
     )
 
     paid_amount: Decimal | None = Field(

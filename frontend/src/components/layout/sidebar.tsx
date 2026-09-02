@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useTranslations, useLocale } from "next-intl";
 import {
   Home, Receipt, TrendingUp, Wallet, CreditCard, Lightbulb,
-  Menu, X, Compass, Activity,
+  Menu, X, Compass, Activity, Store,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
@@ -16,6 +16,12 @@ const navGroups = [
     label: "COMMAND CENTER",
     items: [
       { key: "dashboard", href: "/home", icon: Home },
+    ],
+  },
+  {
+    label: "BUSINESS",
+    items: [
+      { key: "businessProfile", href: "/business", icon: Store },
     ],
   },
   {

@@ -23,6 +23,8 @@ import type {
   BusinessCustomer,
   BusinessPurchase,
   BusinessSummary,
+  BusinessDashboard,
+  BusinessProfitIdea,
   ConsentItem,
   Notification,
   RecycleBinItem,
@@ -335,6 +337,28 @@ export function useBusinessSummary() {
   return useQuery({
     queryKey: ["business-summary", user?.id ?? "anonymous"],
     queryFn: () => api.get<BusinessSummary>("/business/summary"),
+    enabled: !!user?.id && isAuthenticated,
+  });
+}
+
+export function useBusinessDashboard(startDate: string, endDate: string) {
+  const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const params = new URLSearchParams({ start_date: startDate, end_date: endDate });
+
+  return useQuery({
+    queryKey: ["business-dashboard", user?.id ?? "anonymous", startDate, endDate],
+    queryFn: () => api.get<BusinessDashboard>(`/business/dashboard?${params}`),
+    enabled: !!user?.id && isAuthenticated && !!startDate && !!endDate,
+  });
+}
+
+export function useBusinessProfitIdeas() {
+  const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  return useQuery({
+    queryKey: ["business-profit-ideas", user?.id ?? "anonymous"],
+    queryFn: () => api.get<{ ideas: BusinessProfitIdea[] }>("/business/profit-ideas"),
     enabled: !!user?.id && isAuthenticated,
   });
 }

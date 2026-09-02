@@ -93,6 +93,30 @@ export interface BusinessSummary {
   customer_count: number;
 }
 
+export interface BusinessDashboardTrendPoint {
+  date: string;
+  sales: number;
+  purchases: number;
+  profit: number;
+  due: number;
+}
+
+export interface BusinessDashboard {
+  total_sales: number;
+  total_purchases: number;
+  estimated_profit: number;
+  customer_due: number;
+  customer_count: number;
+  transaction_count: number;
+  trend: BusinessDashboardTrendPoint[];
+}
+
+export interface BusinessProfitIdea {
+  title: string;
+  reason: string;
+  priority: "high" | "medium" | "low";
+}
+
 export interface TokenPair {
   access_token: string;
   refresh_token: string;

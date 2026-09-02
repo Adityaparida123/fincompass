@@ -1,10 +1,23 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
+import { useLocale } from "next-intl";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 import {
   ArrowDownLeft,
   ArrowUpRight,
+  BarChart3,
+  ChartNoAxesCombined,
   ChevronDown,
   CircleDollarSign,
   IndianRupee,
@@ -12,6 +25,7 @@ import {
   Plus,
   Save,
   ShoppingBag,
+  Sparkles,
   Store,
   Users,
   Wallet,
@@ -20,10 +34,12 @@ import {
 
 import {
   useBusinessCustomers,
+  useBusinessDashboard,
   useBusinessProfile,
+  useBusinessProfitIdeas,
   useBusinessSales,
-  useBusinessSummary,
   useCreateBusinessSale,
+  useCreateBusinessPurchase,
 } from "@/hooks/use-api";
 
 import { Button } from "@/components/ui/button";
@@ -59,15 +75,56 @@ function saleErrorMessage(error: unknown) {
   return "Could not save the sale. Please check the details and try again.";
 }
 
+type Period = "today" | "week" | "month" | "custom";
+type ProfitGranularity = "weekly" | "monthly";
+
+function toDateInput(value: Date) {
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, "0");
+  const day = String(value.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function periodDates(period: Exclude<Period, "custom">) {
+  const end = new Date();
+  const start = new Date(end);
+  if (period === "week") start.setDate(end.getDate() - 6);
+  if (period === "month") start.setDate(end.getDate() - 29);
+  return { startDate: toDateInput(start), endDate: toDateInput(end) };
+}
+
+function profitAnalysisDates() {
+  const end = new Date();
+  const start = new Date(end);
+  start.setMonth(end.getMonth() - 6);
+  return { startDate: toDateInput(start), endDate: toDateInput(end) };
+}
+
+function startOfWeek(dateValue: string) {
+  const date = new Date(`${dateValue}T00:00:00`);
+  const weekday = date.getDay() || 7;
+  date.setDate(date.getDate() - weekday + 1);
+  return toDateInput(date);
+}
+
 export default function BusinessPage() {
+  const locale = useLocale();
   const { data: profile, isLoading: profileLoading } = useBusinessProfile();
-  const { data: summary, isLoading: summaryLoading } = useBusinessSummary();
   const { data: sales = [], isLoading: salesLoading } = useBusinessSales(10);
   const { data: customers = [] } = useBusinessCustomers(100);
+  const [period, setPeriod] = useState<Period>("today");
+  const [dateRange, setDateRange] = useState(() => periodDates("today"));
+  const [profitGranularity, setProfitGranularity] = useState<ProfitGranularity>("weekly");
+  const [analysisRange] = useState(profitAnalysisDates);
+  const dashboard = useBusinessDashboard(dateRange.startDate, dateRange.endDate);
+  const profitAnalysis = useBusinessDashboard(analysisRange.startDate, analysisRange.endDate);
+  const profitIdeas = useBusinessProfitIdeas();
 
   const createSale = useCreateBusinessSale();
+  const createPurchase = useCreateBusinessPurchase();
 
   const [showSaleForm, setShowSaleForm] = useState(false);
+  const [showPurchaseForm, setShowPurchaseForm] = useState(false);
   const [detailedMode, setDetailedMode] = useState(false);
 
   const [amount, setAmount] = useState("");
@@ -79,6 +136,11 @@ export default function BusinessPage() {
   const [items, setItems] = useState<SaleItem[]>([emptyItem()]);
 
   const [showProfile, setShowProfile] = useState(false);
+
+  function selectPeriod(nextPeriod: Exclude<Period, "custom">) {
+    setPeriod(nextPeriod);
+    setDateRange(periodDates(nextPeriod));
+  }
 
   const calculatedTotal = useMemo(() => {
     if (!detailedMode) {
@@ -102,6 +164,26 @@ export default function BusinessPage() {
   }, [calculatedTotal, paidAmount, paymentMethod]);
 
   const due = Math.max(calculatedTotal - paid, 0);
+
+  const profitTrend = useMemo(() => {
+    const groups = new Map<string, { label: string; profit: number }>();
+    (profitAnalysis.data?.trend ?? []).forEach((point) => {
+      const key = profitGranularity === "weekly"
+        ? startOfWeek(point.date)
+        : point.date.slice(0, 7);
+      const current = groups.get(key) ?? {
+        label: profitGranularity === "weekly"
+          ? `Week of ${formatDate(key)}`
+          : new Date(`${key}-01T00:00:00`).toLocaleDateString("en-IN", { month: "short", year: "numeric" }),
+        profit: 0,
+      };
+      current.profit += Number(point.profit);
+      groups.set(key, current);
+    });
+    return [...groups.entries()]
+      .sort(([first], [second]) => first.localeCompare(second))
+      .map(([, value]) => value);
+  }, [profitAnalysis.data, profitGranularity]);
 
   function resetSaleForm() {
     setAmount("");
@@ -203,7 +285,7 @@ export default function BusinessPage() {
     profile?.business_name?.trim() || "My Business";
 
   const isBusy =
-    summaryLoading ||
+    dashboard.isLoading ||
     salesLoading ||
     profileLoading;
 
@@ -240,25 +322,53 @@ export default function BusinessPage() {
         </div>
       </section>
 
+      <BusinessNav
+        customersHref={`/${locale}/business/customers`}
+        onAddSale={() => setShowSaleForm(true)}
+        onAddPurchase={() => setShowPurchaseForm(true)}
+      />
+
+      <section id="business-dashboard" className="scroll-mt-4 flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/[0.035] p-3 backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap gap-2">
+          {(["today", "week", "month", "custom"] as const).map((option) => (
+            <button
+              key={option}
+              type="button"
+              onClick={() => option === "custom" ? setPeriod("custom") : selectPeriod(option)}
+              className={`rounded-lg px-3 py-2 text-sm transition ${period === option ? "bg-white text-black" : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white"}`}
+            >
+              {{ today: "Today", week: "This Week", month: "This Month", custom: "Custom Range" }[option]}
+            </button>
+          ))}
+        </div>
+        {period === "custom" && (
+          <div className="flex items-center gap-2 text-sm text-white/60">
+            <Input aria-label="Start date" type="date" value={dateRange.startDate} onChange={(event) => setDateRange((range) => ({ ...range, startDate: event.target.value }))} className="h-10 border-white/10 bg-white/[0.04] text-white" />
+            <span>to</span>
+            <Input aria-label="End date" type="date" value={dateRange.endDate} onChange={(event) => setDateRange((range) => ({ ...range, endDate: event.target.value }))} className="h-10 border-white/10 bg-white/[0.04] text-white" />
+          </div>
+        )}
+      </section>
+
       {/* Main Stats */}
       <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard
-          title="Total Sales"
-          value={money(summary?.total_sales)}
+          title="Sales"
+          value={money(dashboard.data?.total_sales)}
           icon={<ArrowUpRight className="h-5 w-5" />}
           loading={isBusy}
         />
 
         <StatCard
-          title="Total Purchases"
-          value={money(summary?.total_purchases)}
+          title="Purchases"
+          value={money(dashboard.data?.total_purchases)}
           icon={<ArrowDownLeft className="h-5 w-5" />}
           loading={isBusy}
         />
 
         <StatCard
           title="Estimated Profit"
-          value={money(summary?.estimated_profit)}
+          value={money(dashboard.data?.estimated_profit)}
           icon={<CircleDollarSign className="h-5 w-5" />}
           loading={isBusy}
           highlight
@@ -266,7 +376,7 @@ export default function BusinessPage() {
 
         <StatCard
           title="Customer Due"
-          value={money(summary?.customer_due)}
+          value={money(dashboard.data?.customer_due)}
           icon={<Wallet className="h-5 w-5" />}
           loading={isBusy}
           warning
@@ -278,26 +388,75 @@ export default function BusinessPage() {
         <MiniStat
           icon={<Users className="h-4 w-4" />}
           label="Customers"
-          value={summary?.customer_count ?? 0}
+          value={dashboard.data?.customer_count ?? 0}
         />
 
         <MiniStat
           icon={<ShoppingBag className="h-4 w-4" />}
-          label="Sales"
-          value={summary?.sales_count ?? 0}
+          label="Transactions"
+          value={dashboard.data?.transaction_count ?? 0}
         />
 
         <MiniStat
           icon={<Package className="h-4 w-4" />}
-          label="Purchases"
-          value={summary?.purchase_count ?? 0}
+          label="Date range"
+          value={`${dateRange.startDate.slice(5)} – ${dateRange.endDate.slice(5)}`}
         />
 
         <MiniStat
           icon={<IndianRupee className="h-4 w-4" />}
-          label="Margin"
-          value={`${Number(summary?.profit_margin || 0).toFixed(1)}%`}
+          label="Profit margin"
+          value={`${dashboard.data?.total_sales ? ((dashboard.data.estimated_profit / dashboard.data.total_sales) * 100).toFixed(1) : "0.0"}%`}
         />
+      </section>
+
+      <section id="business-trends" className="scroll-mt-4 grid gap-3 lg:grid-cols-2">
+        <DashboardChart title="Sales trend" color="#22d3ee" data={dashboard.data?.trend ?? []} dataKey="sales" />
+        <DashboardChart title="Purchase trend" color="#a78bfa" data={dashboard.data?.trend ?? []} dataKey="purchases" />
+        <DashboardChart title="Profit trend" color="#34d399" data={dashboard.data?.trend ?? []} dataKey="profit" />
+        <DashboardChart title="Due trend" color="#fbbf24" data={dashboard.data?.trend ?? []} dataKey="due" />
+      </section>
+
+      <section id="profit-analysis" className="scroll-mt-4 rounded-2xl border border-white/10 bg-white/[0.035] p-4 backdrop-blur-xl sm:p-5">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="flex items-center gap-2 font-semibold text-white">
+              <BarChart3 className="h-5 w-5 text-emerald-300" /> Profit Analysis
+            </div>
+            <p className="mt-1 text-sm text-white/45">Compare profit over time from your sales and purchases.</p>
+          </div>
+          <div className="flex rounded-lg bg-white/5 p-1">
+            {(["weekly", "monthly"] as const).map((option) => (
+              <button key={option} type="button" onClick={() => setProfitGranularity(option)} className={`rounded-md px-3 py-1.5 text-sm capitalize transition ${profitGranularity === option ? "bg-white text-black" : "text-white/55 hover:text-white"}`}>{option}</button>
+            ))}
+          </div>
+        </div>
+        <ProfitAnalysisChart data={profitTrend} loading={profitAnalysis.isLoading} />
+      </section>
+
+      <section id="profit-ideas" className="scroll-mt-4 rounded-2xl border border-cyan-400/20 bg-cyan-500/[0.045] p-4 backdrop-blur-xl sm:p-5">
+        <div className="mb-4 flex items-center gap-2">
+          <Sparkles className="h-5 w-5 text-cyan-300" />
+          <div>
+            <h2 className="font-semibold text-white">AI Profit Ideas</h2>
+            <p className="text-sm text-white/45">Based on your last 30 days of recorded sales and purchase costs.</p>
+          </div>
+        </div>
+        {profitIdeas.isLoading ? (
+          <div className="h-24 animate-pulse rounded-xl bg-white/5" />
+        ) : (
+          <div className="grid gap-3 lg:grid-cols-3">
+            {(profitIdeas.data?.ideas ?? []).map((idea) => (
+              <article key={idea.title} className="rounded-xl border border-white/10 bg-black/10 p-4">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <h3 className="font-medium text-white">{idea.title}</h3>
+                  <span className={`rounded-full px-2 py-0.5 text-xs ${idea.priority === "high" ? "bg-rose-400/10 text-rose-200" : idea.priority === "medium" ? "bg-amber-400/10 text-amber-200" : "bg-cyan-400/10 text-cyan-200"}`}>{idea.priority}</span>
+                </div>
+                <p className="text-sm leading-6 text-white/55">{idea.reason}</p>
+              </article>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Quick Actions */}
@@ -311,7 +470,7 @@ export default function BusinessPage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <QuickAction
             icon={<Plus className="h-5 w-5" />}
             title="Add Sale"
@@ -319,11 +478,25 @@ export default function BusinessPage() {
             onClick={() => setShowSaleForm(true)}
           />
 
+          <Link
+            href={`/${locale}/business/customers`}
+            className="group flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.035] p-4 text-left transition hover:border-white/20 hover:bg-white/[0.06]"
+          >
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/5 text-white/60 transition group-hover:bg-white/10 group-hover:text-white">
+              <Users className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="font-medium text-white">Customers</p>
+              <p className="mt-0.5 text-xs text-white/40">{customers.length} customers</p>
+            </div>
+            <ChevronDown className="ml-auto h-4 w-4 rotate-[-90deg] text-white/20 transition group-hover:text-white/50" />
+          </Link>
+
           <QuickAction
-            icon={<Users className="h-5 w-5" />}
-            title="Customers"
-            description={`${customers.length} customers`}
-            onClick={() => {}}
+            icon={<Package className="h-5 w-5" />}
+            title="Add Purchase"
+            description="Record stock or supplies"
+            onClick={() => setShowPurchaseForm(true)}
           />
 
           <QuickAction
@@ -399,7 +572,7 @@ export default function BusinessPage() {
       )}
 
       {/* Recent Sales */}
-      <section className="rounded-2xl border border-white/10 bg-white/[0.035] backdrop-blur-xl">
+      <section id="business-sales" className="scroll-mt-4 rounded-2xl border border-white/10 bg-white/[0.035] backdrop-blur-xl">
         <div className="flex items-center justify-between border-b border-white/10 p-5">
           <div>
             <h2 className="font-semibold text-white">
@@ -452,7 +625,11 @@ export default function BusinessPage() {
                   </p>
 
                   <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-white/40">
-                    <span>{sale.items?.length || 0} items</span>
+                    <span>
+                      {sale.items?.length
+                        ? sale.items.map((item) => item.name || "Item").join(", ")
+                        : "Quick sale"}
+                    </span>
                     <span>{sale.payment_method}</span>
                     <span>{formatDate(sale.date)}</span>
                   </div>
@@ -481,8 +658,8 @@ export default function BusinessPage() {
 
       {/* Add Sale Modal */}
       {showSaleForm && (
-        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-5">
-          <div className="max-h-[92vh] w-full overflow-y-auto rounded-t-3xl border border-white/10 bg-[#101116] shadow-2xl sm:max-w-2xl sm:rounded-3xl">
+        <div className="fixed inset-0 z-[100] flex items-start justify-center bg-black/70 px-3 pb-3 pt-16 backdrop-blur-sm sm:items-center sm:p-5">
+          <div className="max-h-[calc(100vh-5rem)] w-full overflow-y-auto rounded-3xl border border-white/10 bg-[#101116] shadow-2xl sm:max-h-[92vh] sm:max-w-2xl">
             <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-[#101116]/95 p-5 backdrop-blur-xl">
               <div>
                 <h2 className="text-xl font-semibold text-white">
@@ -709,10 +886,11 @@ export default function BusinessPage() {
                   Payment
                 </label>
 
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                   {[
                     ["cash", "Cash"],
                     ["upi", "UPI"],
+                    ["card", "Card"],
                     ["credit", "Credit"],
                   ].map(([value, label]) => (
                     <button
@@ -840,6 +1018,124 @@ export default function BusinessPage() {
           </div>
         </div>
       )}
+
+      {showPurchaseForm && (
+        <PurchaseEntryDialog
+          onClose={() => setShowPurchaseForm(false)}
+          onSave={async (body) => {
+            await createPurchase.mutateAsync(body);
+            setShowPurchaseForm(false);
+          }}
+          isSaving={createPurchase.isPending}
+          error={createPurchase.error}
+        />
+      )}
+    </div>
+  );
+}
+
+function BusinessNav({
+  customersHref,
+  onAddSale,
+  onAddPurchase,
+}: {
+  customersHref: string;
+  onAddSale: () => void;
+  onAddPurchase: () => void;
+}) {
+  const navClass = "flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-sm text-white/60 transition hover:bg-white/10 hover:text-white";
+  return (
+    <nav aria-label="Business Hub navigation" className="sticky top-0 z-20 -mx-1 overflow-x-auto rounded-xl border border-white/10 bg-[#101116]/90 p-1.5 shadow-xl backdrop-blur-xl">
+      <div className="flex min-w-max items-center gap-1">
+        <a href="#business-dashboard" className={navClass}><ChartNoAxesCombined className="h-4 w-4" /> Dashboard</a>
+        <a href="#business-sales" className={navClass}><ShoppingBag className="h-4 w-4" /> Sales</a>
+        <button type="button" onClick={onAddPurchase} className={navClass}><Package className="h-4 w-4" /> Purchases</button>
+        <Link href={customersHref} className={navClass}><Users className="h-4 w-4" /> Customers</Link>
+        <a href="#profit-analysis" className={navClass}><BarChart3 className="h-4 w-4" /> Profit Analysis</a>
+        <a href="#profit-ideas" className={navClass}><Sparkles className="h-4 w-4" /> AI Ideas</a>
+        <Button onClick={onAddSale} size="sm" className="ml-1 rounded-lg bg-white text-black hover:bg-white/90"><Plus className="mr-1 h-4 w-4" /> Add Sale</Button>
+      </div>
+    </nav>
+  );
+}
+
+function PurchaseEntryDialog({
+  onClose,
+  onSave,
+  isSaving,
+  error,
+}: {
+  onClose: () => void;
+  onSave: (body: Record<string, unknown>) => Promise<void>;
+  isSaving: boolean;
+  error: unknown;
+}) {
+  const [itemized, setItemized] = useState(true);
+  const [amount, setAmount] = useState("");
+  const [supplierName, setSupplierName] = useState("");
+  const [items, setItems] = useState<SaleItem[]>([emptyItem()]);
+  const [formError, setFormError] = useState("");
+  const total = itemized
+    ? items.reduce((sum, item) => sum + Number(item.quantity || 0) * Number(item.unit_price || 0), 0)
+    : Number(amount || 0);
+
+  function updateItem(index: number, field: keyof SaleItem, value: string) {
+    setItems((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, [field]: value } : item));
+  }
+
+  async function savePurchase() {
+    const validItems = items
+      .filter((item) => item.name.trim() && Number(item.quantity) > 0 && Number(item.unit_price) >= 0)
+      .map((item) => ({ name: item.name.trim(), quantity: Number(item.quantity), unit: item.unit.trim() || "unit", unit_price: Number(item.unit_price) }));
+    if (itemized && validItems.length === 0) {
+      setFormError("Add at least one item with a quantity and cost.");
+      return;
+    }
+    if (!itemized && total <= 0) {
+      setFormError("Enter a purchase amount.");
+      return;
+    }
+    setFormError("");
+    await onSave(itemized
+      ? { items: validItems, supplier_name: supplierName.trim() || undefined }
+      : { amount: total, supplier_name: supplierName.trim() || undefined });
+  }
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-start justify-center bg-black/70 px-3 pb-3 pt-16 backdrop-blur-sm sm:items-center sm:p-5">
+      <div className="max-h-[calc(100vh-5rem)] w-full overflow-y-auto rounded-3xl border border-white/10 bg-[#101116] shadow-2xl sm:max-h-[92vh] sm:max-w-2xl">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-[#101116]/95 p-5 backdrop-blur-xl">
+          <div><h2 className="text-xl font-semibold text-white">Add Purchase</h2><p className="text-sm text-white/45">Record stock, supplies or other business costs.</p></div>
+          <button type="button" onClick={onClose} className="rounded-xl p-2 text-white/50 hover:bg-white/10 hover:text-white"><X className="h-5 w-5" /></button>
+        </div>
+        <div className="space-y-5 p-5">
+          <div className="flex rounded-xl border border-white/10 bg-white/[0.03] p-1">
+            <button type="button" onClick={() => setItemized(false)} className={`flex-1 rounded-lg px-3 py-2.5 text-sm font-medium ${!itemized ? "bg-white text-black" : "text-white/55"}`}>Quick Amount</button>
+            <button type="button" onClick={() => setItemized(true)} className={`flex-1 rounded-lg px-3 py-2.5 text-sm font-medium ${itemized ? "bg-white text-black" : "text-white/55"}`}>Add Items</button>
+          </div>
+          <Input placeholder="Supplier name (optional)" value={supplierName} onChange={(event) => setSupplierName(event.target.value)} className="border-white/10 bg-white/[0.04] text-white" />
+          {!itemized ? (
+            <div><label className="mb-2 block text-white/70">Total Purchase Amount *</label><Input type="number" inputMode="decimal" placeholder="e.g. 2500" value={amount} onChange={(event) => setAmount(event.target.value)} className="h-14 border-white/10 bg-white/[0.04] text-xl text-white" /></div>
+          ) : (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between"><label className="text-white/70">Items purchased</label><button type="button" onClick={() => setItems((current) => [...current, emptyItem()])} className="text-sm text-cyan-300">+ Add another item</button></div>
+              {items.map((item, index) => (
+                <div key={index} className="grid gap-3 rounded-xl border border-white/10 bg-white/[0.025] p-3 sm:grid-cols-4">
+                  <Input placeholder="Item name" value={item.name} onChange={(event) => updateItem(index, "name", event.target.value)} className="sm:col-span-2 border-white/10 bg-white/[0.04] text-white" />
+                  <Input type="number" placeholder="Quantity" value={item.quantity} onChange={(event) => updateItem(index, "quantity", event.target.value)} className="border-white/10 bg-white/[0.04] text-white" />
+                  <Input type="number" placeholder="Cost / unit" value={item.unit_price} onChange={(event) => updateItem(index, "unit_price", event.target.value)} className="border-white/10 bg-white/[0.04] text-white" />
+                  <Input placeholder="Unit (kg, pack)" value={item.unit} onChange={(event) => updateItem(index, "unit", event.target.value)} className="border-white/10 bg-white/[0.04] text-white" />
+                  <p className="self-center text-right text-sm text-white/60">{money(Number(item.quantity || 0) * Number(item.unit_price || 0))}</p>
+                  {items.length > 1 && <button type="button" onClick={() => setItems((current) => current.filter((_, itemIndex) => itemIndex !== index))} className="text-sm text-red-300">Remove</button>}
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] p-4"><span className="text-white/55">Total purchase</span><span className="text-2xl font-bold text-white">{money(total)}</span></div>
+          {!!(formError || error) && <p className="text-sm text-red-300">{formError || (error ? saleErrorMessage(error) : "")}</p>}
+          <Button onClick={savePurchase} disabled={isSaving} className="h-12 w-full rounded-xl bg-white text-black hover:bg-white/90">{isSaving ? "Saving..." : "Save Purchase"}</Button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -967,6 +1263,83 @@ function InfoField({
       <p className="mt-1 text-sm text-white/80">
         {value || "Not added"}
       </p>
+    </div>
+  );
+}
+
+function DashboardChart({
+  title,
+  color,
+  data,
+  dataKey,
+}: {
+  title: string;
+  color: string;
+  data: Array<{ date: string; sales: number; purchases: number; profit: number; due: number }>;
+  dataKey: "sales" | "purchases" | "profit" | "due";
+}) {
+  return (
+    <div className="h-64 rounded-2xl border border-white/10 bg-white/[0.035] p-4 backdrop-blur-xl">
+      <h2 className="mb-3 font-semibold text-white">{title}</h2>
+      {data.length === 0 ? (
+        <div className="flex h-[190px] items-center justify-center text-sm text-white/40">
+          No activity in this period yet.
+        </div>
+      ) : (
+        <ResponsiveContainer width="100%" height="85%">
+          <AreaChart data={data} margin={{ top: 6, right: 6, bottom: 0, left: -20 }}>
+            <defs>
+              <linearGradient id={`dashboard-${dataKey}`} x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0%" stopColor={color} stopOpacity={0.35} />
+                <stop offset="100%" stopColor={color} stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
+            <XAxis dataKey="date" tickFormatter={(value) => value.slice(5)} tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 11 }} axisLine={false} tickLine={false} />
+            <YAxis tickFormatter={(value) => `₹${value}`} tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 11 }} axisLine={false} tickLine={false} width={48} />
+            <Tooltip
+              labelFormatter={(value) => formatDate(String(value))}
+              formatter={(value) => money(Number(value))}
+              contentStyle={{ background: "#17181d", border: "1px solid rgba(255,255,255,0.14)", borderRadius: 12, color: "white" }}
+            />
+            <Area type="monotone" dataKey={dataKey} stroke={color} strokeWidth={2} fill={`url(#dashboard-${dataKey})`} />
+          </AreaChart>
+        </ResponsiveContainer>
+      )}
+    </div>
+  );
+}
+
+function ProfitAnalysisChart({
+  data,
+  loading,
+}: {
+  data: Array<{ label: string; profit: number }>;
+  loading: boolean;
+}) {
+  if (loading) {
+    return <div className="h-64 animate-pulse rounded-xl bg-white/5" />;
+  }
+  if (data.length === 0) {
+    return <div className="flex h-64 items-center justify-center text-sm text-white/40">Record sales and purchases to see your profit trend.</div>;
+  }
+  return (
+    <div className="h-64">
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart data={data} margin={{ top: 12, right: 12, bottom: 0, left: -14 }}>
+          <defs>
+            <linearGradient id="profit-analysis" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stopColor="#34d399" stopOpacity={0.38} />
+              <stop offset="100%" stopColor="#34d399" stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
+          <XAxis dataKey="label" tick={{ fill: "rgba(255,255,255,0.45)", fontSize: 11 }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
+          <YAxis tickFormatter={(value) => `₹${value}`} tick={{ fill: "rgba(255,255,255,0.45)", fontSize: 11 }} axisLine={false} tickLine={false} width={50} />
+          <Tooltip formatter={(value) => money(Number(value))} contentStyle={{ background: "#17181d", border: "1px solid rgba(255,255,255,0.14)", borderRadius: 12, color: "white" }} />
+          <Area type="monotone" dataKey="profit" name="Profit" stroke="#34d399" strokeWidth={2.5} fill="url(#profit-analysis)" />
+        </AreaChart>
+      </ResponsiveContainer>
     </div>
   );
 }
