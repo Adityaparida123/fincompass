@@ -36,6 +36,7 @@
   },
   "nav": {
     "dashboard": "डैशबोर्ड",
+    "home": "होम",
     "transactions": "लेन-देन",
     "cashflow": "कैश फ्लो",
     "financialPlanning": "वित्तीय योजना",
@@ -43,6 +44,7 @@
     "businessHealth": "व्यापार स्वास्थ्य",
     "finaiAdvisor": "FinAI सलाहकार",
     "businessProfile": "व्यवसाय प्रोफ़ाइल",
+    "profile": "व्यवसाय प्रोफ़ाइल",
     "settings": "सेटिंग्स"
   },
   "landing": {

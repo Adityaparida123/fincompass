@@ -30,12 +30,6 @@ const navGroups = [
     ],
   },
   {
-    label: "BUSINESS",
-    items: [
-      { key: "businessProfile", href: "/business", icon: Store },
-    ],
-  },
-  {
     label: "FINANCIAL INTELLIGENCE",
     items: [
       { key: "transactions", href: "/expenses", icon: Receipt },
