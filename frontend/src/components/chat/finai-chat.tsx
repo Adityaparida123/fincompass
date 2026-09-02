@@ -52,10 +52,15 @@ function ChatPanel({
     start: t("voice.start"),
     stop: t("voice.stop"),
     listening: t("voice.listening"),
+    requesting: t("voice.requesting"),
     processing: t("voice.processing"),
     permission: t("voice.permission"),
+    noMicrophone: t("voice.noMicrophone"),
     unsupported: t("voice.unsupported"),
     understand: t("voice.understand"),
+    stt: t("voice.stt"),
+    network: t("voice.network"),
+    unavailable: t("voice.unavailable"),
   };
   const speechLabels = {
     speak: t("voice.speak"),

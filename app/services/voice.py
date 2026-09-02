@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-import os
 
 from app.core.config import settings
 from app.core.exceptions import InvalidInputError, LLMUnavailableError
@@ -30,23 +29,23 @@ def _validate_language(language: str) -> None:
 
 
 def _google_credentials_configured() -> bool:
-    # The SDK also supports workload identity and other ADC mechanisms. An
-    # explicit path is optional, but a configured project helps local setup.
-    return bool(
-        settings.GOOGLE_APPLICATION_CREDENTIALS
-        or settings.GOOGLE_APPLICATION_CREDENTIALS_JSON
-        or settings.GOOGLE_CLOUD_PROJECT_ID
-        or os.getenv("GOOGLE_CLOUD_PROJECT")
-    )
+    # The SDK supports ADC, workload identity, and service-account files. Let
+    # the client attempt those mechanisms instead of requiring one env var.
+    return True
 
 
 def _google_credentials():
-    if not settings.GOOGLE_APPLICATION_CREDENTIALS_JSON:
-        return None
-    from google.oauth2 import service_account
+    if settings.GOOGLE_APPLICATION_CREDENTIALS_JSON:
+        from google.oauth2 import service_account
 
-    info = json.loads(settings.GOOGLE_APPLICATION_CREDENTIALS_JSON)
-    return service_account.Credentials.from_service_account_info(info)
+        info = json.loads(settings.GOOGLE_APPLICATION_CREDENTIALS_JSON)
+        return service_account.Credentials.from_service_account_info(info)
+    if settings.GOOGLE_APPLICATION_CREDENTIALS:
+        from google.oauth2 import service_account
+
+        return service_account.Credentials.from_service_account_file(
+            settings.GOOGLE_APPLICATION_CREDENTIALS
+        )
 
 
 def _stt_sync(audio: bytes, content_type: str, language: str) -> str:
@@ -79,11 +78,14 @@ def _stt_sync(audio: bytes, content_type: str, language: str) -> str:
         logger.warning("Google STT request failed: %s", type(exc).__name__)
         raise LLMUnavailableError("Voice input is temporarily unavailable.") from exc
 
-    return " ".join(
+    transcript = " ".join(
         result.alternatives[0].transcript.strip()
         for result in response.results
         if result.alternatives and result.alternatives[0].transcript.strip()
     ).strip()
+    if not transcript:
+        raise InvalidInputError("I couldn't hear anything. Please try again.")
+    return transcript
 
 
 def _tts_sync(text: str, language: str) -> bytes:

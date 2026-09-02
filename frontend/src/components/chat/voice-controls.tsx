@@ -17,10 +17,15 @@ export function VoiceInputControl({
     start: string;
     stop: string;
     listening: string;
+    requesting: string;
     processing: string;
     permission: string;
+    noMicrophone: string;
     unsupported: string;
     understand: string;
+    stt: string;
+    network: string;
+    unavailable: string;
   };
 }) {
   const [error, setError] = useState<VoiceInputError | null>(null);
@@ -33,19 +38,19 @@ export function VoiceInputControl({
     onError: setError,
   });
 
-  const statusText = voice.isListening
-    ? labels.listening
-    : voice.isProcessing
-      ? labels.processing
-    : error === "permission"
-      ? labels.permission
-      : error === "unsupported"
-        ? labels.unsupported
-          : error === "unavailable"
-            ? labels.unsupported
-        : error === "understand"
-          ? labels.understand
-          : null;
+  const statusText = (() => {
+    if (voice.isListening) return labels.listening;
+    if (voice.status === "requesting") return labels.requesting;
+    if (voice.isProcessing) return labels.processing;
+    if (error === "permission") return labels.permission;
+    if (error === "no-microphone") return labels.noMicrophone;
+    if (error === "unsupported") return labels.unsupported;
+    if (error === "network") return labels.network;
+    if (error === "stt") return labels.stt;
+    if (error === "unavailable") return labels.unavailable;
+    if (error === "empty") return labels.understand;
+    return null;
+  })();
 
   return (
     <div className="flex min-w-0 items-center gap-1.5">
@@ -68,15 +73,15 @@ export function VoiceInputControl({
       <button
         type="button"
         onClick={voice.toggle}
-        disabled={!voice.isSupported || voice.isProcessing}
+        disabled={!voice.isSupported || voice.isProcessing || voice.status === "requesting"}
         className={cn(
           "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
           voice.isListening
             ? "border-rose-400/50 bg-rose-500/10 text-rose-400"
             : "border-border-subtle text-text-muted hover:border-primary/40 hover:text-primary",
         )}
-        aria-label={voice.isListening ? labels.stop : labels.start}
-        title={voice.isListening ? labels.stop : labels.start}
+        aria-label={voice.isListening ? labels.stop : voice.status === "requesting" ? labels.requesting : labels.start}
+        title={voice.isListening ? labels.stop : voice.status === "requesting" ? labels.requesting : labels.start}
       >
         {voice.isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
       </button>

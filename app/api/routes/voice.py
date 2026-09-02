@@ -38,5 +38,7 @@ async def text_to_speech(
     data: VoiceTTSRequest,
     _user=Depends(get_current_user),  # noqa: B008
 ) -> Response:
+    if len(data.text) > settings.VOICE_TTS_MAX_CHARACTERS:
+        raise InvalidInputError("The response is too long to read aloud.")
     audio = await voice_service.synthesize_speech(data.text, data.language)
     return Response(content=audio, media_type="audio/mpeg", headers={"Cache-Control": "no-store"})
