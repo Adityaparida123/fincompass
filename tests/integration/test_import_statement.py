@@ -165,6 +165,43 @@ async def test_business_summary_uses_imported_transactions(client, consented_hea
     assert float(dashboard_body["estimated_profit"]) == 320.00
 
 
+async def test_add_sale_creates_one_canonical_transaction(client, consented_headers):
+    sale = await client.post(
+        "/api/v1/business/sales",
+        json={
+            "amount": "25000.00",
+            "customer_name": "ABC",
+            "payment_method": "cash",
+            "date": "2026-09-02",
+        },
+        headers=consented_headers,
+    )
+    assert sale.status_code == 201
+    assert sale.json()["total_amount"] == "25000.00"
+
+    transactions = await client.get(
+        "/api/v1/transactions",
+        params={"start": "2026-09-02", "end": "2026-09-02"},
+        headers=consented_headers,
+    )
+    assert transactions.status_code == 200
+    rows = transactions.json()["items"]
+    assert len(rows) == 1
+    assert rows[0]["amount"] == "25000.00"
+    assert rows[0]["transaction_type"] == "income"
+    assert rows[0]["category"] == "sales"
+
+    summary = await client.get("/api/v1/business/summary", headers=consented_headers)
+    assert summary.status_code == 200
+    body = summary.json()
+    assert float(body["total_sales"]) == 25000.00
+    assert body["sales_count"] == 1
+
+    listed_sales = await client.get("/api/v1/business/sales", headers=consented_headers)
+    assert listed_sales.status_code == 200
+    assert len(listed_sales.json()) == 1
+
+
 async def test_confirm_skips_duplicates_on_reimport(client, consented_headers):
     await _upload(client, consented_headers)
     await client.post(

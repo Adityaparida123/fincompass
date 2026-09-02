@@ -10,6 +10,9 @@ from app.schemas.business import (
     PurchaseCreate,
     SaleCreate,
 )
+from app.schemas.transaction import TransactionCreate
+from app.db.enums import TransactionSource, TransactionType
+from app.services.finance.transactions import create_transaction
 from app.services.finance.scope import SCOPE_BUSINESS, SCOPE_PERSONAL, classify_scope
 
 
@@ -316,9 +319,32 @@ async def create_sale(
     # Save sale
     # ----------------------------------------
 
+    transaction = await create_transaction(
+        db,
+        user_id,
+        TransactionCreate(
+            date=sale_date,
+            description=customer_name or "Business sale",
+            amount=total_amount,
+            transaction_type=TransactionType.income,
+            category="sales",
+            merchant=customer_name,
+            source=TransactionSource.manual,
+            expense_scope=SCOPE_BUSINESS,
+        ),
+    )
+    transaction["paid_amount"] = paid_amount
+    transaction["due_amount"] = due_amount
+    await db.update_one(
+        "transactions",
+        {"id": transaction.id, "user_id": user_id},
+        {"paid_amount": paid_amount, "due_amount": due_amount},
+    )
+
     sale = await db.insert(
         BUSINESS_SALES_COLLECTION,
         {
+            "transaction_id": transaction.id,
             "user_id": user_id,
             "customer_id": customer_id,
             "customer_name": customer_name,
@@ -400,6 +426,8 @@ async def list_sales(
         ],
         limit=limit,
     )
+    linked_ids = {sale.get("transaction_id") for sale in manual_sales if sale.get("transaction_id") is not None}
+    manual_sales = [sale for sale in manual_sales if sale.get("transaction_id") not in linked_ids]
     imported_sales, _ = await _business_metrics_from_transactions(db, user_id)
     imported = [_transaction_as_sale(transaction) for transaction in imported_sales]
     return sorted(manual_sales + imported, key=lambda sale: str(sale.get("date") or ""), reverse=True)[:limit]
@@ -487,9 +515,25 @@ async def create_purchase(
         items = []
         total_amount = _decimal(data.amount)
 
+    transaction = await create_transaction(
+        db,
+        user_id,
+        TransactionCreate(
+            date=purchase_date,
+            description=data.supplier_name or "Business purchase",
+            amount=total_amount,
+            transaction_type=TransactionType.expense,
+            category="inventory",
+            merchant=data.supplier_name,
+            source=TransactionSource.manual,
+            expense_scope=SCOPE_BUSINESS,
+        ),
+    )
+
     return await db.insert(
         BUSINESS_PURCHASES_COLLECTION,
         {
+            "transaction_id": transaction.id,
             "user_id": user_id,
             "items": items,
             "total_amount": total_amount,
@@ -514,6 +558,8 @@ async def list_purchases(
         ],
         limit=limit,
     )
+    linked_ids = {purchase.get("transaction_id") for purchase in manual_purchases if purchase.get("transaction_id") is not None}
+    manual_purchases = [purchase for purchase in manual_purchases if purchase.get("transaction_id") not in linked_ids]
     _, imported_purchases = await _business_metrics_from_transactions(db, user_id)
     imported = [_transaction_as_purchase(transaction) for transaction in imported_purchases]
     return sorted(manual_purchases + imported, key=lambda purchase: str(purchase.get("date") or ""), reverse=True)[:limit]

@@ -393,7 +393,11 @@ export function useCreateBusinessSale() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["business-sales"] });
       qc.invalidateQueries({ queryKey: ["business-summary"] });
+      qc.invalidateQueries({ queryKey: ["business-dashboard"] });
       qc.invalidateQueries({ queryKey: ["business-customers"] });
+      qc.invalidateQueries({ queryKey: ["transactions"] });
+      qc.invalidateQueries({ queryKey: ["cashflow"] });
+      qc.invalidateQueries({ queryKey: ["readiness"] });
     },
   });
 }
@@ -450,6 +454,10 @@ export function useCreateBusinessPurchase() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["business-purchases"] });
       qc.invalidateQueries({ queryKey: ["business-summary"] });
+      qc.invalidateQueries({ queryKey: ["business-dashboard"] });
+      qc.invalidateQueries({ queryKey: ["transactions"] });
+      qc.invalidateQueries({ queryKey: ["cashflow"] });
+      qc.invalidateQueries({ queryKey: ["readiness"] });
     },
   });
 }
