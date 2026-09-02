@@ -74,18 +74,19 @@ def _stt_sync(audio: bytes, content_type: str, language: str) -> str:
             config=speech.RecognitionConfig(**config_kwargs),
             audio=speech.RecognitionAudio(content=audio),
         )
+        transcript = " ".join(
+            result.alternatives[0].transcript.strip()
+            for result in response.results
+            if result.alternatives and result.alternatives[0].transcript.strip()
+        ).strip()
+        if not transcript:
+            raise InvalidInputError("I couldn't hear anything. Please try again.")
+        return transcript
+    except InvalidInputError:
+        raise
     except Exception as exc:  # Google SDK errors must not reach the client.
         logger.warning("Google STT request failed: %s", type(exc).__name__)
         raise LLMUnavailableError("Voice input is temporarily unavailable.") from exc
-
-    transcript = " ".join(
-        result.alternatives[0].transcript.strip()
-        for result in response.results
-        if result.alternatives and result.alternatives[0].transcript.strip()
-    ).strip()
-    if not transcript:
-        raise InvalidInputError("I couldn't hear anything. Please try again.")
-    return transcript
 
 
 def _tts_sync(text: str, language: str) -> bytes:

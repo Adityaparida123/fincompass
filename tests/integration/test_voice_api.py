@@ -4,6 +4,8 @@ from unittest.mock import AsyncMock
 
 import pytest
 
+from app.core.exceptions import InvalidInputError
+
 
 @pytest.mark.asyncio
 async def test_stt_requires_auth(client):
@@ -55,6 +57,20 @@ async def test_stt_uses_mocked_google_service(client, auth_headers, monkeypatch)
     }
     mocked.assert_awaited_once()
     assert mocked.await_args.args[2] == "hi-IN"
+
+
+@pytest.mark.asyncio
+async def test_stt_reports_no_speech(client, auth_headers, monkeypatch):
+    mocked = AsyncMock(side_effect=InvalidInputError("I couldn't hear anything. Please try again."))
+    monkeypatch.setattr("app.api.routes.voice.voice_service.transcribe_audio", mocked)
+    response = await client.post(
+        "/api/v1/voice/stt",
+        headers=auth_headers,
+        files={"audio": ("voice.webm", b"audio", "audio/webm")},
+        data={"language": "en-IN"},
+    )
+    assert response.status_code == 422
+    assert response.json()["error"]["message"] == "I couldn't hear anything. Please try again."
 
 
 @pytest.mark.asyncio

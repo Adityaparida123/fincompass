@@ -114,7 +114,17 @@ export function useVoiceInput({
       setStatus("requesting");
       voiceLog("microphone permission requested");
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      voiceLog("microphone stream received", { trackCount: stream.getAudioTracks().length });
+      const tracks = stream.getAudioTracks();
+      voiceLog("microphone permission granted", {
+        trackCount: tracks.length,
+        trackEnabled: tracks[0]?.enabled ?? false,
+      });
+      if (!tracks.length || !tracks[0]?.enabled) {
+        releaseStream();
+        setStatus("error");
+        onErrorRef.current("no-microphone");
+        return;
+      }
       const recorder = new MediaRecorder(stream, { mimeType });
       voiceLog("recorder created", { mimeType: recorder.mimeType || mimeType });
       chunksRef.current = [];
@@ -146,13 +156,15 @@ export function useVoiceInput({
         setStatus("processing");
         try {
           const body = new FormData();
-            body.append("audio", blob, `finai-voice.${mimeExtension(blob.type || mimeType)}`);
+          body.append("audio", blob, `finai-voice.${mimeExtension(blob.type || mimeType)}`);
           body.append("language", getVoiceLanguage(locale));
-            voiceLog("STT request started", { bytes: blob.size, mimeType: blob.type, language: getVoiceLanguage(locale) });
+          voiceLog("sending STT request", { bytes: blob.size, mimeType: blob.type, language: getVoiceLanguage(locale) });
           const result = await api.post<{ text: string; language: string }>("/voice/stt", body, { timeout: 35_000 });
-            voiceLog("STT response received", { hasText: Boolean(result.text?.trim()), language: result.language });
-          if (result.text.trim()) onTranscriptRef.current(result.text.trim());
-          else onErrorRef.current("empty");
+          voiceLog("STT response received", { hasText: Boolean(result.text?.trim()), language: result.language });
+          if (result.text.trim()) {
+            voiceLog("updating composer");
+            onTranscriptRef.current(result.text.trim());
+          } else onErrorRef.current("empty");
           setStatus("idle");
         } catch (error) {
           setStatus("error");
