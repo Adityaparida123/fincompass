@@ -74,7 +74,7 @@ export default function CustomersPage() {
     <div className="min-h-screen space-y-6 pb-24">
       <section className="rounded-3xl border border-white/10 bg-white/[0.035] p-5 shadow-2xl backdrop-blur-xl sm:p-7">
         <Link href={`/${locale}/business`} className="mb-4 inline-flex items-center gap-2 text-sm text-white/50 hover:text-white">
-          <ArrowLeft className="h-4 w-4" /> Back to Business Hub
+          <ArrowLeft className="h-4 w-4" /> Back to Buisness Hub
         </Link>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>

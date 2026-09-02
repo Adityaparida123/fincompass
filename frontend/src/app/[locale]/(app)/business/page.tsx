@@ -300,7 +300,7 @@ export default function BusinessPage() {
           <div>
             <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-cyan-300">
               <Store className="h-4 w-4" />
-              Business Hub
+              Buisness Hub
             </div>
 
             <h1 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
@@ -1045,7 +1045,7 @@ function BusinessNav({
 }) {
   const navClass = "flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-sm text-white/60 transition hover:bg-white/10 hover:text-white";
   return (
-    <nav aria-label="Business Hub navigation" className="sticky top-0 z-20 -mx-1 overflow-x-auto rounded-xl border border-white/10 bg-[#101116]/90 p-1.5 shadow-xl backdrop-blur-xl">
+    <nav aria-label="Buisness Hub navigation" className="sticky top-0 z-20 -mx-1 overflow-x-auto rounded-xl border border-white/10 bg-[#101116]/90 p-1.5 shadow-xl backdrop-blur-xl">
       <div className="flex min-w-max items-center gap-1">
         <a href="#business-dashboard" className={navClass}><ChartNoAxesCombined className="h-4 w-4" /> Dashboard</a>
         <a href="#business-sales" className={navClass}><ShoppingBag className="h-4 w-4" /> Sales</a>
