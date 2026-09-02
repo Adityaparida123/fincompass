@@ -27,6 +27,7 @@ from app.api.routes import (
     schemes,
     transactions,
     users,
+    voice,
 )
 from app.core.config import settings
 from app.core.exceptions import (
@@ -150,6 +151,7 @@ app.include_router(notifications.router, prefix=API_PREFIX)
 app.include_router(recycle_bin.router, prefix=API_PREFIX)
 app.include_router(ml.router, prefix=API_PREFIX)
 app.include_router(advisor.router, prefix=API_PREFIX)
+app.include_router(voice.router, prefix=API_PREFIX)
 
 
 @app.api_route("/", methods=["GET", "HEAD"])

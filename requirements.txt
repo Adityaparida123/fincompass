@@ -31,3 +31,7 @@ openpyxl>=3.1,<4
 xlrd>=2.0,<3
 
 httpx==0.28.1
+
+# Google Cloud voice transport (credentials remain server-side)
+google-cloud-speech==2.33.0
+google-cloud-texttospeech==2.27.0

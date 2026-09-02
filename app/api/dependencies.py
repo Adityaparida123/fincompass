@@ -144,6 +144,17 @@ async def rate_limit_ml(request: Request) -> None:
     )
 
 
+async def rate_limit_voice(request: Request) -> None:
+    from app.core.config import settings
+
+    await _rate_limit(
+        request,
+        "voice",
+        limit=settings.RATE_LIMIT_VOICE_LIMIT,
+        window=settings.RATE_LIMIT_VOICE_WINDOW,
+    )
+
+
 async def rate_limit_statement(request: Request) -> None:
     from app.core.config import settings
 

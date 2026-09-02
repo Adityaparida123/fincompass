@@ -353,6 +353,19 @@
     "send": "Send message",
     "fullscreen": "Expand chat",
     "exitFullscreen": "Exit full screen",
+    "voice": {
+      "start": "Start voice input",
+      "stop": "Stop voice input",
+      "listening": "Listening...",
+      "processing": "Processing...",
+      "permission": "Microphone permission is required for voice input.",
+      "unsupported": "Voice input isn't supported in this browser. You can continue using text.",
+      "understand": "Sorry, I couldn't understand that. Please try again.",
+      "speak": "Read response aloud",
+      "stopReading": "Stop reading",
+      "loading": "Preparing audio...",
+      "unavailable": "Read aloud unavailable"
+    },
     "suggestions": {
       "save": "How much should I save every month?",
       "expenses": "Why did my expenses increase?",

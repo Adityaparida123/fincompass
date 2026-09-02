@@ -9,6 +9,7 @@ type RequestOptions = RequestInit & {
   skipAuth?: boolean;
   timeout?: number;
   errorMessages?: Partial<Record<number, string>>;
+  responseType?: "json" | "blob";
 };
 
 const TOKEN_STORAGE_KEY = "fincompass-tokens";
@@ -255,7 +256,7 @@ class ApiClient {
 
   async request<T>(path: string, options: RequestOptions = {}): Promise<T> {
     this.restoreTokens();
-    const { token, skipAuth, timeout = DEFAULT_TIMEOUT_MS, errorMessages, ...init } = options;
+    const { token, skipAuth, timeout = DEFAULT_TIMEOUT_MS, errorMessages, responseType = "json", ...init } = options;
     const headers = new Headers(init.headers);
     if (!headers.has("Content-Type") && init.body && !(init.body instanceof FormData)) {
       headers.set("Content-Type", "application/json");
@@ -311,6 +312,8 @@ class ApiClient {
 
     if (res.status === 204) return undefined as T;
 
+    if (res.ok && responseType === "blob") return await res.blob() as T;
+
     const data = await res.json().catch(() => null);
     if (!res.ok) {
       const err = data as ApiError;
@@ -337,6 +340,15 @@ class ApiClient {
       ...options,
       method: "POST",
       body: isFormData ? body : body ? JSON.stringify(body) : undefined,
+    });
+  }
+
+  postBlob(path: string, body?: unknown, options?: RequestOptions) {
+    return this.request<Blob>(path, {
+      ...options,
+      method: "POST",
+      responseType: "blob",
+      body: body instanceof FormData ? body : JSON.stringify(body),
     });
   }
 

@@ -13,6 +13,7 @@ import { generateFollowUps, type DashboardContext } from "@/lib/chat-followups";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { VoiceInputControl, VoiceOutputControl } from "@/components/chat/voice-controls";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
 
@@ -29,6 +30,8 @@ function ChatPanel({
   t,
   bottomRef,
   setInput,
+  setDraft,
+  locale,
 }: {
   isOpen: boolean;
   isFullscreen: boolean;
@@ -42,7 +45,25 @@ function ChatPanel({
   t: ReturnType<typeof useTranslations>;
   bottomRef: React.RefObject<HTMLDivElement | null>;
   setInput: (value: string) => void;
+  setDraft: (value: string | null) => void;
+  locale: string;
 }) {
+  const voiceLabels = {
+    start: t("voice.start"),
+    stop: t("voice.stop"),
+    listening: t("voice.listening"),
+    processing: t("voice.processing"),
+    permission: t("voice.permission"),
+    unsupported: t("voice.unsupported"),
+    understand: t("voice.understand"),
+  };
+  const speechLabels = {
+    speak: t("voice.speak"),
+    stop: t("voice.stopReading"),
+    loading: t("voice.loading"),
+    unavailable: t("voice.unavailable"),
+  };
+
   if (!isOpen) return null;
 
   const content = (
@@ -119,6 +140,7 @@ function ChatPanel({
             <span className={cn("mt-0.5 px-1 text-[10px] text-text-muted/70 tabular-nums", m.role === "user" ? "text-right" : "text-left")}>
               {format(m.timestamp, "HH:mm")}
             </span>
+            {m.role === "assistant" && <VoiceOutputControl text={m.content} locale={locale} labels={speechLabels} />}
           </div>
         ))}
         {isLoading && (
@@ -157,11 +179,20 @@ function ChatPanel({
         <Input
           value={value}
           onChange={(e) => {
+            setDraft(null);
             setInput(e.target.value);
           }}
           placeholder={t("placeholder")}
           disabled={isLoading}
           className="h-9 text-[13px]"
+        />
+        <VoiceInputControl
+          locale={locale}
+          onTranscript={(text) => {
+            setDraft(null);
+            setInput(text);
+          }}
+          labels={voiceLabels}
         />
         <Button type="submit" size="icon" className="h-9 w-9 shrink-0" disabled={isLoading || !value.trim()} aria-label={t("send")}>
           <Send className="h-4 w-4" />
@@ -370,6 +401,8 @@ export function FinAIChat() {
         t={t}
         bottomRef={bottomRef}
         setInput={setInput}
+        setDraft={setDraft}
+        locale={locale}
       />
     </>
   );

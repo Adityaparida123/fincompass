@@ -67,6 +67,16 @@ class Settings(BaseSettings):
     LLM_READ_TIMEOUT_SECONDS: float = 90.0
     LLM_MAX_RETRIES: int = 2
 
+    # Google Cloud voice services. Credentials stay server-side via ADC or the
+    # path in GOOGLE_APPLICATION_CREDENTIALS; these values are never returned.
+    GOOGLE_CLOUD_PROJECT_ID: str | None = None
+    GOOGLE_APPLICATION_CREDENTIALS: str | None = None
+    GOOGLE_APPLICATION_CREDENTIALS_JSON: str | None = None
+    VOICE_MAX_AUDIO_SIZE: int = 10 * 1024 * 1024
+    VOICE_MAX_DURATION_SECONDS: int = 20
+    VOICE_TTS_MAX_CHARACTERS: int = 4000
+    VOICE_TIMEOUT_SECONDS: float = 30.0
+
     CORS_ORIGINS: str | None = (
         "http://localhost:3000,http://localhost:5173,"
         "http://127.0.0.1:5173,https://fincompass-three.vercel.app"
@@ -88,6 +98,8 @@ class Settings(BaseSettings):
     RATE_LIMIT_CHAT_WINDOW: int = 60
     RATE_LIMIT_ML_LIMIT: int = 60
     RATE_LIMIT_ML_WINDOW: int = 60
+    RATE_LIMIT_VOICE_LIMIT: int = 30
+    RATE_LIMIT_VOICE_WINDOW: int = 60
     RATE_LIMIT_STATEMENT_LIMIT: int = 10
     RATE_LIMIT_STATEMENT_WINDOW: int = 3600  # 1 hour
 

@@ -161,6 +161,18 @@ Edit `.env` with your values. **Never commit `.env`.**
 | `DEFAULT_CURRENCY` | Default `INR` |
 | `DEFAULT_TIMEZONE` | Default `Asia/Kolkata` |
 
+### Google Cloud voice setup (optional)
+
+Voice is an authenticated transport layer around the existing FinAI chat. To enable it:
+
+1. Create a Google Cloud project and enable **Speech-to-Text API** and **Text-to-Speech API**.
+2. Configure Application Default Credentials locally, or set `GOOGLE_APPLICATION_CREDENTIALS` to a server-only service-account file path.
+3. For Render, set `GOOGLE_CLOUD_PROJECT_ID` and the secret `GOOGLE_APPLICATION_CREDENTIALS_JSON`; never put either value in `NEXT_PUBLIC_*` variables or commit a key file.
+4. Start the backend and frontend normally. The authenticated endpoints are `POST /api/v1/voice/stt` and `POST /api/v1/voice/tts`.
+5. Test English with the application set to English (`en-IN`), then switch to Hindi and test again (`hi-IN`).
+
+If Google credentials or the SDK are not configured, voice endpoints return a friendly temporary-unavailable response and the existing text FinAI flow continues to work.
+
 ---
 
 ## Database Setup
