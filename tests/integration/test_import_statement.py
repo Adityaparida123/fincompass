@@ -112,6 +112,59 @@ async def test_confirm_imports(client, consented_headers, db_session):
     assert listed.json()["total"] == 2
 
 
+async def test_business_summary_uses_imported_transactions(client, consented_headers):
+    confirm = await client.post(
+        "/api/v1/transactions/import-statement/confirm",
+        json={
+            "transactions": [
+                {
+                    "date": "2026-08-01",
+                    "description": "Retail sale to Ramesh",
+                    "amount": "500.00",
+                    "transaction_type": "income",
+                    "category": "sales",
+                },
+                {
+                    "date": "2026-08-02",
+                    "description": "Rice sack inventory",
+                    "amount": "180.00",
+                    "transaction_type": "expense",
+                    "category": "inventory",
+                },
+                {
+                    "date": "2026-08-03",
+                    "description": "Family groceries",
+                    "amount": "120.00",
+                    "transaction_type": "expense",
+                    "category": "groceries",
+                },
+            ]
+        },
+        headers=consented_headers,
+    )
+    assert confirm.status_code == 200
+
+    summary = await client.get("/api/v1/business/summary", headers=consented_headers)
+    assert summary.status_code == 200
+    body = summary.json()
+    assert float(body["total_sales"]) == 500.00
+    assert float(body["total_purchases"]) == 180.00
+    assert float(body["estimated_profit"]) == 320.00
+    assert body["sales_count"] == 1
+    assert body["purchase_count"] == 1
+
+    dashboard = await client.get(
+        "/api/v1/business/dashboard",
+        params={"start_date": "2026-08-01", "end_date": "2026-08-03"},
+        headers=consented_headers,
+    )
+    assert dashboard.status_code == 200
+    dashboard_body = dashboard.json()
+    assert float(dashboard_body["total_sales"]) == 500.00
+    assert float(dashboard_body["total_purchases"]) == 180.00
+    assert float(dashboard_body["estimated_profit"]) == 320.00
+
+
 async def test_confirm_skips_duplicates_on_reimport(client, consented_headers):
     await _upload(client, consented_headers)
     await client.post(

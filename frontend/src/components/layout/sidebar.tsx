@@ -41,7 +41,6 @@ const navGroups = [
     label: "BUSINESS FINANCE",
     items: [
       { key: "creditReadiness", href: "/readiness", icon: CreditCard },
-      { key: "businessHealth", href: "/business", icon: HeartPulse },
       { key: "businessProfile", href: "/business", icon: Store },
     ],
   },

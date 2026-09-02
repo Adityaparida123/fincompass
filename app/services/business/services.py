@@ -10,6 +10,7 @@ from app.schemas.business import (
     PurchaseCreate,
     SaleCreate,
 )
+from app.services.finance.scope import SCOPE_BUSINESS, SCOPE_PERSONAL, classify_scope
 
 
 BUSINESS_PROFILE_COLLECTION = "business_profiles"
@@ -21,6 +22,58 @@ BUSINESS_PURCHASES_COLLECTION = "business_purchases"
 # ============================================================
 # HELPERS
 # ============================================================
+
+
+def _as_date(value) -> date | None:
+    if value is None:
+        return None
+    if isinstance(value, date):
+        return value
+    if isinstance(value, str):
+        try:
+            return date.fromisoformat(value)
+        except ValueError:
+            return None
+    return None
+
+
+def _is_business_income(tx: Doc) -> bool:
+    if str(tx.get("transaction_type", "")).lower() != "income":
+        return False
+    override = str(tx.get("expense_scope") or "").lower()
+    if override == SCOPE_PERSONAL:
+        return False
+    if override == SCOPE_BUSINESS:
+        return True
+    category = str(tx.get("category") or "").strip().lower()
+    return classify_scope(category) != SCOPE_PERSONAL
+
+
+def _is_business_purchase(tx: Doc) -> bool:
+    if str(tx.get("transaction_type", "")).lower() != "expense":
+        return False
+    override = str(tx.get("expense_scope") or "").lower()
+    if override == SCOPE_PERSONAL:
+        return False
+    if override == SCOPE_BUSINESS:
+        return True
+    category = str(tx.get("category") or "").strip().lower()
+    return classify_scope(category) == SCOPE_BUSINESS
+
+
+async def _load_business_transactions(db: MongoDatabase, user_id: int) -> list[Doc]:
+    return await db.find(
+        "transactions",
+        {"user_id": user_id, "is_deleted": False},
+        sort=[("date", -1), ("id", -1)],
+    )
+
+
+async def _business_metrics_from_transactions(db: MongoDatabase, user_id: int) -> tuple[list[Doc], list[Doc]]:
+    rows = await _load_business_transactions(db, user_id)
+    sales = [row for row in rows if _is_business_income(row)]
+    purchases = [row for row in rows if _is_business_purchase(row)]
+    return sales, purchases
 
 def _decimal(value) -> Decimal:
     """Safely convert values to Decimal."""
@@ -447,55 +500,25 @@ async def get_business_summary(
     - transaction counts
     """
 
-    sales = await list_sales(
-        db,
-        user_id,
-        limit=1000,
-    )
+    transaction_sales, transaction_purchases = await _business_metrics_from_transactions(db, user_id)
+    sales = await list_sales(db, user_id, limit=1000)
+    purchases = await list_purchases(db, user_id, limit=1000)
+    customers = await list_customers(db, user_id, limit=1000)
 
-    purchases = await list_purchases(
-        db,
-        user_id,
-        limit=1000,
-    )
-
-    customers = await list_customers(
-        db,
-        user_id,
-        limit=1000,
-    )
-
-    total_sales = sum(
-        (
-            _decimal(s.get("total_amount", 0))
-            for s in sales
-        ),
-        Decimal("0"),
-    )
-
-    total_purchases = sum(
-        (
-            _decimal(p.get("total_amount", 0))
-            for p in purchases
-        ),
-        Decimal("0"),
-    )
-
-    total_due = sum(
-        (
-            _decimal(c.get("total_due", 0))
-            for c in customers
-        ),
-        Decimal("0"),
-    )
-
-    total_paid = sum(
-        (
-            _decimal(s.get("paid_amount", 0))
-            for s in sales
-        ),
-        Decimal("0"),
-    )
+    if transaction_sales or transaction_purchases:
+        total_sales = sum((_decimal(s.get("amount", 0)) for s in transaction_sales), Decimal("0"))
+        total_purchases = sum((_decimal(p.get("amount", 0)) for p in transaction_purchases), Decimal("0"))
+        total_due = sum((_decimal(c.get("total_due", 0)) for c in customers), Decimal("0"))
+        total_paid = sum((_decimal(s.get("amount", 0)) for s in transaction_sales), Decimal("0"))
+        sales_count = len(transaction_sales)
+        purchase_count = len(transaction_purchases)
+    else:
+        total_sales = sum((_decimal(s.get("total_amount", 0)) for s in sales), Decimal("0"))
+        total_purchases = sum((_decimal(p.get("total_amount", 0)) for p in purchases), Decimal("0"))
+        total_due = sum((_decimal(c.get("total_due", 0)) for c in customers), Decimal("0"))
+        total_paid = sum((_decimal(s.get("paid_amount", 0)) for s in sales), Decimal("0"))
+        sales_count = len(sales)
+        purchase_count = len(purchases)
 
     estimated_profit = total_sales - total_purchases
 
@@ -513,8 +536,8 @@ async def get_business_summary(
         "profit_margin": profit_margin,
         "customer_due": total_due,
         "total_paid": total_paid,
-        "sales_count": len(sales),
-        "purchase_count": len(purchases),
+        "sales_count": sales_count,
+        "purchase_count": purchase_count,
         "customer_count": len(customers),
     }
 
@@ -526,17 +549,20 @@ async def get_business_dashboard(
     end_date: date,
 ) -> dict:
     """Return period metrics and a daily trend for the Business Dashboard."""
+    transaction_sales, transaction_purchases = await _business_metrics_from_transactions(db, user_id)
     sales = await list_sales(db, user_id, limit=1000)
     purchases = await list_purchases(db, user_id, limit=1000)
 
     def in_period(record: Doc) -> bool:
-        recorded_on = record.get("date")
-        if isinstance(recorded_on, str):
-            recorded_on = date.fromisoformat(recorded_on)
-        return isinstance(recorded_on, date) and start_date <= recorded_on <= end_date
+        recorded_on = _as_date(record.get("date"))
+        return recorded_on is not None and start_date <= recorded_on <= end_date
 
-    period_sales = [sale for sale in sales if in_period(sale)]
-    period_purchases = [purchase for purchase in purchases if in_period(purchase)]
+    if transaction_sales or transaction_purchases:
+        period_sales = [sale for sale in transaction_sales if in_period(sale)]
+        period_purchases = [purchase for purchase in transaction_purchases if in_period(purchase)]
+    else:
+        period_sales = [sale for sale in sales if in_period(sale)]
+        period_purchases = [purchase for purchase in purchases if in_period(purchase)]
 
     buckets: dict[str, dict] = {}
     day = start_date
@@ -550,12 +576,18 @@ async def get_business_dashboard(
         day = date.fromordinal(day.toordinal() + 1)
 
     for sale in period_sales:
-        bucket = buckets[sale["date"]]
-        bucket["sales"] += _decimal(sale.get("total_amount"))
-        bucket["due"] += _decimal(sale.get("due_amount"))
+        sale_date = _as_date(sale.get("date"))
+        if sale_date is None or sale_date.isoformat() not in buckets:
+            continue
+        buckets[sale_date.isoformat()]["sales"] += _decimal(sale.get("amount"))
+        if sale.get("due_amount") is not None:
+            buckets[sale_date.isoformat()]["due"] += _decimal(sale.get("due_amount"))
 
     for purchase in period_purchases:
-        buckets[purchase["date"]]["purchases"] += _decimal(purchase.get("total_amount"))
+        purchase_date = _as_date(purchase.get("date"))
+        if purchase_date is None or purchase_date.isoformat() not in buckets:
+            continue
+        buckets[purchase_date.isoformat()]["purchases"] += _decimal(purchase.get("amount"))
 
     trend = []
     for bucket in buckets.values():
@@ -584,8 +616,19 @@ async def get_profit_ideas(db: MongoDatabase, user_id: int) -> list[dict[str, st
     today = date.today()
     current_start = date.fromordinal(today.toordinal() - 29)
     previous_start = date.fromordinal(today.toordinal() - 59)
+    imported_sales, imported_purchases = await _business_metrics_from_transactions(db, user_id)
     sales = await list_sales(db, user_id, limit=1000)
     purchases = await list_purchases(db, user_id, limit=1000)
+
+    if imported_sales or imported_purchases:
+        sales = [
+            {"date": row.get("date"), "total_amount": row.get("amount"), "due_amount": 0}
+            for row in imported_sales
+        ]
+        purchases = [
+            {"date": row.get("date"), "total_amount": row.get("amount")}
+            for row in imported_purchases
+        ]
 
     def recorded_on(record: Doc) -> date | None:
         value = record.get("date")

@@ -104,6 +104,8 @@ export function useCreateTransaction() {
       qc.invalidateQueries({ queryKey: ["readiness"] });
       qc.invalidateQueries({ queryKey: ["financial-health"] });
       qc.invalidateQueries({ queryKey: ["ml"] });
+      qc.invalidateQueries({ queryKey: ["business-summary"] });
+      qc.invalidateQueries({ queryKey: ["business-dashboard"] });
     },
   });
 }
@@ -119,6 +121,8 @@ export function useDeleteTransaction() {
       qc.invalidateQueries({ queryKey: ["readiness"] });
       qc.invalidateQueries({ queryKey: ["financial-health"] });
       qc.invalidateQueries({ queryKey: ["ml"] });
+      qc.invalidateQueries({ queryKey: ["business-summary"] });
+      qc.invalidateQueries({ queryKey: ["business-dashboard"] });
     },
   });
 }
@@ -154,6 +158,10 @@ export function useImportStatement() {
       qc.invalidateQueries({ queryKey: ["readiness"] });
       qc.invalidateQueries({ queryKey: ["financial-health"] });
       qc.invalidateQueries({ queryKey: ["ml"] });
+      qc.invalidateQueries({ queryKey: ["business-summary"] });
+      qc.invalidateQueries({ queryKey: ["business-dashboard"] });
+      qc.invalidateQueries({ queryKey: ["business-sales"] });
+      qc.invalidateQueries({ queryKey: ["business-purchases"] });
     },
   });
 }
