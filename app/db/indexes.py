@@ -77,6 +77,23 @@ _INDEX_SPECS: dict[str, list[tuple[list[tuple[str, int]], bool]]] = {
         ([("id", 1)], False),
         ([("user_id", 1), ("created_at", 1)], False),
     ],
+    "business_profiles": [
+        ([("id", 1)], False),
+        ([("user_id", 1)], True),
+    ],
+    "business_sales": [
+        ([("id", 1)], False),
+        ([("user_id", 1), ("date", -1)], False),
+        ([("user_id", 1), ("customer_id", 1), ("date", -1)], False),
+    ],
+    "business_customers": [
+        ([("id", 1)], False),
+        ([("user_id", 1), ("name", 1)], False),
+    ],
+    "business_purchases": [
+        ([("id", 1)], False),
+        ([("user_id", 1), ("date", -1)], False),
+    ],    
 }
 
 

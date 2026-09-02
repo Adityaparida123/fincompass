@@ -19,6 +19,12 @@ import type {
   Scheme,
   SchemeMatch,
   BusinessProfile,
+  BusinessSale,
+  BusinessCustomer,
+  BusinessPurchase,
+  BusinessSummary,
+  BusinessDashboard,
+  BusinessProfitIdea,
   ConsentItem,
   Notification,
   RecycleBinItem,
@@ -321,6 +327,122 @@ export function useUpdateBusinessProfile() {
     mutationFn: (body: Record<string, unknown>) =>
       api.patch<BusinessProfile>("/users/me/business", body),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["business-profile"] }),
+  });
+}
+
+export function useBusinessSummary() {
+  const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+
+  return useQuery({
+    queryKey: ["business-summary", user?.id ?? "anonymous"],
+    queryFn: () => api.get<BusinessSummary>("/business/summary"),
+    enabled: !!user?.id && isAuthenticated,
+  });
+}
+
+export function useBusinessDashboard(startDate: string, endDate: string) {
+  const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const params = new URLSearchParams({ start_date: startDate, end_date: endDate });
+
+  return useQuery({
+    queryKey: ["business-dashboard", user?.id ?? "anonymous", startDate, endDate],
+    queryFn: () => api.get<BusinessDashboard>(`/business/dashboard?${params}`),
+    enabled: !!user?.id && isAuthenticated && !!startDate && !!endDate,
+  });
+}
+
+export function useBusinessProfitIdeas() {
+  const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  return useQuery({
+    queryKey: ["business-profit-ideas", user?.id ?? "anonymous"],
+    queryFn: () => api.get<{ ideas: BusinessProfitIdea[] }>("/business/profit-ideas"),
+    enabled: !!user?.id && isAuthenticated,
+  });
+}
+
+export function useBusinessSales(limit = 50) {
+  const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+
+  return useQuery({
+    queryKey: ["business-sales", user?.id ?? "anonymous", limit],
+    queryFn: () =>
+      api.get<BusinessSale[]>(`/business/sales?limit=${limit}`),
+    enabled: !!user?.id && isAuthenticated,
+  });
+}
+
+export function useCreateBusinessSale() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: (body: Record<string, unknown>) =>
+      api.post<BusinessSale>("/business/sales", body),
+
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["business-sales"] });
+      qc.invalidateQueries({ queryKey: ["business-summary"] });
+      qc.invalidateQueries({ queryKey: ["business-customers"] });
+    },
+  });
+}
+
+export function useBusinessCustomers(limit = 100) {
+  const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+
+  return useQuery({
+    queryKey: ["business-customers", user?.id ?? "anonymous", limit],
+    queryFn: () =>
+      api.get<BusinessCustomer[]>(
+        `/business/customers?limit=${limit}`,
+      ),
+    enabled: !!user?.id && isAuthenticated,
+  });
+}
+
+export function useCreateBusinessCustomer() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: (body: Record<string, unknown>) =>
+      api.post<BusinessCustomer>("/business/customers", body),
+
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["business-customers"] });
+      qc.invalidateQueries({ queryKey: ["business-summary"] });
+    },
+  });
+}
+
+export function useBusinessPurchases(limit = 50) {
+  const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+
+  return useQuery({
+    queryKey: ["business-purchases", user?.id ?? "anonymous", limit],
+    queryFn: () =>
+      api.get<BusinessPurchase[]>(
+        `/business/purchases?limit=${limit}`,
+      ),
+    enabled: !!user?.id && isAuthenticated,
+  });
+}
+
+export function useCreateBusinessPurchase() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: (body: Record<string, unknown>) =>
+      api.post<BusinessPurchase>("/business/purchases", body),
+
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["business-purchases"] });
+      qc.invalidateQueries({ queryKey: ["business-summary"] });
+    },
   });
 }
 

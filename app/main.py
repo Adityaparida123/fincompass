@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes import (
     advisor,
     auth,
+    business,
     budget,
     cashflow,
     chat,
@@ -132,6 +133,7 @@ app.include_router(health.router)
 app.include_router(auth.router, prefix=API_PREFIX)
 app.include_router(users.router, prefix=API_PREFIX)
 app.include_router(transactions.router, prefix=API_PREFIX)
+app.include_router(business.router, prefix=API_PREFIX)
 app.include_router(expenses.router, prefix=API_PREFIX)
 app.include_router(cashflow.router, prefix=API_PREFIX)
 app.include_router(savings.router, prefix=API_PREFIX)
